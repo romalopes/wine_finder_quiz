@@ -3,6 +3,7 @@ import About from './components/About.jsx';
 import Footer from './components/Footer';
 import Header from './components/Header';
 import Home from './components/Home.jsx';
+import Quiz from './components/Quiz.jsx';
 
 function App() {
   return (
@@ -10,6 +11,7 @@ function App() {
       <Header />
       <Routes>
         <Route element={<Home />} path="/" />
+        <Route element={<Quiz />} path="quiz" />
         <Route element={<About />} path="about" />
       </Routes>
       <Footer />
