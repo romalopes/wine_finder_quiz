@@ -131,6 +131,14 @@ function Home() {
           <div className="wine-match-list">
             {matches.map((match) => (
               <article className="wine-match" key={match.id}>
+                <div className="wine-match__media">
+                  <img
+                    alt={`${match.name} bottle`}
+                    loading="lazy"
+                    src={match.image}
+                  />
+                </div>
+
                 <div className="wine-match__header">
                   <div>
                     <span>{match.color}</span>
