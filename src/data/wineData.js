@@ -313,6 +313,682 @@ function img(color) {
   return imageByColor(color);
 }
 
+// Vintage library. Each wine gets 2-3 recent vintages. A vintage is a
+// concrete bottle-year for a wine: the year the grapes were harvested
+// and a short tasting note that reflects what that specific year was
+// like. Adding vintages lets the React finder answer "what was the
+// 2020 Penfolds like?" in addition to "what does a generic Penfolds
+// taste like?".
+const VINTAGE_LIBRARY = {
+  "pinot-noir": [
+    {
+      year: 2018,
+      prompt:
+        "Cool, savoury vintage. Red cherry, forest floor, and a long, mineral finish.",
+    },
+    {
+      year: 2020,
+      prompt:
+        "Vibrant and perfumed. Bright raspberry, rose petal, and lifted acidity.",
+    },
+    {
+      year: 2022,
+      prompt:
+        "Generous, sun-kissed year. Plump red fruit, fine tannin, and a velvety mid-palate.",
+    },
+  ],
+  "cabernet-sauvignon": [
+    {
+      year: 2018,
+      prompt:
+        "Classic, structured vintage. Cassis, cedar, graphite, and firm, age-worthy tannin.",
+    },
+    {
+      year: 2020,
+      prompt:
+        "Elegant and cool. Blackcurrant, mint, and a slate-driven finish.",
+    },
+    {
+      year: 2021,
+      prompt:
+        "Powerful and concentrated. Black fruit, cocoa, and a long, warming finish.",
+    },
+  ],
+  merlot: [
+    {
+      year: 2019,
+      prompt:
+        "Plush and approachable. Plum, chocolate, and a soft, rounded tannin.",
+    },
+    {
+      year: 2021,
+      prompt:
+        "Bright and fresh. Red cherry, herbs, and a medium-bodied, food-friendly frame.",
+    },
+  ],
+  "syrah-shiraz": [
+    {
+      year: 2018,
+      prompt:
+        "Cool-climate elegance. White pepper, violet, and finely wrought tannin.",
+    },
+    {
+      year: 2020,
+      prompt:
+        "Warm and generous. Blackberry jam, clove, and warm, baking-spice finish.",
+    },
+    {
+      year: 2022,
+      prompt:
+        "Bold Barossa style. Dark fruit, chocolate, licorice, and plush alcohol.",
+    },
+  ],
+  sangiovese: [
+    {
+      year: 2019,
+      prompt:
+        "Classic Chianti year. Sour cherry, dried herbs, and a tangy, food-friendly acidity.",
+    },
+    {
+      year: 2021,
+      prompt:
+        "Riper, more generous. Red plum, leather, and a savoury, sun-warmed finish.",
+    },
+  ],
+  chardonnay: [
+    {
+      year: 2019,
+      prompt:
+        "Linear and mineral. Lemon pith, oyster shell, and a long, saline finish.",
+    },
+    {
+      year: 2021,
+      prompt:
+        "Generous and creamy. Stone fruit, hazelnut, and gentle French oak.",
+    },
+  ],
+  "sauvignon-blanc": [
+    {
+      year: 2020,
+      prompt:
+        "Classic Marlborough. Lime, passionfruit, and a crisp, herbaceous finish.",
+    },
+    {
+      year: 2022,
+      prompt:
+        "Softer, riper style. Stone fruit, citrus, and a rounder, more textural palate.",
+    },
+  ],
+  riesling: [
+    {
+      year: 2018,
+      prompt:
+        "Off-dry Mosel classic. Lime, green apple, slate, and a long, filigree finish.",
+    },
+    {
+      year: 2021,
+      prompt:
+        "Bone-dry Clare Valley. Lemon, bath salt, and a steely, dry finish.",
+    },
+  ],
+  prosecco: [
+    {
+      year: 2021,
+      prompt: "Fresh and zippy. Pear, green apple, and lively, frothy bubbles.",
+    },
+    {
+      year: 2022,
+      prompt:
+        "Softer and riper. White peach, honeysuckle, and a creamy, easy-drinking mousse.",
+    },
+  ],
+  rose: [
+    {
+      year: 2021,
+      prompt:
+        "Pale, dry Provence style. Strawberry, melon, and a crisp, saline finish.",
+    },
+    {
+      year: 2023,
+      prompt:
+        "Bright, juicy, and aromatic. Red berries, citrus zest, and a clean, dry finish.",
+    },
+  ],
+  tempranillo: [
+    {
+      year: 2018,
+      prompt:
+        "Traditional Rioja. Red cherry, dill, American oak, and silky tannin.",
+    },
+    {
+      year: 2020,
+      prompt:
+        "Riper, more modern. Black cherry, vanilla, and a richer, fuller body.",
+    },
+  ],
+  malbec: [
+    {
+      year: 2019,
+      prompt:
+        "Concentrated Mendoza vintage. Plum, violet, cocoa, and rich, velvety tannin.",
+    },
+    {
+      year: 2021,
+      prompt:
+        "Cooler, more elegant. Red fruit, herbs, and a fresh, structured finish.",
+    },
+  ],
+  zinfandel: [
+    {
+      year: 2018,
+      prompt:
+        "Ripe, heady vintage. Brambleberry, black pepper, vanilla, and warm alcohol.",
+    },
+    {
+      year: 2020,
+      prompt:
+        "Bright and balanced. Red fruit, spice, and a more elegant, food-friendly frame.",
+    },
+  ],
+  nebbiolo: [
+    {
+      year: 2017,
+      prompt:
+        "Classic Barolo. Tar, rose, dried cherry, and a long, firm, age-worthy finish.",
+    },
+    {
+      year: 2019,
+      prompt:
+        "Softer, more approachable vintage. Red berries, herbs, and refined tannin.",
+    },
+  ],
+  gamay: [
+    {
+      year: 2021,
+      prompt:
+        "Bright, juicy Cru Beaujolais. Red berries, granite minerality, and low tannin.",
+    },
+    {
+      year: 2022,
+      prompt:
+        "Easy, bouncy and chillable. Cherry, banana, and a soft, juicy finish.",
+    },
+  ],
+  "pinot-grigio": [
+    {
+      year: 2021,
+      prompt:
+        "Crisp Alto Adige style. Pear, almond, and a clean, mineral finish.",
+    },
+    {
+      year: 2022,
+      prompt:
+        "Softer, riper Italian pinot grigio. Lemon, melon, and a rounder, moreish finish.",
+    },
+  ],
+  "pinot-gris": [
+    {
+      year: 2019,
+      prompt:
+        "Rich, Alsace style. Pear, honey, ginger, and a touch of residual sweetness.",
+    },
+    {
+      year: 2021,
+      prompt:
+        "Dry, mineral Oregon gris. Stone fruit, white flowers, and a clean, savoury finish.",
+    },
+  ],
+  viognier: [
+    {
+      year: 2020,
+      prompt:
+        "Aromatic Condrieu-style. Apricot, honeysuckle, and a luxurious, oily mid-palate.",
+    },
+    {
+      year: 2022,
+      prompt:
+        "Modern, fresher viognier. Peach, ginger, and a brighter, more lifted finish.",
+    },
+  ],
+  gewurztraminer: [
+    {
+      year: 2019,
+      prompt:
+        "Headily aromatic Alsace. Lychee, rose petal, Turkish delight, and a hint of sweetness.",
+    },
+    {
+      year: 2021,
+      prompt: "Bone-dry style. Grapefruit pith, spice, and a long, dry finish.",
+    },
+  ],
+  "chenin-blanc": [
+    {
+      year: 2018,
+      prompt:
+        "Dry Vouvray. Quince, chamomile, wet stone, and a long, savoury finish.",
+    },
+    {
+      year: 2020,
+      prompt: "Off-dry, honeyed. Pear, beeswax, and bright, balancing acidity.",
+    },
+  ],
+  semillon: [
+    {
+      year: 2018,
+      prompt: "Young Hunter Valley. Lemon, snow pea, and a tight, racy finish.",
+    },
+    {
+      year: 2014,
+      prompt:
+        "Aged release. Toast, honey, lanolin, and a toasty, complex palate.",
+    },
+  ],
+  "gruner-veltliner": [
+    {
+      year: 2021,
+      prompt:
+        "Classic Wachau. White pepper, lentil, lime, and a crisp, savoury finish.",
+    },
+    {
+      year: 2022,
+      prompt:
+        "Riper Smaragd level. Stone fruit, spice, and a more textured, layered palate.",
+    },
+  ],
+  albarino: [
+    {
+      year: 2021,
+      prompt:
+        "Atlantic-influenced Rias Baixas. Saline, citrus peel, and a stony, mouth-watering finish.",
+    },
+    {
+      year: 2022,
+      prompt:
+        "Riper, rounder vintage. White peach, apricot, and a richer, fuller mid-palate.",
+    },
+  ],
+  verdejo: [
+    {
+      year: 2021,
+      prompt:
+        "Rueda classic. Fennel, grapefruit, and a crisp, herbaceous finish.",
+    },
+    {
+      year: 2022,
+      prompt:
+        "Modern, more fruit-forward verdejo. Melon, stone fruit, and a softer, rounder finish.",
+    },
+  ],
+  champagne: [
+    {
+      year: 2014,
+      prompt:
+        "Vintage Champagne. Brioche, citrus, and a long, fine, mineral finish.",
+    },
+    {
+      year: 2018,
+      prompt:
+        "Generous, ripe vintage. Yellow apple, honey, and creamy, persistent bubbles.",
+    },
+  ],
+  cava: [
+    {
+      year: 2020,
+      prompt:
+        "Brut Nature Cava. Green apple, almond, and a dry, mouth-watering finish.",
+    },
+    {
+      year: 2021,
+      prompt: "Softer Brut. Pear, lemon, and an easy, bready mid-palate.",
+    },
+  ],
+  franciacorta: [
+    {
+      year: 2018,
+      prompt:
+        "Satèn style. Almond, white peach, and a creamy, persistent mousse.",
+    },
+    {
+      year: 2019,
+      prompt:
+        "Nature dosage. Lemon curd, bread crust, and a long, dry, mineral finish.",
+    },
+  ],
+  "moscato-d-asti": [
+    {
+      year: 2021,
+      prompt:
+        "Fresh, fragrant Moscato. Orange blossom, peach, and a gentle, frothy sweetness.",
+    },
+    {
+      year: 2022,
+      prompt:
+        "Riper, lusher vintage. Honey, grape, and a more generous, sweeter mousse.",
+    },
+  ],
+  sauternes: [
+    {
+      year: 2015,
+      prompt:
+        "Rich botrytis year. Apricot, honey, ginger, and bright, lifting acidity.",
+    },
+    {
+      year: 2017,
+      prompt:
+        "Concentrated and opulent. Mango, saffron, and a long, luscious, sweet finish.",
+    },
+  ],
+  "port-tawny": [
+    {
+      year: 2010,
+      prompt:
+        "10 year old Tawny. Dried fig, walnut, orange peel, and a long, polished finish.",
+    },
+    {
+      year: 2015,
+      prompt:
+        "Fresher, fruitier Tawny. Plum, cherry, spice, and a more vibrant, lifted finish.",
+    },
+  ],
+  "sherry-oloroso": [
+    {
+      year: 2010,
+      prompt:
+        "Dry, mature Oloroso. Walnut, toffee, leather, and a long, savoury, dry finish.",
+    },
+    {
+      year: 2015,
+      prompt:
+        "Younger, fresher Oloroso. Dried orange, spice, and a more lifted, rounder mouthfeel.",
+    },
+  ],
+  pinotage: [
+    {
+      year: 2019,
+      prompt:
+        "Modern, elegant style. Red berries, chocolate, and a smooth, smoky finish.",
+    },
+    {
+      year: 2021,
+      prompt:
+        "Classic bold Pinotage. Smoked meat, plum, banana, and a robust, firm tannin.",
+    },
+  ],
+  torrontes: [
+    {
+      year: 2021,
+      prompt:
+        "High-altitude Salta. Grapefruit, rose, lychee, and a long, herbaceous finish.",
+    },
+    {
+      year: 2022,
+      prompt:
+        "Softer, riper vintage. Peach, white flowers, and a rounder, more generous palate.",
+    },
+  ],
+  "sangiovese-blend-super-tuscan": [
+    {
+      year: 2018,
+      prompt:
+        "Iconic vintage. Dark cherry, cedar, leather, and a long, powerful finish.",
+    },
+    {
+      year: 2020,
+      prompt:
+        "More elegant, structured. Red fruit, tobacco, and a fine-boned, savoury frame.",
+    },
+  ],
+};
+
+const VINTAGE_TEST_LIBRARY = {
+  "penfolds-bin-389": [
+    {
+      year: 2018,
+      prompt:
+        "A powerhouse Bin 389. Dark fruit, firm tannin, and a long, oak-driven finish.",
+    },
+    {
+      year: 2020,
+      prompt:
+        "A more elegant, structured 389. Cassis, spice, and savoury, fine-grained tannin.",
+    },
+  ],
+  "henschke-hill-of-grace": [
+    {
+      year: 2017,
+      prompt:
+        "A cool, poised vintage. Black fruit, spice, and a long, mineral, age-worthy finish.",
+    },
+    {
+      year: 2019,
+      prompt:
+        "A riper, more opulent year. Plum, dark chocolate, and warm, polished oak.",
+    },
+  ],
+  "leeuwin-estate-art-series": [
+    {
+      year: 2019,
+      prompt:
+        "A bright, linear Art Series. Citrus, white peach, and a crystalline, long finish.",
+    },
+    {
+      year: 2021,
+      prompt:
+        "A richer, more generous release. Stone fruit, hazelnut, and creamy, integrated oak.",
+    },
+  ],
+  "grosset-polish-hill": [
+    {
+      year: 2021,
+      prompt:
+        "Bone-dry, intense Polish Hill. Lime, bath salt, and a long, focused finish.",
+    },
+    {
+      year: 2023,
+      prompt:
+        "A more approachable, juicy vintage. Lemon, white flowers, and a bright, clean finish.",
+    },
+  ],
+  "tyrrells-vat-1-semillon": [
+    {
+      year: 2018,
+      prompt:
+        "Young, racy Vat 1. Lemon, snow pea, and a tight, bone-dry finish.",
+    },
+    {
+      year: 2010,
+      prompt:
+        "Aged release. Toast, honey, lanolin, and a complex, toasty mid-palate.",
+    },
+  ],
+  "giaconda-chardonnay": [
+    {
+      year: 2019,
+      prompt:
+        "Intense, mineral Giaconda. Citrus, struck match, and a long, layered finish.",
+    },
+    {
+      year: 2021,
+      prompt:
+        "Riper, more generous. White peach, hazelnut, and a creamy, oak-driven finish.",
+    },
+  ],
+  "yalumba-signature": [
+    {
+      year: 2017,
+      prompt:
+        "Concentrated, structured vintage. Cassis, plum, and firm, savoury tannin.",
+    },
+    {
+      year: 2019,
+      prompt:
+        "A more approachable release. Red fruit, spice, and a soft, generous finish.",
+    },
+  ],
+  "tolpuddle-pinot-noir": [
+    {
+      year: 2021,
+      prompt:
+        "Cool, fragrant vintage. Red cherry, rose, and a long, fine, mineral finish.",
+    },
+    {
+      year: 2022,
+      prompt:
+        "Riper, more plush. Plum, baking spice, and a soft, generous mid-palate.",
+    },
+  ],
+  "de-bortoli-noble-one": [
+    {
+      year: 2018,
+      prompt:
+        "Rich botrytis year. Apricot, honey, and a long, luscious, sweet finish.",
+    },
+    {
+      year: 2020,
+      prompt:
+        "A more focused, balanced vintage. Marmalade, ginger, and bright, lifting acidity.",
+    },
+  ],
+  "rockford-basket-press": [
+    {
+      year: 2018,
+      prompt:
+        "Classic old-vine Barossa. Blackberry, dark chocolate, and warm, generous alcohol.",
+    },
+    {
+      year: 2020,
+      prompt:
+        "A cooler, more elegant Basket Press. Red fruit, spice, and fine, savoury tannin.",
+    },
+  ],
+};
+
+// Per-wine packaging metadata: how the bottle is sealed, the alcohol
+// percentage, and the standard volume per bottle. This is shared
+// between the wineProfiles catalogue and the australianWineTests
+// quiz, so we look it up by wine id and apply it through withDetails
+// in both exports.
+const WINE_DETAILS_LIBRARY = {
+  "pinot-noir": { closure: "Cork", alcoholPercentage: 13.5, volumeMl: 750 },
+  "cabernet-sauvignon": {
+    closure: "Cork",
+    alcoholPercentage: 14.5,
+    volumeMl: 750,
+  },
+  merlot: { closure: "Cork", alcoholPercentage: 14.0, volumeMl: 750 },
+  "syrah-shiraz": {
+    closure: "Screw cap",
+    alcoholPercentage: 14.5,
+    volumeMl: 750,
+  },
+  sangiovese: { closure: "Cork", alcoholPercentage: 13.5, volumeMl: 750 },
+  chardonnay: { closure: "Cork", alcoholPercentage: 13.5, volumeMl: 750 },
+  "sauvignon-blanc": {
+    closure: "Screw cap",
+    alcoholPercentage: 12.5,
+    volumeMl: 750,
+  },
+  riesling: { closure: "Screw cap", alcoholPercentage: 12.0, volumeMl: 750 },
+  prosecco: { closure: "Cork", alcoholPercentage: 11.5, volumeMl: 750 },
+  rose: { closure: "Cork", alcoholPercentage: 12.5, volumeMl: 750 },
+  tempranillo: { closure: "Cork", alcoholPercentage: 14.0, volumeMl: 750 },
+  malbec: { closure: "Cork", alcoholPercentage: 14.0, volumeMl: 750 },
+  zinfandel: { closure: "Cork", alcoholPercentage: 14.5, volumeMl: 750 },
+  nebbiolo: { closure: "Cork", alcoholPercentage: 14.0, volumeMl: 750 },
+  gamay: { closure: "Cork", alcoholPercentage: 12.5, volumeMl: 750 },
+  "pinot-grigio": { closure: "Cork", alcoholPercentage: 12.5, volumeMl: 750 },
+  "pinot-gris": { closure: "Cork", alcoholPercentage: 13.5, volumeMl: 750 },
+  viognier: { closure: "Screw cap", alcoholPercentage: 13.5, volumeMl: 750 },
+  gewurztraminer: { closure: "Cork", alcoholPercentage: 13.5, volumeMl: 750 },
+  "chenin-blanc": { closure: "Cork", alcoholPercentage: 12.5, volumeMl: 750 },
+  semillon: { closure: "Screw cap", alcoholPercentage: 11.5, volumeMl: 750 },
+  "gruner-veltliner": {
+    closure: "Screw cap",
+    alcoholPercentage: 12.5,
+    volumeMl: 750,
+  },
+  albarino: { closure: "Cork", alcoholPercentage: 12.5, volumeMl: 750 },
+  verdejo: { closure: "Cork", alcoholPercentage: 13.0, volumeMl: 750 },
+  champagne: { closure: "Cork", alcoholPercentage: 12.5, volumeMl: 750 },
+  cava: { closure: "Cork", alcoholPercentage: 11.5, volumeMl: 750 },
+  franciacorta: { closure: "Cork", alcoholPercentage: 12.5, volumeMl: 750 },
+  "moscato-d-asti": { closure: "Cork", alcoholPercentage: 5.5, volumeMl: 750 },
+  sauternes: { closure: "Cork", alcoholPercentage: 14.0, volumeMl: 375 },
+  "port-tawny": { closure: "Cork", alcoholPercentage: 19.5, volumeMl: 750 },
+  "sherry-oloroso": { closure: "Cork", alcoholPercentage: 18.0, volumeMl: 750 },
+  pinotage: { closure: "Screw cap", alcoholPercentage: 14.0, volumeMl: 750 },
+  torrontes: { closure: "Cork", alcoholPercentage: 13.0, volumeMl: 750 },
+  "sangiovese-blend-super-tuscan": {
+    closure: "Cork",
+    alcoholPercentage: 14.5,
+    volumeMl: 750,
+  },
+  "penfolds-bin-389": {
+    closure: "Screw cap",
+    alcoholPercentage: 14.5,
+    volumeMl: 750,
+  },
+  "henschke-hill-of-grace": {
+    closure: "Cork",
+    alcoholPercentage: 14.5,
+    volumeMl: 750,
+  },
+  "leeuwin-estate-art-series": {
+    closure: "Screw cap",
+    alcoholPercentage: 13.5,
+    volumeMl: 750,
+  },
+  "grosset-polish-hill": {
+    closure: "Screw cap",
+    alcoholPercentage: 12.5,
+    volumeMl: 750,
+  },
+  "tyrrells-vat-1-semillon": {
+    closure: "Screw cap",
+    alcoholPercentage: 10.5,
+    volumeMl: 750,
+  },
+  "giaconda-chardonnay": {
+    closure: "Cork",
+    alcoholPercentage: 13.5,
+    volumeMl: 750,
+  },
+  "yalumba-signature": {
+    closure: "Screw cap",
+    alcoholPercentage: 14.5,
+    volumeMl: 750,
+  },
+  "tolpuddle-pinot-noir": {
+    closure: "Cork",
+    alcoholPercentage: 13.0,
+    volumeMl: 750,
+  },
+  "de-bortoli-noble-one": {
+    closure: "Screw cap",
+    alcoholPercentage: 10.5,
+    volumeMl: 375,
+  },
+  "rockford-basket-press": {
+    closure: "Cork",
+    alcoholPercentage: 14.5,
+    volumeMl: 750,
+  },
+};
+
+function withVintages(wine, library) {
+  const vintages = library[wine.id] || [];
+  return { ...wine, vintages };
+}
+
+function withDetails(wine) {
+  const details = WINE_DETAILS_LIBRARY[wine.id] || {
+    closure: "Cork",
+    alcoholPercentage: 13.5,
+    volumeMl: 750,
+  };
+  return { ...wine, ...details };
+}
+
 export const wineProfiles = [
   {
     id: "pinot-noir",
@@ -703,7 +1379,9 @@ export const wineProfiles = [
     image: img("Red"),
     parameters: p.superTuscan,
   },
-];
+]
+  .map((wine) => withVintages(wine, VINTAGE_LIBRARY))
+  .map((wine) => withDetails(wine));
 
 export const australianWineTests = [
   {
@@ -876,7 +1554,9 @@ export const australianWineTests = [
       fruit: 5,
     },
   },
-];
+]
+  .map((wine) => withVintages(wine, VINTAGE_TEST_LIBRARY))
+  .map((wine) => withDetails(wine));
 
 export const initialTaste = tasteParameters.reduce((taste, parameter) => {
   return { ...taste, [parameter.id]: 3 };
