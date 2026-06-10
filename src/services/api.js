@@ -83,6 +83,23 @@ export const winesApi = {
   show(id) {
     return request(`/wines/${id}`);
   },
+  create(wineData) {
+    return request("/wines", {
+      method: "POST",
+      body: { wine: wineData },
+    });
+  },
+  update(id, wineData) {
+    return request(`/wines/${id}`, {
+      method: "PATCH",
+      body: { wine: wineData },
+    });
+  },
+  destroy(id) {
+    return request(`/wines/${id}`, {
+      method: "DELETE",
+    });
+  },
 };
 
 export const wineProfilesApi = {
@@ -91,6 +108,11 @@ export const wineProfilesApi = {
   },
   show(id) {
     return request(`/wine_profiles/${id}`);
+  },
+  search(query, limit = 10) {
+    return request(
+      `/wine_profiles/search?q=${encodeURIComponent(query)}&limit=${limit}`,
+    );
   },
 };
 

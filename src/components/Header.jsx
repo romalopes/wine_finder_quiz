@@ -16,7 +16,9 @@ function Header() {
         Cellar Signal
       </NavLink>
       <nav aria-label="Primary navigation">
+        <NavLink to="/wines">Wines</NavLink>
         <NavLink to="/">Finder</NavLink>
+        <NavLink to="/search">Search</NavLink>
         <NavLink to="/quiz">Quiz</NavLink>
         <NavLink to="/about">About</NavLink>
         {currentUser ? (
