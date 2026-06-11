@@ -88,6 +88,10 @@ function WineDetail() {
           <span className="wine-detail__spec-value">{wine.closure || "—"}</span>
         </div>
         <div className="wine-detail__spec">
+          <span className="wine-detail__spec-label">Color</span>
+          <span className="wine-detail__spec-value">{wine.color || "—"}</span>
+        </div>
+        <div className="wine-detail__spec">
           <span className="wine-detail__spec-label">Alcohol</span>
           <span className="wine-detail__spec-value">
             {wine.alcohol_percentage != null

@@ -803,6 +803,77 @@ textarea {
   padding: 10px 14px;
 }
 
+.auth-card__divider {
+  align-items: center;
+  display: flex;
+  gap: 16px;
+  margin: 24px 0 18px;
+  text-align: center;
+}
+
+.auth-card__divider::before,
+.auth-card__divider::after {
+  background: #e4d9cd;
+  content: "";
+  flex: 1;
+  height: 1px;
+}
+
+.auth-card__divider span {
+  color: #9a8c84;
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.auth-card__social-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+.auth-card__social-btn {
+  align-items: center;
+  background: #fff;
+  border: 1px solid #d7c8bb;
+  border-radius: 8px;
+  color: #241b19;
+  cursor: pointer;
+  display: inline-flex;
+  flex: 1;
+  font-size: 0.9rem;
+  font-weight: 700;
+  gap: 10px;
+  justify-content: center;
+  min-height: 48px;
+  padding: 10px 16px;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.auth-card__social-btn:hover:not(:disabled) {
+  border-color: #27615e;
+  box-shadow: 0 0 0 3px rgba(39, 97, 94, 0.12);
+}
+
+.auth-card__social-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.auth-card__social-btn svg {
+  flex-shrink: 0;
+}
+
+.auth-card__social-btn--google:hover:not(:disabled) {
+  border-color: #4285f4;
+}
+
+.auth-card__social-btn--github:hover:not(:disabled) {
+  border-color: #241b19;
+}
+
 /* ===== Wine Management Styles ===== */
 
 .wine-management__header {

@@ -1,3 +1,5 @@
+import { authClient } from "../contexts/Auth";
+
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api/v1";
 
@@ -19,6 +21,7 @@ async function request(
     ...headers,
   };
 
+  console.log(method, body, auth, headers);
   let payload;
   if (body !== undefined) {
     requestHeaders["Content-Type"] = "application/json";
@@ -26,9 +29,15 @@ async function request(
   }
 
   if (auth) {
-    const token = getStoredToken();
-    if (token) {
-      requestHeaders.Authorization = `Bearer ${token}`;
+    // const token = getStoredToken();
+    // const { user, session, signOut } = useAuth();
+    const result = await authClient.getSession();
+
+    const session = result.data?.session;
+
+    if (session) {
+      requestHeaders.Authorization = `Bearer ${session.token}`;
+      requestHeaders["X-Session-Token"] = session.token;
     }
   }
 
@@ -78,7 +87,7 @@ export const authApi = {
 
 export const winesApi = {
   list() {
-    return request("/wines");
+    return request("/wines", { auth: true });
   },
   show(id) {
     return request(`/wines/${id}`);
@@ -86,18 +95,21 @@ export const winesApi = {
   create(wineData) {
     return request("/wines", {
       method: "POST",
+      auth: true,
       body: { wine: wineData },
     });
   },
   update(id, wineData) {
     return request(`/wines/${id}`, {
       method: "PATCH",
+      auth: true,
       body: { wine: wineData },
     });
   },
   destroy(id) {
     return request(`/wines/${id}`, {
       method: "DELETE",
+      auth: true,
     });
   },
 };

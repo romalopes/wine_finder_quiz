@@ -1,6 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { createAuthClient } from "@neondatabase/neon-js/auth";
-export const authClient = createAuthClient(import.meta.env.VITE_NEON_AUTH_URL);
+import { authClient } from "./Auth";
 
 const AuthContext = createContext(null);
 
