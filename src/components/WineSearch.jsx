@@ -65,14 +65,16 @@ function WineSearch() {
     }
   }
 
+  const llm = results?.llm_interpreted;
+
   return (
     <div className="wine-app">
       <div className="wine-search__hero">
         <p className="wine-kicker">Find your wine</p>
         <h1>Search Wines & Varieties</h1>
         <p className="wine-search__subtitle">
-          Type a wine name, grape variety, or region. Typos are OK — our fuzzy
-          search will still find results.
+          Type a wine name, grape variety, or region. Typos are OK — our
+          AI-powered search will still find results.
         </p>
       </div>
 
@@ -80,7 +82,7 @@ function WineSearch() {
         <input
           type="text"
           className="wine-search__input"
-          placeholder='e.g. "penfolds", "cabernet", "Burgundy", "shiraz"…'
+          placeholder='e.g. "something bold and fruity from Australia"…'
           value={query}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
@@ -97,10 +99,90 @@ function WineSearch() {
 
       {error && <p className="auth-form__error">{error}</p>}
 
-      {searching && <p className="wine-management__loading">Searching…</p>}
+      {searching && (
+        <div className="wine-search__ai-thinking">
+          <span className="wine-search__ai-badge">AI Thinking…</span>
+          <p>Interpreting your search with local LLM…</p>
+        </div>
+      )}
 
       {!searching && searched && results && (
         <div className="wine-search__results">
+          {/* LLM Interpretation Panel */}
+          {llm && (
+            <div className="wine-search__llm-panel">
+              <div className="wine-search__llm-header">
+                <span className="wine-search__ai-badge">AI-Powered Search</span>
+              </div>
+              <div className="wine-search__llm-details">
+                {llm.name_hints && llm.name_hints.length > 0 && (
+                  <span className="wine-search__llm-tag">
+                    Name: {llm.name_hints.join(", ")}
+                  </span>
+                )}
+                {llm.region_hints && llm.region_hints.length > 0 && (
+                  <span className="wine-search__llm-tag">
+                    Region: {llm.region_hints.join(", ")}
+                  </span>
+                )}
+                {llm.color && (
+                  <span className="wine-search__llm-tag">
+                    Color: {llm.color}
+                  </span>
+                )}
+                {llm.style_notes && llm.style_notes.length > 0 && (
+                  <span className="wine-search__llm-tag">
+                    Style: {llm.style_notes.join(", ")}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Wines */}
+          {results.wines && results.wines.length > 0 && (
+            <div className="wine-search__section">
+              <h2>Wines</h2>
+              <div className="wine-management__grid">
+                {results.wines.map((wine) => (
+                  <div
+                    key={wine.slug}
+                    className="wine-management__card"
+                    onClick={() => navigate(`/wines/${wine.slug}`)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") navigate(`/wines/${wine.slug}`);
+                    }}
+                  >
+                    <div className="wine-management__card-header">
+                      <h3>{wine.name}</h3>
+                      <span
+                        className={`wine-management__color-badge wine-management__color-badge--${wine.color}`}
+                      >
+                        {getWineTypeLabel(wine)}
+                      </span>
+                    </div>
+                    <p className="wine-search__detail">
+                      <strong>Region:</strong> {wine.region}
+                    </p>
+                    {wine.vintages && wine.vintages.length > 0 && (
+                      <p className="wine-management__vintage-count">
+                        {wine.vintages.length} vintage
+                        {wine.vintages.length !== 1 ? "s" : ""}
+                      </p>
+                    )}
+                    <div className="wine-search__card-footer">
+                      <span className="wine-search__cta">
+                        View Details &rarr;
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Wine profiles (varieties) */}
           {results.wine_profiles && results.wine_profiles.length > 0 && (
             <div className="wine-search__section">
@@ -144,50 +226,6 @@ function WineSearch() {
                     <div className="wine-search__card-footer">
                       <span className="wine-search__cta">
                         View in Quiz &rarr;
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Wines */}
-          {results.wines && results.wines.length > 0 && (
-            <div className="wine-search__section">
-              <h2>Wines</h2>
-              <div className="wine-management__grid">
-                {results.wines.map((wine) => (
-                  <div
-                    key={wine.slug}
-                    className="wine-management__card"
-                    onClick={() => navigate(`/wines/${wine.slug}`)}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") navigate(`/wines/${wine.slug}`);
-                    }}
-                  >
-                    <div className="wine-management__card-header">
-                      <h3>{wine.name}</h3>
-                      <span
-                        className={`wine-management__color-badge wine-management__color-badge--${wine.color}`}
-                      >
-                        {getWineTypeLabel(wine)}
-                      </span>
-                    </div>
-                    <p className="wine-search__detail">
-                      <strong>Region:</strong> {wine.region}
-                    </p>
-                    {wine.vintages && wine.vintages.length > 0 && (
-                      <p className="wine-management__vintage-count">
-                        {wine.vintages.length} vintage
-                        {wine.vintages.length !== 1 ? "s" : ""}
-                      </p>
-                    )}
-                    <div className="wine-search__card-footer">
-                      <span className="wine-search__cta">
-                        View Details &rarr;
                       </span>
                     </div>
                   </div>

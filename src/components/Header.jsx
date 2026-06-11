@@ -1,19 +1,31 @@
 import { NavLink, useNavigate } from "react-router-dom";
-import { useAuth } from "../contexts/AuthContext.jsx";
+import { useState } from "react";
+import { useAuth } from "../contexts/AuthContext";
 
 function Header() {
-  const { currentUser, signOut } = useAuth();
-  const navigate = useNavigate();
+  const { user, session, signOut } = useAuth();
+  const [loading, setLoading] = useState(true);
 
-  function handleSignOut() {
-    signOut();
-    navigate("/");
+  async function handleSignOut() {
+    await signOut();
+    navigate("/login");
   }
+
+  function getDisplayName() {
+    if (!session || !user) return null;
+    return (
+      user.name ||
+      user.displayName ||
+      (user.email ? user.email.split("@")[0] : null)
+    );
+  }
+
+  const displayName = getDisplayName();
 
   return (
     <header className="site-header">
       <NavLink className="site-logo" to="/">
-        Cellar Signal
+        Cellar Signal - Wine Prediction
       </NavLink>
       <nav aria-label="Primary navigation">
         <NavLink to="/wines">Wines</NavLink>
@@ -21,15 +33,18 @@ function Header() {
         <NavLink to="/search">Search</NavLink>
         <NavLink to="/quiz">Quiz</NavLink>
         <NavLink to="/about">About</NavLink>
-        {currentUser ? (
-          <button
-            className="site-header__auth"
-            onClick={handleSignOut}
-            type="button"
-          >
-            Sign out
-            {currentUser.email ? <small> ({currentUser.email})</small> : null}
-          </button>
+        {/* <pre>{JSON.stringify(user, null, 2)}</pre> */}
+        {user ? (
+          <>
+            <span className="site-header__user-name">{displayName}</span>
+            <button
+              className="site-header__auth"
+              onClick={handleSignOut}
+              type="button"
+            >
+              Sign out
+            </button>
+          </>
         ) : (
           <NavLink className="site-header__auth" to="/login">
             Sign in

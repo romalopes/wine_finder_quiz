@@ -1329,6 +1329,65 @@ textarea {
   padding: 8px 18px;
 }
 
+/* ===== AI / LLM Search ===== */
+
+.wine-search__ai-badge {
+  background: linear-gradient(135deg, #27615e, #681a2a);
+  border-radius: 999px;
+  color: #fff8f2;
+  display: inline-block;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  padding: 5px 14px;
+  text-transform: uppercase;
+}
+
+.wine-search__ai-thinking {
+  align-items: center;
+  display: flex;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.wine-search__ai-thinking p {
+  color: #5d514b;
+  font-size: 1rem;
+  margin: 0;
+}
+
+.wine-search__llm-panel {
+  background: linear-gradient(
+    135deg,
+    rgba(39, 97, 94, 0.06),
+    rgba(104, 26, 42, 0.06)
+  );
+  border: 1px solid #e4d9cd;
+  border-radius: 8px;
+  margin-bottom: 32px;
+  padding: 18px 22px;
+}
+
+.wine-search__llm-header {
+  margin-bottom: 12px;
+}
+
+.wine-search__llm-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.wine-search__llm-tag {
+  background: #fff;
+  border: 1px solid #d7c8bb;
+  border-radius: 999px;
+  color: #4f4440;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 5px 14px;
+}
+
 @media (max-width: 640px) {
   .wine-management__header {
     flex-direction: column;
