@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link } from "react-router-dom";
 
 function About() {
   return (
@@ -7,13 +7,13 @@ function About() {
         <p className="wine-kicker">About the model</p>
         <h1>A general tasting profile for future wine data.</h1>
         <p>
-          The finder starts with broad sensory parameters: acidity, body, tannin,
-          sweetness, alcohol warmth, and fruit intensity. Those values can be
-          stored per wine style, grape, producer, region, or bottle when the app
-          grows into a database-backed project.
+          The finder starts with broad sensory parameters: acidity, body,
+          tannin, sweetness, alcohol warmth, and fruit intensity. Those values
+          can be stored per wine style, grape, producer, region, or bottle when
+          the app grows into a database-backed project.
         </p>
-        <Link className="text-link" to="/">
-          Back to finder
+        <Link className="text-link" to="/wines">
+          Back to wine list
         </Link>
       </section>
     </main>
