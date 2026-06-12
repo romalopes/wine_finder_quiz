@@ -140,4 +140,35 @@ export const tasteParametersApi = {
   },
 };
 
+export const reviewsApi = {
+  list(wineSlug, vintageId) {
+    return request(`/wines/${wineSlug}/vintages/${vintageId}/reviews`, {
+      auth: true,
+    });
+  },
+  show(id) {
+    return request(`/reviews/${id}`, { auth: true });
+  },
+  create(wineSlug, vintageId, reviewData) {
+    return request(`/wines/${wineSlug}/vintages/${vintageId}/reviews`, {
+      method: "POST",
+      auth: true,
+      body: { review: reviewData },
+    });
+  },
+  update(id, reviewData) {
+    return request(`/reviews/${id}`, {
+      method: "PATCH",
+      auth: true,
+      body: { review: reviewData },
+    });
+  },
+  destroy(id) {
+    return request(`/reviews/${id}`, {
+      method: "DELETE",
+      auth: true,
+    });
+  },
+};
+
 export { API_BASE_URL };

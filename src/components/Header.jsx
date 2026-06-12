@@ -35,7 +35,7 @@ function Header() {
   return (
     <header className="site-header">
       <NavLink className="site-logo" to="/">
-        Cellar Signal — Wine Prediction
+        Wine Prediction
       </NavLink>
       <nav aria-label="Primary navigation">
         <NavLink to="/wines">Wines</NavLink>
