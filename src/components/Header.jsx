@@ -1,10 +1,19 @@
 import { NavLink, useNavigate } from "react-router-dom";
-import { useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
+
+function getInitials(name) {
+  if (!name) return "?";
+  return name
+    .split(/\s+/)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+}
 
 function Header() {
   const { user, session, signOut } = useAuth();
-  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   async function handleSignOut() {
     await signOut();
@@ -21,11 +30,12 @@ function Header() {
   }
 
   const displayName = getDisplayName();
+  const initials = getInitials(displayName || user?.email);
 
   return (
     <header className="site-header">
       <NavLink className="site-logo" to="/">
-        Cellar Signal - Wine Prediction
+        Cellar Signal — Wine Prediction
       </NavLink>
       <nav aria-label="Primary navigation">
         <NavLink to="/wines">Wines</NavLink>
@@ -33,10 +43,16 @@ function Header() {
         <NavLink to="/search">Search</NavLink>
         <NavLink to="/quiz">Quiz</NavLink>
         <NavLink to="/about">About</NavLink>
-        {/* <pre>{JSON.stringify(user, null, 2)}</pre> */}
+
         {user ? (
-          <>
+          <div className="site-header__user">
+            <span className="site-header__avatar" aria-hidden="true">
+              {initials}
+            </span>
             <span className="site-header__user-name">{displayName}</span>
+            {user.email && (
+              <span className="site-header__user-email">{user.email}</span>
+            )}
             <button
               className="site-header__auth"
               onClick={handleSignOut}
@@ -44,7 +60,7 @@ function Header() {
             >
               Sign out
             </button>
-          </>
+          </div>
         ) : (
           <NavLink className="site-header__auth" to="/login">
             Sign in

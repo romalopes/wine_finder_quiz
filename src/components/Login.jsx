@@ -106,7 +106,7 @@ function Login() {
               {isSignUp ? "Create account" : "Welcome back"}
             </p>
             <h1 id="auth-title">
-              {isSignUp ? "Join Cellar Signal" : "Sign in to Cellar Signal"}
+              {isSignUp ? "Join Wine Prediction" : "Sign in to Wine Prediction"}
             </h1>
             <p className="auth-card__intro">
               {isSignUp
