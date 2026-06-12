@@ -128,6 +128,12 @@ export const wineProfilesApi = {
   },
 };
 
+export const userApi = {
+  findUser(email) {
+    return request(`/user/${email}`);
+  },
+};
+
 export const tasteParametersApi = {
   list() {
     return request("/taste_parameters");

@@ -169,10 +169,10 @@ function WineForm() {
           </label>
 
           <label className="auth-form__field">
-            <span>Color *</span>
+            <span>Color * </span>
             <select
               name="color"
-              value={formData.color}
+              value={formData.color?.toLowerCase()}
               onChange={handleChange}
               required
             >
