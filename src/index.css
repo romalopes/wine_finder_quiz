@@ -463,6 +463,84 @@ textarea {
   padding: 10px 38px 10px 14px;
 }
 
+.wine-test__search-group {
+  display: grid;
+  gap: 10px;
+}
+
+.wine-test__search-label span {
+  color: #5d514b;
+  font-weight: 800;
+}
+
+.wine-test__search-wrapper {
+  position: relative;
+}
+
+.wine-test__search-input {
+  background: #fff;
+  border: 1px solid #d7c8bb;
+  border-radius: 8px;
+  color: #241b19;
+  font: inherit;
+  min-height: 48px;
+  padding: 10px 14px;
+  width: 100%;
+}
+
+.wine-test__search-input:focus {
+  border-color: #27615e;
+  box-shadow: 0 0 0 3px rgba(39, 97, 94, 0.18);
+  outline: none;
+}
+
+.wine-test__search-results {
+  background: #fff;
+  border: 1px solid #d7c8bb;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(54, 36, 28, 0.1);
+  left: 0;
+  max-height: 260px;
+  overflow-y: auto;
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 20;
+}
+
+.wine-test__search-item {
+  background: transparent;
+  border: 0;
+  color: #241b19;
+  cursor: pointer;
+  display: block;
+  padding: 10px 14px;
+  text-align: left;
+  width: 100%;
+}
+
+.wine-test__search-item:hover {
+  background: #f3ebe2;
+}
+
+.wine-test__search-item strong {
+  color: #681a2a;
+  display: block;
+  font-size: 0.95rem;
+}
+
+.wine-test__search-item span {
+  color: #766963;
+  font-size: 0.82rem;
+}
+
+.wine-test__search-empty {
+  color: #766963;
+  font-size: 0.85rem;
+  font-style: italic;
+  margin: 6px 0 0;
+}
+
 .wine-test-card {
   background: #f3ebe2;
   border: 1px solid #e4d9cd;
@@ -696,6 +774,23 @@ textarea {
   font-weight: 500;
   margin-left: 4px;
   opacity: 0.85;
+}
+
+.my-reviews-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.my-reviews__wine-link {
+  color: #27615e;
+  font-weight: 700;
+  text-decoration: none;
+  flex: 1;
+}
+
+.my-reviews__wine-link:hover {
+  text-decoration: underline;
 }
 
 .auth-page {
@@ -1188,9 +1283,9 @@ textarea {
 }
 
 .wine-detail__vintages {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 12px;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
 }
 
 .wine-detail__vintage {
@@ -1382,6 +1477,17 @@ textarea {
   border-color: #8a7300;
 }
 
+.review-card__unpublish {
+  color: #766963;
+  border-color: #d7c8bb;
+}
+
+.review-card__unpublish:hover {
+  background: #766963;
+  border-color: #766963;
+  color: #fff8f2;
+}
+
 .review-card__delete {
   background: transparent;
   border: 0;
@@ -1551,6 +1657,17 @@ textarea {
 .wine-form__fields {
   display: grid;
   gap: 18px;
+}
+
+.wine-form__section {
+  border-top: 1px solid #e4d9cd;
+  padding-top: 24px;
+}
+
+.wine-form__params {
+  display: grid;
+  gap: 18px;
+  margin-top: 16px;
 }
 
 .wine-form__vintages {

@@ -1,132 +1,284 @@
-import { useState } from 'react';
-import {
-  australianWineTests,
-  calculateMatch,
-  initialTaste,
-  tasteParameters,
-} from '../data/wineData';
+import { useState, useEffect, useRef, useCallback } from "react";
+import { wineProfilesApi, tasteParametersApi } from "../services/api";
+
+function calculateMatch(profile, tasteParams, selectedTaste) {
+  const params = profile.parameters || {};
+  const totalDistance = tasteParams.reduce((total, param) => {
+    return (
+      total + Math.abs((params[param.slug] ?? 3) - selectedTaste[param.slug])
+    );
+  }, 0);
+  const maxDistance = tasteParams.length * 4;
+  return Math.round((1 - totalDistance / maxDistance) * 100);
+}
 
 function Quiz() {
-  const [testWineId, setTestWineId] = useState(australianWineTests[0].id);
-  const [testTaste, setTestTaste] = useState(initialTaste);
+  const [tasteParams, setTasteParams] = useState([]);
+  const [loadingParams, setLoadingParams] = useState(true);
+
+  const [query, setQuery] = useState("");
+  const [searchResults, setSearchResults] = useState(null);
+  const [searching, setSearching] = useState(false);
+  const [error, setError] = useState(null);
+  const timerRef = useRef(null);
+
+  const [selectedWine, setSelectedWine] = useState(null);
+  const [testTaste, setTestTaste] = useState({});
   const [hasSubmittedTest, setHasSubmittedTest] = useState(false);
 
-  const testWine = australianWineTests.find((wine) => wine.id === testWineId);
-  const testScore = testWine ? calculateMatch(testWine, testTaste) : 0;
+  // Fetch taste parameters from the database
+  useEffect(() => {
+    async function loadParams() {
+      try {
+        const data = await tasteParametersApi.list();
+        setTasteParams(data);
+        const defaults = {};
+        data.forEach((p) => {
+          defaults[p.slug] = 3;
+        });
+        setTestTaste(defaults);
+      } catch {
+        // silently fail
+      } finally {
+        setLoadingParams(false);
+      }
+    }
+    loadParams();
+  }, []);
 
-  function handleTestTasteChange(parameterId, value) {
-    setTestTaste((currentTaste) => ({
-      ...currentTaste,
-      [parameterId]: Number(value),
-    }));
-    setHasSubmittedTest(false);
+  // Search using the same API as the main search
+  const performSearch = useCallback(async (q) => {
+    const trimmed = q.trim();
+    if (trimmed.length < 2) {
+      setSearchResults(null);
+      return;
+    }
+    try {
+      setSearching(true);
+      setError(null);
+      const data = await wineProfilesApi.search(trimmed);
+      setSearchResults(data);
+    } catch (err) {
+      setError(err.message || "Search failed");
+      setSearchResults(null);
+    } finally {
+      setSearching(false);
+    }
+  }, []);
+
+  function handleInputChange(e) {
+    const value = e.target.value;
+    setQuery(value);
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => performSearch(value), 300);
   }
 
-  function handleTestWineChange(value) {
-    setTestWineId(value);
-    setTestTaste(initialTaste);
+  function handleKeyDown(e) {
+    if (e.key === "Enter") {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      performSearch(query);
+    }
+  }
+
+  function selectWine(wine) {
+    setSelectedWine(wine);
+    const defaults = {};
+    tasteParams.forEach((p) => {
+      defaults[p.slug] = 3;
+    });
+    setTestTaste(defaults);
+    setHasSubmittedTest(false);
+    setSearchResults(null);
+    setQuery("");
+  }
+
+  function handleTestTasteChange(slug, value) {
+    setTestTaste((prev) => ({ ...prev, [slug]: Number(value) }));
     setHasSubmittedTest(false);
   }
 
   function resetTest() {
-    setTestTaste(initialTaste);
+    const defaults = {};
+    tasteParams.forEach((p) => {
+      defaults[p.slug] = 3;
+    });
+    setTestTaste(defaults);
     setHasSubmittedTest(false);
+  }
+
+  const testScore =
+    selectedWine && tasteParams.length > 0
+      ? calculateMatch(selectedWine, tasteParams, testTaste)
+      : 0;
+
+  // Merge wine_profiles and wines from search results
+  const allSearchHits = searchResults
+    ? [...(searchResults.wine_profiles || []), ...(searchResults.wines || [])]
+    : [];
+
+  if (loadingParams) {
+    return (
+      <main className="wine-app quiz-page">
+        <p className="wine-management__loading">Loading quiz…</p>
+      </main>
+    );
   }
 
   return (
     <main className="wine-app quiz-page">
       <section className="quiz-hero" aria-labelledby="quiz-title">
         <p className="wine-kicker">Tasting quiz</p>
-        <h1 id="quiz-title">Score your read of an Australian wine.</h1>
+        <h1 id="quiz-title">Score your read of a wine.</h1>
         <p>
           Pick a wine, set the tasting parameters as you would describe it, then
           compare your profile with the stored target values.
         </p>
       </section>
 
-      <section className="wine-panel wine-test" aria-labelledby="wine-test-title">
+      <section
+        className="wine-panel wine-test"
+        aria-labelledby="wine-test-title"
+      >
         <div className="section-heading">
           <p>Training mode</p>
-          <h2 id="wine-test-title">Australian wine examples</h2>
+          <h2 id="wine-test-title">Wine examples</h2>
         </div>
 
         <div className="wine-test__intro">
-          <label>
-            <span>Choose a wine</span>
-            <select
-              onChange={(event) => handleTestWineChange(event.target.value)}
-              value={testWineId}
+          <div className="wine-test__search-group">
+            <label
+              className="wine-test__search-label"
+              htmlFor="quiz-wine-search"
             >
-              {australianWineTests.map((wine) => (
-                <option key={wine.id} value={wine.id}>
-                  {wine.name}
-                </option>
-              ))}
-            </select>
-          </label>
+              <span>Choose a wine</span>
+            </label>
+            <div className="wine-test__search-wrapper">
+              <input
+                id="quiz-wine-search"
+                className="wine-test__search-input"
+                type="text"
+                placeholder='e.g. "Shiraz from Barossa"…'
+                value={query}
+                onChange={handleInputChange}
+                onKeyDown={handleKeyDown}
+                autoComplete="off"
+              />
+              {searching && (
+                <p className="wine-test__search-empty">Searching…</p>
+              )}
+              {searchResults && allSearchHits.length > 0 && !selectedWine && (
+                <div className="wine-test__search-results">
+                  {allSearchHits.map((wine) => (
+                    <button
+                      key={wine.slug || wine.name}
+                      type="button"
+                      className="wine-test__search-item"
+                      onClick={() => selectWine(wine)}
+                    >
+                      <strong>{wine.name}</strong>
+                      <span>
+                        {[wine.color, ...(wine.regions || [])]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+              {searchResults && allSearchHits.length === 0 && !searching && (
+                <p className="wine-test__search-empty">
+                  No wines match your search.
+                </p>
+              )}
+            </div>
+          </div>
 
           <article className="wine-test-card">
-            <span>{testWine.color} - {testWine.region}</span>
-            <h3>{testWine.name}</h3>
-            <p>{testWine.prompt}</p>
+            {selectedWine ? (
+              <>
+                <span>
+                  {selectedWine.color || "Wine"} ·{" "}
+                  {(selectedWine.regions || []).join(", ")}
+                </span>
+                <h3>{selectedWine.name}</h3>
+                {(selectedWine.notes || []).length > 0 && (
+                  <p style={{ marginTop: 4, fontSize: "0.85rem" }}>
+                    {selectedWine.notes.join(", ")}
+                  </p>
+                )}
+              </>
+            ) : (
+              <>
+                <span>No wine selected</span>
+                <h3>Search above</h3>
+                <p>Type a wine name or region to begin.</p>
+              </>
+            )}
           </article>
         </div>
 
-        <div className="wine-test__grid">
-          <div className="wine-sliders">
-            {tasteParameters.map((parameter) => (
-              <label className="wine-slider" key={parameter.id}>
-                <span className="wine-slider__top">
-                  <strong>{parameter.label}</strong>
-                  <output>{testTaste[parameter.id]}</output>
-                </span>
-                <input
-                  max="5"
-                  min="1"
-                  onChange={(event) => handleTestTasteChange(parameter.id, event.target.value)}
-                  type="range"
-                  value={testTaste[parameter.id]}
-                />
-                <span className="wine-slider__scale">
-                  <small>{parameter.low}</small>
-                  <small>{parameter.high}</small>
-                </span>
-              </label>
-            ))}
-          </div>
+        {error && <p className="auth-form__error">{error}</p>}
 
-          <aside className="wine-test-result" aria-live="polite">
-            <span>Your accuracy</span>
-            <strong>{hasSubmittedTest ? `${testScore}%` : '--'}</strong>
-            <p>
-              {hasSubmittedTest
-                ? 'This compares your parameter set with the stored profile for the selected wine.'
-                : 'Fill the sliders, then submit your tasting profile.'}
-            </p>
-
-            {hasSubmittedTest && (
-              <dl>
-                {tasteParameters.map((parameter) => (
-                  <div key={parameter.id}>
-                    <dt>{parameter.label}</dt>
-                    <dd>
-                      You {testTaste[parameter.id]} / Target {testWine.parameters[parameter.id]}
-                    </dd>
-                  </div>
-                ))}
-              </dl>
-            )}
-
-            <div className="wine-test-actions">
-              <button onClick={() => setHasSubmittedTest(true)} type="button">
-                Check accuracy
-              </button>
-              <button onClick={resetTest} type="button">
-                Try again
-              </button>
+        {selectedWine && (
+          <div className="wine-test__grid">
+            <div className="wine-sliders">
+              {tasteParams.map((param) => (
+                <label className="wine-slider" key={param.slug}>
+                  <span className="wine-slider__top">
+                    <strong>{param.label}</strong>
+                    <output>{testTaste[param.slug]}</output>
+                  </span>
+                  <input
+                    max="5"
+                    min="1"
+                    onChange={(event) =>
+                      handleTestTasteChange(param.slug, event.target.value)
+                    }
+                    type="range"
+                    value={testTaste[param.slug]}
+                  />
+                  <span className="wine-slider__scale">
+                    <small>{param.low}</small>
+                    <small>{param.high}</small>
+                  </span>
+                </label>
+              ))}
             </div>
-          </aside>
-        </div>
+
+            <aside className="wine-test-result" aria-live="polite">
+              <span>Your accuracy</span>
+              <strong>{hasSubmittedTest ? `${testScore}%` : "--"}</strong>
+              <p>
+                {hasSubmittedTest
+                  ? "This compares your parameter set with the stored profile for the selected wine."
+                  : "Fill the sliders, then submit your tasting profile."}
+              </p>
+
+              {hasSubmittedTest && (
+                <dl>
+                  {tasteParams.map((param) => (
+                    <div key={param.slug}>
+                      <dt>{param.label}</dt>
+                      <dd>
+                        You {testTaste[param.slug]} / Target{" "}
+                        {selectedWine.parameters?.[param.slug] ?? "—"}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              )}
+
+              <div className="wine-test-actions">
+                <button onClick={() => setHasSubmittedTest(true)} type="button">
+                  Check accuracy
+                </button>
+                <button onClick={resetTest} type="button">
+                  Try again
+                </button>
+              </div>
+            </aside>
+          </div>
+        )}
       </section>
     </main>
   );

@@ -42,6 +42,7 @@ function Header() {
         <NavLink to="/">Finder</NavLink>
         <NavLink to="/search">Search</NavLink>
         <NavLink to="/quiz">Quiz</NavLink>
+        {user && <NavLink to="/my-reviews">My Reviews</NavLink>}
         <NavLink to="/about">About</NavLink>
 
         {user ? (

@@ -169,6 +169,9 @@ export const reviewsApi = {
       auth: true,
     });
   },
+  myReviews() {
+    return request("/reviews/my_reviews", { auth: true });
+  },
 };
 
 export { API_BASE_URL };

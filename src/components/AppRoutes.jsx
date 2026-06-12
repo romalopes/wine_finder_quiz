@@ -2,6 +2,7 @@ import { Route, Routes } from "react-router-dom";
 import About from "./About.jsx";
 import Home from "./Home.jsx";
 import Login from "./Login.jsx";
+import MyReviews from "./MyReviews.jsx";
 import Quiz from "./Quiz.jsx";
 import WineList from "./WineList.jsx";
 import WineDetail from "./WineDetail.jsx";
@@ -19,6 +20,7 @@ function AppRoutes({ user, setUser }) {
           path="/login"
           element={<Login user={user} setUser={setUser} />}
         />
+        <Route element={<MyReviews />} path="/my-reviews" />
         <Route element={<WineSearch />} path="/search" />
         <Route element={<WineList />} path="/wines" />
         <Route element={<WineDetail />} path="/wines/:slug" />

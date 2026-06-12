@@ -265,7 +265,7 @@ function WineDetail() {
                               >
                                 Edit
                               </button>
-                              {review.status === "draft" && (
+                              {review.status === "draft" ? (
                                 <button
                                   type="button"
                                   className="review-card__publish"
@@ -285,6 +285,26 @@ function WineDetail() {
                                   }}
                                 >
                                   Publish
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  className="review-card__unpublish"
+                                  onClick={async () => {
+                                    try {
+                                      await reviewsApi.update(review.id, {
+                                        status: "draft",
+                                      });
+                                      loadReviews(vintage.id);
+                                    } catch (err) {
+                                      alert(
+                                        err.message ||
+                                          "Failed to unpublish review",
+                                      );
+                                    }
+                                  }}
+                                >
+                                  Unpublish
                                 </button>
                               )}
                               <button

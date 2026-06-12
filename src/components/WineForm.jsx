@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { winesApi } from "../services/api";
+import { winesApi, tasteParametersApi } from "../services/api";
 
 const INITIAL_VINTAGE = { year: "", prompt: "" };
 
@@ -19,11 +19,27 @@ function WineForm() {
     prompt: "",
   });
   const [vintages, setVintages] = useState([]);
+  const [tasteParams, setTasteParams] = useState([]);
+  const [tasteScores, setTasteScores] = useState({});
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    async function loadParams() {
+      try {
+        const data = await tasteParametersApi.list();
+        setTasteParams(data);
+        const defaults = {};
+        data.forEach((p) => {
+          defaults[p.slug] = 3;
+        });
+        setTasteScores(defaults);
+      } catch {
+        // silently fail
+      }
+    }
+    loadParams();
     if (isEditing) {
       loadWine();
     }
@@ -52,6 +68,17 @@ function WineForm() {
           prompt: v.prompt || "",
         })),
       );
+      if (data.parameters && Object.keys(data.parameters).length > 0) {
+        setTasteScores((prev) => {
+          const next = { ...prev };
+          for (const key of Object.keys(next)) {
+            if (data.parameters[key] !== undefined) {
+              next[key] = data.parameters[key];
+            }
+          }
+          return next;
+        });
+      }
     } catch (err) {
       setError(err.message || "Failed to load wine");
     } finally {
@@ -72,6 +99,18 @@ function WineForm() {
     });
   }
 
+  function handleTasteChange(slug, value) {
+    setTasteScores((prev) => ({ ...prev, [slug]: Number(value) }));
+  }
+
+  function getTasteDefaults() {
+    const defaults = {};
+    tasteParams.forEach((p) => {
+      defaults[p.slug] = 3;
+    });
+    return defaults;
+  }
+
   function addVintage() {
     setVintages((prev) => [...prev, { ...INITIAL_VINTAGE }]);
   }
@@ -85,6 +124,11 @@ function WineForm() {
     try {
       setSubmitting(true);
       setError(null);
+
+      const wineTasteParametersAttributes = tasteParams.map((tp) => ({
+        taste_parameter_slug: tp.slug,
+        score: tasteScores[tp.slug],
+      }));
 
       const payload = {
         name: formData.name,
@@ -101,6 +145,7 @@ function WineForm() {
           if (v.id) attr.id = v.id;
           return attr;
         }),
+        wine_taste_parameters_attributes: wineTasteParametersAttributes,
       };
 
       if (isEditing) {
@@ -240,6 +285,33 @@ function WineForm() {
               placeholder="Description or notes about this wine"
             />
           </label>
+        </div>
+
+        <div className="wine-form__section">
+          <div className="wine-form__vintages-header">
+            <h2>Taste Parameters</h2>
+          </div>
+          <div className="wine-form__params">
+            {tasteParams.map((tp) => (
+              <label className="wine-slider" key={tp.slug}>
+                <span className="wine-slider__top">
+                  <strong>{tp.label}</strong>
+                  <output>{tasteScores[tp.slug]}</output>
+                </span>
+                <input
+                  max="5"
+                  min="1"
+                  onChange={(e) => handleTasteChange(tp.slug, e.target.value)}
+                  type="range"
+                  value={tasteScores[tp.slug]}
+                />
+                <span className="wine-slider__scale">
+                  <small>{tp.low}</small>
+                  <small>{tp.high}</small>
+                </span>
+              </label>
+            ))}
+          </div>
         </div>
 
         <div className="wine-form__vintages">
