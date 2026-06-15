@@ -180,8 +180,24 @@ function Login() {
               <button
                 type="button"
                 className="auth-card__social-btn auth-card__social-btn--google"
-                disabled
-                title="Google login coming soon"
+                disabled={isSubmitting}
+                onClick={async () => {
+                  setFormError(null);
+                  setIsSubmitting(true);
+                  try {
+                    const result = await authClient.signIn.social({
+                      provider: "google",
+                    });
+                    if (result.error) {
+                      setFormError(result.error.message);
+                    }
+                  } catch (err) {
+                    console.error(err);
+                    setFormError(err.message);
+                  } finally {
+                    setIsSubmitting(false);
+                  }
+                }}
               >
                 <svg
                   className="auth-card__social-icon"
@@ -213,8 +229,24 @@ function Login() {
               <button
                 type="button"
                 className="auth-card__social-btn auth-card__social-btn--github"
-                disabled
-                title="GitHub login coming soon"
+                disabled={isSubmitting}
+                onClick={async () => {
+                  setFormError(null);
+                  setIsSubmitting(true);
+                  try {
+                    const result = await authClient.signIn.social({
+                      provider: "github",
+                    });
+                    if (result.error) {
+                      setFormError(result.error.message);
+                    }
+                  } catch (err) {
+                    console.error(err);
+                    setFormError(err.message);
+                  } finally {
+                    setIsSubmitting(false);
+                  }
+                }}
               >
                 <svg
                   className="auth-card__social-icon"

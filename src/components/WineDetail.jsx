@@ -9,7 +9,6 @@ function timeAgo(dateStr) {
   const now = Date.now();
   const then = new Date(dateStr).getTime();
   const diffSec = Math.floor((now - then) / 1000);
-
   if (diffSec < 60) return "just now";
   if (diffSec < 3600) {
     const m = Math.floor(diffSec / 60);
@@ -122,14 +121,13 @@ function WineDetail() {
       <Link to="/wines" className="wine-detail__back">
         &larr; Back to Wines
       </Link>
-
       <div className="wine-detail__header">
         <div>
           <p className="wine-kicker">{wine.region}</p>
           <h1>{wine.name}</h1>
         </div>
         <span
-          className={`wine-management__color-badge wine-management__color-badge--${wine.color}`}
+          className={`wine-management__color-badge wine-management__color-badge--${wine.color?.toLowerCase()}`}
         >
           {wine.color}
         </span>
@@ -173,9 +171,8 @@ function WineDetail() {
               !window.confirm(
                 `Delete "${wine.name}"? This action cannot be undone.`,
               )
-            ) {
+            )
               return;
-            }
             try {
               await winesApi.destroy(wine.slug);
               navigate("/wines", { replace: true });
@@ -204,10 +201,8 @@ function WineDetail() {
                     {reviewsByVintage[vintage.id] ? "Hide reviews" : "Reviews"}
                   </button>
                 </div>
-
                 {vintage.prompt && <p>{vintage.prompt}</p>}
 
-                {/* Reviews */}
                 {loadingReviews[vintage.id] && (
                   <p className="review-loading">Loading reviews…</p>
                 )}
@@ -324,7 +319,6 @@ function WineDetail() {
                     </div>
                   )}
 
-                {/* Edit Review form */}
                 {editingReview && editingReview.vintageId === vintage.id && (
                   <div className="review-form-wrapper">
                     <ReviewForm
@@ -337,7 +331,6 @@ function WineDetail() {
                   </div>
                 )}
 
-                {/* Add Review button / form */}
                 {user && (
                   <div className="review-form-wrapper">
                     {activeFormVintage === vintage.id ? (
@@ -371,17 +364,22 @@ function WineDetail() {
         )}
       </div>
 
-      {wine.parameters && Object.keys(wine.parameters).length > 0 && (
+      {wine.parameters && wine.parameters.length > 0 && (
         <div className="wine-detail__section">
           <h2>Taste Parameters</h2>
           <div className="wine-detail__params">
-            {Object.entries(wine.parameters).map(([key, score]) => (
-              <div key={key} className="wine-detail__param">
-                <span className="wine-detail__param-label">{key}</span>
+            {wine.parameters.map((param) => (
+              <div
+                key={param.id || param.taste_parameter_id}
+                className="wine-detail__param"
+              >
+                <span className="wine-detail__param-label">
+                  {param.taste_parameter_slug}
+                </span>
                 <div className="wine-meter">
-                  <span style={{ width: `${(score / 5) * 100}%` }} />
+                  <span style={{ width: `${(param.score / 5) * 100}%` }} />
                 </div>
-                <span className="wine-detail__param-score">{score}</span>
+                <span className="wine-detail__param-score">{param.score}</span>
               </div>
             ))}
           </div>

@@ -10,6 +10,7 @@ function WineForm() {
   const isEditing = Boolean(slug);
 
   const [formData, setFormData] = useState({
+    id: null,
     name: "",
     region: "",
     color: "",
@@ -18,73 +19,86 @@ function WineForm() {
     volume_ml: "",
     prompt: "",
   });
+
   const [vintages, setVintages] = useState([]);
   const [tasteParams, setTasteParams] = useState([]);
-  const [tasteScores, setTasteScores] = useState({});
+  const [tasteScores, setTasteScores] = useState([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    async function loadParams() {
+    async function initFormData() {
       try {
-        const data = await tasteParametersApi.list();
-        setTasteParams(data);
-        const defaults = {};
-        data.forEach((p) => {
-          defaults[p.slug] = 3;
-        });
-        setTasteScores(defaults);
-      } catch {
-        // silently fail
-      }
-    }
-    loadParams();
-    if (isEditing) {
-      loadWine();
-    }
-  }, [slug]);
+        setLoading(true);
+        // 1. Load global taste parameters first
+        const globalParams = await tasteParametersApi.list();
+        // The API returns the array directly, not wrapped in data.parameters
+        const paramsArray = Array.isArray(globalParams) ? globalParams : [];
+        setTasteParams(paramsArray);
 
-  async function loadWine() {
-    try {
-      setLoading(true);
-      const data = await winesApi.show(slug);
-      setFormData({
-        name: data.name || "",
-        region: data.region || "",
-        color: data.color || "",
-        closure: data.closure || "",
-        alcohol_percentage:
-          data.alcohol_percentage != null
-            ? String(data.alcohol_percentage)
-            : "",
-        volume_ml: data.volume_ml != null ? String(data.volume_ml) : "",
-        prompt: data.prompt || "",
-      });
-      setVintages(
-        (data.vintages || []).map((v) => ({
-          id: v.id,
-          year: v.year,
-          prompt: v.prompt || "",
-        })),
-      );
-      if (data.parameters && Object.keys(data.parameters).length > 0) {
-        setTasteScores((prev) => {
-          const next = { ...prev };
-          for (const key of Object.keys(next)) {
-            if (data.parameters[key] !== undefined) {
-              next[key] = data.parameters[key];
-            }
+        // Set baseline defaults
+        let initialScores = paramsArray.map((p) => ({
+          id: null, // join table record id
+          taste_parameter_id: p.id,
+          taste_parameter_slug: p.slug,
+          score: 3,
+        }));
+
+        // 2. If editing, load the wine and merge its existing scores
+        if (isEditing) {
+          const wineData = await winesApi.show(slug);
+
+          setFormData({
+            id: wineData.id || null,
+            name: wineData.name || "",
+            region: wineData.region || "",
+            color: wineData.color || "",
+            closure: wineData.closure || "",
+            alcohol_percentage:
+              wineData.alcohol_percentage != null
+                ? String(wineData.alcohol_percentage)
+                : "",
+            volume_ml:
+              wineData.volume_ml != null ? String(wineData.volume_ml) : "",
+            prompt: wineData.prompt || "",
+          });
+
+          setVintages(
+            (wineData.vintages || []).map((v) => ({
+              id: v.id,
+              year: v.year,
+              prompt: v.prompt || "",
+            })),
+          );
+
+          if (wineData.parameters && wineData.parameters.length > 0) {
+            initialScores = initialScores.map((scoreObj) => {
+              const matchingParam = wineData.parameters.find(
+                (wp) => wp.taste_parameter_id === scoreObj.taste_parameter_id,
+              );
+              if (matchingParam) {
+                return {
+                  ...scoreObj,
+                  id: matchingParam.id,
+                  score: matchingParam.score,
+                };
+              }
+              return scoreObj;
+            });
           }
-          return next;
-        });
+        }
+
+        setTasteScores(initialScores);
+      } catch (err) {
+        setError(err.message || "Failed to initialize form options");
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      setError(err.message || "Failed to load wine");
-    } finally {
-      setLoading(false);
     }
-  }
+
+    initFormData();
+  }, [slug, isEditing]);
 
   function handleChange(e) {
     const { name, value } = e.target;
@@ -99,16 +113,14 @@ function WineForm() {
     });
   }
 
-  function handleTasteChange(slug, value) {
-    setTasteScores((prev) => ({ ...prev, [slug]: Number(value) }));
-  }
-
-  function getTasteDefaults() {
-    const defaults = {};
-    tasteParams.forEach((p) => {
-      defaults[p.slug] = 3;
+  function handleTasteChange(index, value) {
+    setTasteScores((prev) => {
+      const updated = [...prev];
+      if (updated[index]) {
+        updated[index] = { ...updated[index], score: Number(value) };
+      }
+      return updated;
     });
-    return defaults;
   }
 
   function addVintage() {
@@ -125,12 +137,16 @@ function WineForm() {
       setSubmitting(true);
       setError(null);
 
-      const wineTasteParametersAttributes = tasteParams.map((tp) => ({
-        taste_parameter_slug: tp.slug,
-        score: tasteScores[tp.slug],
+      const wineTasteParametersAttributes = tasteScores.map((ts) => ({
+        id: ts.id || null,
+        wine_id: formData.id,
+        taste_parameter_id: ts.taste_parameter_id,
+        taste_parameter_slug: ts.taste_parameter_slug,
+        score: ts.score,
       }));
 
       const payload = {
+        id: formData.id || null,
         name: formData.name,
         region: formData.region,
         color: formData.color,
@@ -141,7 +157,7 @@ function WineForm() {
         volume_ml: formData.volume_ml ? parseInt(formData.volume_ml, 10) : null,
         prompt: formData.prompt || null,
         vintages_attributes: vintages.map((v) => {
-          const attr = { year: parseInt(v.year, 10), prompt: v.prompt };
+          const attr = { year: parseInt(v.year, 10), prompt: v.prompt || null };
           if (v.id) attr.id = v.id;
           return attr;
         }),
@@ -180,13 +196,10 @@ function WineForm() {
       >
         &larr; Back
       </Link>
-
       <div className="wine-management__header">
         <h1>{isEditing ? "Edit Wine" : "Add New Wine"}</h1>
       </div>
-
       {error && <p className="auth-form__error">{error}</p>}
-
       <form onSubmit={handleSubmit} className="wine-form">
         <div className="wine-form__fields">
           <label className="auth-form__field">
@@ -200,7 +213,6 @@ function WineForm() {
               placeholder="e.g. Château Margaux"
             />
           </label>
-
           <label className="auth-form__field">
             <span>Region *</span>
             <input
@@ -212,25 +224,23 @@ function WineForm() {
               placeholder="e.g. Bordeaux, France"
             />
           </label>
-
           <label className="auth-form__field">
             <span>Color * </span>
             <select
               name="color"
-              value={formData.color?.toLowerCase()}
+              value={formData.color}
               onChange={handleChange}
               required
             >
               <option value="">Select color…</option>
-              <option value="red">Red</option>
-              <option value="white">White</option>
-              <option value="rosé">Rosé</option>
-              <option value="orange">Orange</option>
-              <option value="sparkling">Sparkling</option>
-              <option value="dessert">Dessert</option>
+              <option value="Red">Red</option>
+              <option value="White">White</option>
+              <option value="Rosé">Rosé</option>
+              <option value="Orange">Orange</option>
+              <option value="Sparkling">Sparkling</option>
+              <option value="Dessert">Dessert</option>
             </select>
           </label>
-
           <label className="auth-form__field">
             <span>Closure</span>
             <select
@@ -246,7 +256,6 @@ function WineForm() {
               <option value="Glass stopper">Glass stopper</option>
             </select>
           </label>
-
           <div className="wine-form__row">
             <label className="auth-form__field wine-form__row-item">
               <span>Alcohol %</span>
@@ -274,7 +283,6 @@ function WineForm() {
               />
             </label>
           </div>
-
           <label className="auth-form__field">
             <span>Prompt (optional)</span>
             <textarea
@@ -292,25 +300,28 @@ function WineForm() {
             <h2>Taste Parameters</h2>
           </div>
           <div className="wine-form__params">
-            {tasteParams.map((tp) => (
-              <label className="wine-slider" key={tp.slug}>
-                <span className="wine-slider__top">
-                  <strong>{tp.label}</strong>
-                  <output>{tasteScores[tp.slug]}</output>
-                </span>
-                <input
-                  max="5"
-                  min="1"
-                  onChange={(e) => handleTasteChange(tp.slug, e.target.value)}
-                  type="range"
-                  value={tasteScores[tp.slug]}
-                />
-                <span className="wine-slider__scale">
-                  <small>{tp.low}</small>
-                  <small>{tp.high}</small>
-                </span>
-              </label>
-            ))}
+            {tasteParams.map((tp, index) => {
+              const currentScore = tasteScores[index]?.score ?? 3;
+              return (
+                <label className="wine-slider" key={tp.slug}>
+                  <span className="wine-slider__top">
+                    <strong>{tp.label}</strong>
+                    <output>{currentScore}</output>
+                  </span>
+                  <input
+                    max="5"
+                    min="1"
+                    type="range"
+                    value={currentScore}
+                    onChange={(e) => handleTasteChange(index, e.target.value)}
+                  />
+                  <span className="wine-slider__scale">
+                    <small>{tp.low}</small>
+                    <small>{tp.high}</small>
+                  </span>
+                </label>
+              );
+            })}
           </div>
         </div>
 
@@ -325,13 +336,11 @@ function WineForm() {
               + Add Vintage
             </button>
           </div>
-
           {vintages.length === 0 && (
             <p className="wine-management__empty-state">
               No vintages added yet. Click "+ Add Vintage" to add one.
             </p>
           )}
-
           {vintages.map((vintage, index) => (
             <div key={index} className="wine-form__vintage-row">
               <label className="auth-form__field wine-form__vintage-year">
