@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { wineProfilesApi, tasteParametersApi } from "../services/api";
 
-function calculateMatch(profile, tasteParams, selectedTaste) {
-  const params = profile.parameters || {};
+function calculateMatch(selectedWineParameters, tasteParams, selectedTaste) {
+  const params = selectedWineParameters || {};
   const totalDistance = tasteParams.reduce((total, param) => {
     return (
       total + Math.abs((params[param.slug] ?? 3) - selectedTaste[param.slug])
@@ -23,6 +23,7 @@ function Quiz() {
   const timerRef = useRef(null);
 
   const [selectedWine, setSelectedWine] = useState(null);
+  const [selectedWineParameters, setSelectedWineParameters] = useState({});
   const [testTaste, setTestTaste] = useState({});
   const [hasSubmittedTest, setHasSubmittedTest] = useState(false);
 
@@ -86,6 +87,11 @@ function Quiz() {
     tasteParams.forEach((p) => {
       defaults[p.slug] = 3;
     });
+
+    wine.parameters.forEach((p) => {
+      selectedWineParameters[p.taste_parameter_slug] = p.score;
+    });
+
     setTestTaste(defaults);
     setHasSubmittedTest(false);
     setSearchResults(null);
@@ -108,7 +114,7 @@ function Quiz() {
 
   const testScore =
     selectedWine && tasteParams.length > 0
-      ? calculateMatch(selectedWine, tasteParams, testTaste)
+      ? calculateMatch(selectedWineParameters, tasteParams, testTaste)
       : 0;
 
   // Merge wine_profiles and wines from search results
@@ -261,7 +267,7 @@ function Quiz() {
                       <dt>{param.label}</dt>
                       <dd>
                         You {testTaste[param.slug]} / Target{" "}
-                        {selectedWine.parameters?.[param.slug] ?? "—"}
+                        {selectedWineParameters?.[param.slug] ?? "—"}
                       </dd>
                     </div>
                   ))}

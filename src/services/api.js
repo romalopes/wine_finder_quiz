@@ -42,6 +42,7 @@ async function request(
     }
   }
 
+  console.log("API_BASE_URL", `${API_BASE_URL}${path}`);
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method,
     headers: requestHeaders,
@@ -88,7 +89,7 @@ export const authApi = {
 
 export const winesApi = {
   list() {
-    return request("/wines", { auth: true });
+    return request("/wines", { auth: false });
   },
   show(id) {
     return request(`/wines/${id}`);
