@@ -64,7 +64,7 @@ function WineList() {
       <div className="wine-management__header">
         <div>
           <p className="wine-kicker">Cellar</p>
-          <h1>Wine List</h1>
+          <h1>Wine List- {import.meta.env.VITE_API_BASE_URL}</h1>
         </div>
         <Link
           to="/wines/new"
