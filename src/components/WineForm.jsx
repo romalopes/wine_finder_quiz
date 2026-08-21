@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { winesApi, tasteParametersApi } from "../services/api";
+import { winesApi, tasteParametersApi, wineriesApi } from "../services/api";
 
 const INITIAL_VINTAGE = { year: "", prompt: "" };
 
@@ -18,11 +18,13 @@ function WineForm() {
     alcohol_percentage: "",
     volume_ml: "",
     prompt: "",
+    winery_id: "",
   });
 
   const [vintages, setVintages] = useState([]);
   const [tasteParams, setTasteParams] = useState([]);
   const [tasteScores, setTasteScores] = useState([]);
+  const [wineries, setWineries] = useState([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
@@ -36,6 +38,10 @@ function WineForm() {
         // The API returns the array directly, not wrapped in data.parameters
         const paramsArray = Array.isArray(globalParams) ? globalParams : [];
         setTasteParams(paramsArray);
+
+        // Load wineries
+        const wineryData = await wineriesApi.list();
+        setWineries(Array.isArray(wineryData) ? wineryData : []);
 
         // Set baseline defaults
         let initialScores = paramsArray.map((p) => ({
@@ -62,6 +68,7 @@ function WineForm() {
             volume_ml:
               wineData.volume_ml != null ? String(wineData.volume_ml) : "",
             prompt: wineData.prompt || "",
+            winery_id: wineData.winery?.id || "",
           });
 
           setVintages(
@@ -156,6 +163,7 @@ function WineForm() {
           : null,
         volume_ml: formData.volume_ml ? parseInt(formData.volume_ml, 10) : null,
         prompt: formData.prompt || null,
+        winery_id: formData.winery_id ? parseInt(formData.winery_id, 10) : null,
         vintages_attributes: vintages.map((v) => {
           const attr = { year: parseInt(v.year, 10), prompt: v.prompt || null };
           if (v.id) attr.id = v.id;
@@ -202,6 +210,21 @@ function WineForm() {
       {error && <p className="auth-form__error">{error}</p>}
       <form onSubmit={handleSubmit} className="wine-form">
         <div className="wine-form__fields">
+          <label className="auth-form__field">
+            <span>Winery</span>
+            <select
+              name="winery_id"
+              value={formData.winery_id}
+              onChange={handleChange}
+            >
+              <option value="">Select winery…</option>
+              {wineries.map((winery) => (
+                <option key={winery.id} value={winery.id}>
+                  {winery.name}
+                </option>
+              ))}
+            </select>
+          </label>
           <label className="auth-form__field">
             <span>Name *</span>
             <input

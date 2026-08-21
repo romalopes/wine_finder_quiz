@@ -116,6 +116,35 @@ export const winesApi = {
   },
 };
 
+export const wineriesApi = {
+  list() {
+    return request("/wineries");
+  },
+  show(id) {
+    return request(`/wineries/${id}`);
+  },
+  create(wineryData) {
+    return request("/wineries", {
+      method: "POST",
+      auth: true,
+      body: { winery: wineryData },
+    });
+  },
+  update(id, wineryData) {
+    return request(`/wineries/${id}`, {
+      method: "PATCH",
+      auth: true,
+      body: { winery: wineryData },
+    });
+  },
+  destroy(id) {
+    return request(`/wineries/${id}`, {
+      method: "DELETE",
+      auth: true,
+    });
+  },
+};
+
 export const wineProfilesApi = {
   list() {
     return request("/wine_profiles");

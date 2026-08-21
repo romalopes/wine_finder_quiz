@@ -64,7 +64,7 @@ function WineList() {
       <div className="wine-management__header">
         <div>
           <p className="wine-kicker">Cellar</p>
-          <h1>Wine List- {import.meta.env.VITE_API_BASE_URL}</h1>
+          <h1>Wine List</h1>
         </div>
         <Link
           to="/wines/new"
@@ -105,6 +105,9 @@ function WineList() {
                 </span>
               </div>
               <p className="wine-management__region">{wine.region}</p>
+              {wine.winery && (
+                <p className="wine-management__winery">{wine.winery.name}</p>
+              )}
               {wine.vintages && wine.vintages.length > 0 && (
                 <p className="wine-management__vintage-count">
                   {wine.vintages.length} vintage

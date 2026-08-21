@@ -137,6 +137,12 @@ function WineDetail() {
 
       <div className="wine-detail__specs">
         <div className="wine-detail__spec">
+          <span className="wine-detail__spec-label">Winery</span>
+          <span className="wine-detail__spec-value">
+            {wine.winery ? wine.winery.name : "—"}
+          </span>
+        </div>
+        <div className="wine-detail__spec">
           <span className="wine-detail__spec-label">Closure</span>
           <span className="wine-detail__spec-value">{wine.closure || "—"}</span>
         </div>
