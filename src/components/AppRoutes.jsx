@@ -8,6 +8,9 @@ import WineList from "./WineList.jsx";
 import WineDetail from "./WineDetail.jsx";
 import WineForm from "./WineForm.jsx";
 import WineSearch from "./WineSearch.jsx";
+import ProducerList from "./ProducerList.jsx";
+import ProducerDetail from "./ProducerDetail.jsx";
+import ProducerForm from "./ProducerForm.jsx";
 
 function AppRoutes({ user, setUser }) {
   return (
@@ -26,6 +29,10 @@ function AppRoutes({ user, setUser }) {
         <Route element={<WineDetail />} path="/wines/:slug" />
         <Route element={<WineForm />} path="/wines/new" />
         <Route element={<WineForm />} path="/wines/:slug/edit" />
+        <Route element={<ProducerList />} path="/producers" />
+        <Route element={<ProducerDetail />} path="/producers/:slug" />
+        <Route element={<ProducerForm />} path="/producers/new" />
+        <Route element={<ProducerForm />} path="/producers/:slug/edit" />
       </Routes>
     </>
   );

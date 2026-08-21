@@ -1,35 +1,35 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { wineriesApi } from "../services/api";
+import { producersApi } from "../services/api";
 
-function WineryDetail() {
+function ProducerDetail() {
   const { slug } = useParams();
   const navigate = useNavigate();
-  const [winery, setWinery] = useState(null);
+  const [producer, setProducer] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const loadWinery = useCallback(async () => {
+  const loadProducer = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await wineriesApi.show(slug);
-      setWinery(data);
+      const data = await producersApi.show(slug);
+      setProducer(data);
     } catch (err) {
-      setError(err.message || "Failed to load winery");
+      setError(err.message || "Failed to load producer");
     } finally {
       setLoading(false);
     }
   }, [slug]);
 
   useEffect(() => {
-    loadWinery();
-  }, [loadWinery]);
+    loadProducer();
+  }, [loadProducer]);
 
   if (loading) {
     return (
       <div className="wine-app">
-        <p className="wine-management__loading">Loading winery details…</p>
+        <p className="wine-management__loading">Loading producer details…</p>
       </div>
     );
   }
@@ -38,24 +38,24 @@ function WineryDetail() {
     return (
       <div className="wine-app">
         <p className="wine-management__error">{error}</p>
-        <Link to="/wineries" className="auth-form__submit">
-          Back to Wineries
+        <Link to="/producers" className="auth-form__submit">
+          Back to Producers
         </Link>
       </div>
     );
   }
 
-  if (!winery) return null;
+  if (!producer) return null;
 
   return (
     <div className="wine-app">
-      <Link to="/wineries" className="wine-detail__back">
-        &larr; Back to Wineries
+      <Link to="/producers" className="wine-detail__back">
+        &larr; Back to Producers
       </Link>
       <div className="wine-detail__header">
         <div>
-          <p className="wine-kicker">Winery</p>
-          <h1>{winery.name}</h1>
+          <p className="wine-kicker">Producer</p>
+          <h1>{producer.name}</h1>
         </div>
       </div>
 
@@ -63,48 +63,50 @@ function WineryDetail() {
         <div className="wine-detail__spec">
           <span className="wine-detail__spec-label">Address</span>
           <span className="wine-detail__spec-value">
-            {winery.address || "—"}
+            {producer.address || "—"}
           </span>
         </div>
         <div className="wine-detail__spec">
           <span className="wine-detail__spec-label">Email</span>
-          <span className="wine-detail__spec-value">{winery.email || "—"}</span>
+          <span className="wine-detail__spec-value">
+            {producer.email || "—"}
+          </span>
         </div>
       </div>
 
       <div className="wine-detail__actions">
         <Link
-          to={`/wineries/${winery.slug}/edit`}
+          to={`/producers/${producer.slug}/edit`}
           className="auth-form__submit"
         >
-          Edit Winery
+          Edit Producer
         </Link>
         <button
           className="wine-management__delete-btn"
           onClick={async () => {
             if (
               !window.confirm(
-                `Delete "${winery.name}"? This action cannot be undone.`,
+                `Delete "${producer.name}"? This action cannot be undone.`,
               )
             )
               return;
             try {
-              await wineriesApi.destroy(winery.slug);
-              navigate("/wineries", { replace: true });
+              await producersApi.destroy(producer.slug);
+              navigate("/producers", { replace: true });
             } catch (err) {
-              alert(err.message || "Failed to delete winery");
+              alert(err.message || "Failed to delete producer");
             }
           }}
         >
-          Delete Winery
+          Delete Producer
         </button>
       </div>
 
       <div className="wine-detail__section">
         <h2>Wines</h2>
-        {winery.wines && winery.wines.length > 0 ? (
+        {producer.wines && producer.wines.length > 0 ? (
           <ul className="wine-list">
-            {winery.wines.map((wine) => (
+            {producer.wines.map((wine) => (
               <li key={wine.slug}>
                 <Link to={`/wines/${wine.slug}`}>{wine.name}</Link>
               </li>
@@ -112,7 +114,7 @@ function WineryDetail() {
           </ul>
         ) : (
           <p className="wine-management__empty-state">
-            No wines are associated with this winery yet.
+            No wines are associated with this producer yet.
           </p>
         )}
       </div>
@@ -120,4 +122,4 @@ function WineryDetail() {
   );
 }
 
-export default WineryDetail;
+export default ProducerDetail;

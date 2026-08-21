@@ -1,25 +1,25 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { wineriesApi } from "../services/api";
+import { producersApi } from "../services/api";
 
-function WineryList() {
-  const [wineries, setWineries] = useState([]);
+function ProducerList() {
+  const [producers, setProducers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    loadWineries();
+    loadProducers();
   }, []);
 
-  async function loadWineries() {
+  async function loadProducers() {
     try {
       setLoading(true);
       setError(null);
-      const data = await wineriesApi.list();
-      setWineries(Array.isArray(data) ? data : []);
+      const data = await producersApi.list();
+      setProducers(Array.isArray(data) ? data : []);
     } catch (err) {
-      setError(err.message || "Failed to load wineries");
+      setError(err.message || "Failed to load producers");
     } finally {
       setLoading(false);
     }
@@ -28,7 +28,7 @@ function WineryList() {
   if (loading) {
     return (
       <div className="wine-app">
-        <p className="wine-management__loading">Loading wineries…</p>
+        <p className="wine-management__loading">Loading producers…</p>
       </div>
     );
   }
@@ -37,7 +37,7 @@ function WineryList() {
     return (
       <div className="wine-app">
         <p className="wine-management__error">{error}</p>
-        <button className="auth-form__submit" onClick={loadWineries}>
+        <button className="auth-form__submit" onClick={loadProducers}>
           Retry
         </button>
       </div>
@@ -49,51 +49,51 @@ function WineryList() {
       <div className="wine-management__header">
         <div>
           <p className="wine-kicker">Cellar</p>
-          <h1>Wineries</h1>
+          <h1>Producers</h1>
         </div>
         <Link
-          to="/wineries/new"
+          to="/producers/new"
           className="auth-form__submit wine-management__add-btn"
         >
-          + Add Winery
+          + Add Producer
         </Link>
       </div>
 
-      {wineries.length === 0 ? (
+      {producers.length === 0 ? (
         <div className="wine-management__empty">
-          <p>No wineries found. Start by adding a new winery!</p>
-          <Link to="/wineries/new" className="auth-form__submit">
-            + Add Your First Winery
+          <p>No producers found. Start by adding a new producer!</p>
+          <Link to="/producers/new" className="auth-form__submit">
+            + Add Your First Producer
           </Link>
         </div>
       ) : (
         <div className="wine-management__grid">
-          {wineries.map((winery) => (
+          {producers.map((producer) => (
             <div
-              key={winery.slug}
+              key={producer.slug}
               className="wine-management__card"
-              onClick={() => navigate(`/wineries/${winery.slug}`)}
+              onClick={() => navigate(`/producers/${producer.slug}`)}
               role="button"
               tabIndex={0}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
-                  navigate(`/wineries/${winery.slug}`);
+                  navigate(`/producers/${producer.slug}`);
                 }
               }}
             >
               <div className="wine-management__card-header">
-                <h3>{winery.name}</h3>
+                <h3>{producer.name}</h3>
               </div>
-              {winery.address && (
-                <p className="wine-management__region">{winery.address}</p>
+              {producer.address && (
+                <p className="wine-management__region">{producer.address}</p>
               )}
-              {winery.email && (
-                <p className="wine-management__winery">{winery.email}</p>
+              {producer.email && (
+                <p className="wine-management__producer">{producer.email}</p>
               )}
-              {winery.wines && winery.wines.length > 0 && (
+              {producer.wines && producer.wines.length > 0 && (
                 <p className="wine-management__vintage-count">
-                  {winery.wines.length} wine
-                  {winery.wines.length !== 1 ? "s" : ""}
+                  {producer.wines.length} wine
+                  {producer.wines.length !== 1 ? "s" : ""}
                 </p>
               )}
             </div>
@@ -104,4 +104,4 @@ function WineryList() {
   );
 }
 
-export default WineryList;
+export default ProducerList;

@@ -116,29 +116,29 @@ export const winesApi = {
   },
 };
 
-export const wineriesApi = {
+export const producersApi = {
   list() {
-    return request("/wineries");
+    return request("/producers");
   },
   show(id) {
-    return request(`/wineries/${id}`);
+    return request(`/producers/${id}`);
   },
-  create(wineryData) {
-    return request("/wineries", {
+  create(producerData) {
+    return request("/producers", {
       method: "POST",
       auth: true,
-      body: { winery: wineryData },
+      body: { producer: producerData },
     });
   },
-  update(id, wineryData) {
-    return request(`/wineries/${id}`, {
+  update(id, producerData) {
+    return request(`/producers/${id}`, {
       method: "PATCH",
       auth: true,
-      body: { winery: wineryData },
+      body: { producer: producerData },
     });
   },
   destroy(id) {
-    return request(`/wineries/${id}`, {
+    return request(`/producers/${id}`, {
       method: "DELETE",
       auth: true,
     });

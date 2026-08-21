@@ -105,8 +105,10 @@ function WineList() {
                 </span>
               </div>
               <p className="wine-management__region">{wine.region}</p>
-              {wine.winery && (
-                <p className="wine-management__winery">{wine.winery.name}</p>
+              {wine.producer && (
+                <p className="wine-management__producer">
+                  {wine.producer.name}
+                </p>
               )}
               {wine.vintages && wine.vintages.length > 0 && (
                 <p className="wine-management__vintage-count">

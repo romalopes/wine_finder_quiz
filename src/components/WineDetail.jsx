@@ -137,9 +137,15 @@ function WineDetail() {
 
       <div className="wine-detail__specs">
         <div className="wine-detail__spec">
-          <span className="wine-detail__spec-label">Winery</span>
+          <span className="wine-detail__spec-label">Producer</span>
           <span className="wine-detail__spec-value">
-            {wine.winery ? wine.winery.name : "—"}
+            {wine.producer ? (
+              <Link to={`/producers/${wine.producer.slug}`}>
+                {wine.producer.name}
+              </Link>
+            ) : (
+              "—"
+            )}
           </span>
         </div>
         <div className="wine-detail__spec">
