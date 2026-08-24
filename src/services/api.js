@@ -1,15 +1,24 @@
-import { authClient } from "../contexts/Auth";
-
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api/v1";
 
 const TOKEN_STORAGE_KEY = "wine_prediction_token";
 
-function getStoredToken() {
-  if (typeof window === "undefined") {
-    return null;
+let authToken = null;
+
+export function setAuthToken(token) {
+  authToken = token;
+  if (typeof window !== "undefined") {
+    if (token) {
+      window.localStorage.setItem(TOKEN_STORAGE_KEY, token);
+    } else {
+      window.localStorage.removeItem(TOKEN_STORAGE_KEY);
+    }
   }
-  return window.localStorage.getItem(TOKEN_STORAGE_KEY);
+}
+
+// Restore any previously stored token at module load.
+if (typeof window !== "undefined") {
+  authToken = window.localStorage.getItem(TOKEN_STORAGE_KEY);
 }
 
 async function request(
@@ -21,28 +30,16 @@ async function request(
     ...headers,
   };
 
-  console.log("VITE_API_BASE_URL", import.meta.env.VITE_API_BASE_URL);
-  console.log(method, body, auth, headers);
   let payload;
   if (body !== undefined) {
     requestHeaders["Content-Type"] = "application/json";
     payload = JSON.stringify(body);
   }
 
-  if (auth) {
-    // const token = getStoredToken();
-    // const { user, session, signOut } = useAuth();
-    const result = await authClient.getSession();
-
-    const session = result.data?.session;
-
-    if (session) {
-      requestHeaders.Authorization = `Bearer ${session.token}`;
-      requestHeaders["X-Session-Token"] = session.token;
-    }
+  if (auth && authToken) {
+    requestHeaders.Authorization = `Bearer ${authToken}`;
   }
 
-  console.log("API_BASE_URL", `${API_BASE_URL}${path}`);
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method,
     headers: requestHeaders,
@@ -58,12 +55,20 @@ async function request(
   if (!response.ok) {
     const message =
       (isJson && (data?.error || data?.message)) ||
+      (Array.isArray(data?.errors) && data.errors.join(", ")) ||
       (typeof data === "string" && data) ||
       `Request failed with status ${response.status}`;
     const error = new Error(message);
     error.status = response.status;
     error.data = data;
     throw error;
+  }
+
+  // Surface the JWT issued by devise-jwt (sent in the Authorization header
+  // on sign-in / sign-up responses).
+  const authorizationHeader = response.headers.get("Authorization");
+  if (authorizationHeader) {
+    data.token = authorizationHeader.replace(/^Bearer\s+/i, "");
   }
 
   return data;
@@ -73,17 +78,22 @@ export const authApi = {
   signIn({ email, password }) {
     return request("/auth/sign_in", {
       method: "POST",
-      body: { email, password },
+      body: { user: { email, password } },
     });
   },
   signUp({ email, password, name }) {
     return request("/auth/sign_up", {
       method: "POST",
-      body: { email, password, name },
+      body: {
+        user: { name, email, password, password_confirmation: password },
+      },
     });
   },
+  signOut() {
+    return request("/auth/sign_out", { method: "DELETE", auth: true });
+  },
   me() {
-    return request("/auth/me", { auth: true });
+    return request("/me", { auth: true });
   },
 };
 

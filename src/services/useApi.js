@@ -1,19 +1,24 @@
-import { authClient } from "../auth";
+import { API_BASE_URL } from "./api.js";
+
+const TOKEN_STORAGE_KEY = "wine_prediction_token";
+
+function getStoredToken() {
+  if (typeof window === "undefined") return null;
+  return window.localStorage.getItem(TOKEN_STORAGE_KEY);
+}
 
 export const useApi = () => {
   const apiFetch = async (path, options = {}) => {
-    const { data } = await authClient.getSession();
-    const token = data?.session?.token;
+    const token = getStoredToken();
 
-    alert(import.meta.env.VITE_API_URL);
-    const res = await fetch(`${import.meta.env.VITE_API_URL}${path}`, {
+    const res = await fetch(`${API_BASE_URL}${path}`, {
       ...options,
       headers: {
         "Content-Type": "application/json",
-        "X-Session-Token": token ?? "",
+        Accept: "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...options.headers,
       },
-      credentials: "include", // se usares cookies
     });
 
     if (!res.ok) throw new Error(await res.text());

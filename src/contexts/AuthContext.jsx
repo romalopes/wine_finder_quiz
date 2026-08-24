@@ -1,183 +1,135 @@
-import { createContext, useContext, useEffect, useState } from "react";
-import { authClient } from "./Auth";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+import { authApi, setAuthToken } from "../services/api.js";
 
 const AuthContext = createContext(null);
 
-export function AuthProvider({ children }) {
-  const [session, setSession] = useState(null);
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+const STORAGE_TOKEN_KEY = "wine_prediction_token";
 
+function readStoredToken() {
+  if (typeof window === "undefined") return null;
+  return window.localStorage.getItem(STORAGE_TOKEN_KEY);
+}
+
+export function AuthProvider({ children }) {
+  const [token, setToken] = useState(() => readStoredToken());
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(Boolean(readStoredToken()));
+
+  // Restore the session on mount when a token is stored.
   useEffect(() => {
-    authClient.getSession().then((result) => {
-      setSession(result.data?.session ?? null);
-      setUser(result.data?.user ?? null);
-      setLoading(false);
-    });
+    let cancelled = false;
+
+    async function restore() {
+      try {
+        const result = await authApi.me();
+        if (!cancelled) setUser(result.user ?? null);
+      } catch {
+        window.localStorage.removeItem(STORAGE_TOKEN_KEY);
+        setToken(null);
+        if (!cancelled) setUser(null);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    if (token) {
+      restore();
+    }
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const refreshSession = async () => {
-    const result = await authClient.getSession();
+  const persistToken = useCallback((nextToken) => {
+    setToken(nextToken);
+    if (nextToken) {
+      window.localStorage.setItem(STORAGE_TOKEN_KEY, nextToken);
+    } else {
+      window.localStorage.removeItem(STORAGE_TOKEN_KEY);
+    }
+    setAuthToken(nextToken);
+  }, []);
 
-    setSession(result.data?.session ?? null);
-    setUser(result.data?.user ?? null);
-  };
-
-  const signOut = async () => {
-    await authClient.signOut();
-    setSession(null);
-    setUser(null);
-  };
-
-  return (
-    <AuthContext.Provider
-      value={{
-        session,
-        user,
-        loading,
-        refreshSession,
-        signOut,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
+  const signIn = useCallback(
+    async ({ email, password }) => {
+      const result = await authApi.signIn({ email, password });
+      const nextToken = extractToken(result);
+      persistToken(nextToken);
+      setUser(result.user ?? null);
+      return result.user;
+    },
+    [persistToken],
   );
+
+  const signUp = useCallback(
+    async ({ email, password, name }) => {
+      const result = await authApi.signUp({ email, password, name });
+      const nextToken = extractToken(result);
+      persistToken(nextToken);
+      setUser(result.user ?? null);
+      return result.user;
+    },
+    [persistToken],
+  );
+
+  const refreshSession = useCallback(async () => {
+    try {
+      const result = await authApi.me();
+      setUser(result.user ?? null);
+      return result.user;
+    } catch {
+      setUser(null);
+      return null;
+    }
+  }, []);
+
+  const signOut = useCallback(async () => {
+    try {
+      await authApi.signOut();
+    } catch {
+      // Ignore network errors on sign out; clear locally regardless.
+    }
+    persistToken(null);
+    setUser(null);
+  }, [persistToken]);
+
+  const value = useMemo(
+    () => ({
+      user,
+      token,
+      session: token ? { token } : null,
+      isAuthenticated: Boolean(token),
+      loading,
+      signIn,
+      signUp,
+      refreshSession,
+      signOut,
+    }),
+    [user, token, loading, signIn, signUp, refreshSession, signOut],
+  );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+function extractToken(response) {
+  // devise-jwt returns the token in the Authorization header; the api layer
+  // surfaces it on the response object.
+  return response?.token || response?.authorization || null;
 }
 
 export function useAuth() {
-  return useContext(AuthContext);
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
 }
-
-// import {
-//   createContext,
-//   useCallback,
-//   useContext,
-//   useEffect,
-//   useMemo,
-//   useState,
-// } from "react";
-// import { authApi } from "../services/api.js";
-
-// const AuthContext = createContext(null);
-
-// const STORAGE_TOKEN_KEY = "wine_prediction_token";
-// const STORAGE_USER_KEY = "wine_prediction_user";
-
-// function readStoredSession() {
-//   if (typeof window === "undefined") {
-//     return { token: null, user: null };
-//   }
-//   try {
-//     const token = window.localStorage.getItem(STORAGE_TOKEN_KEY);
-//     const userRaw = window.localStorage.getItem(STORAGE_USER_KEY);
-//     const user = userRaw ? JSON.parse(userRaw) : null;
-//     return { token, user };
-//   } catch (error) {
-//     console.warn("Could not read stored session", error);
-//     return { token: null, user: null };
-//   }
-// }
-
-// function persistSession(token, user) {
-//   if (typeof window === "undefined") {
-//     return;
-//   }
-//   if (token) {
-//     window.localStorage.setItem(STORAGE_TOKEN_KEY, token);
-//   } else {
-//     window.localStorage.removeItem(STORAGE_TOKEN_KEY);
-//   }
-//   if (user) {
-//     window.localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(user));
-//   } else {
-//     window.localStorage.removeItem(STORAGE_USER_KEY);
-//   }
-// }
-
-// export function AuthProvider({ children }) {
-//   const [{ token, user }, setSession] = useState(() => readStoredSession());
-//   const [status, setStatus] = useState("idle");
-//   const [error, setError] = useState(null);
-
-//   useEffect(() => {
-//     persistSession(token, user);
-//   }, [token, user]);
-
-//   const signIn = useCallback(async ({ email, password }) => {
-//     setStatus("loading");
-//     setError(null);
-//     try {
-//       const response = await authApi.signIn({ email, password });
-//       const nextToken = response.token || response.access_token || response.jwt;
-//       const nextUser = response.user || {
-//         email,
-//         name: response.name || email.split("@")[0],
-//       };
-
-//       if (!nextToken) {
-//         throw new Error("Authentication response did not include a token.");
-//       }
-
-//       setSession({ token: nextToken, user: nextUser });
-//       setStatus("authenticated");
-//       return nextUser;
-//     } catch (signInError) {
-//       setStatus("error");
-//       setError(signInError.message);
-//       throw signInError;
-//     }
-//   }, []);
-
-//   const signUp = useCallback(async ({ email, password, name }) => {
-//     setStatus("loading");
-//     setError(null);
-//     try {
-//       const response = await authApi.signUp({ email, password, name });
-//       const nextToken = response.token || response.access_token || response.jwt;
-//       const nextUser = response.user || {
-//         email,
-//         name: name || email.split("@")[0],
-//       };
-
-//       if (nextToken) {
-//         setSession({ token: nextToken, user: nextUser });
-//       }
-//       setStatus("authenticated");
-//       return nextUser;
-//     } catch (signUpError) {
-//       setStatus("error");
-//       setError(signUpError.message);
-//       throw signUpError;
-//     }
-//   }, []);
-
-//   const signOut = useCallback(() => {
-//     setSession({ token: null, user: null });
-//     setStatus("idle");
-//     setError(null);
-//   }, []);
-
-//   const value = useMemo(
-//     () => ({
-//       token,
-//       currentUser: user,
-//       isAuthenticated: Boolean(token),
-//       status,
-//       error,
-//       signIn,
-//       signUp,
-//       signOut,
-//     }),
-//     [token, user, status, error, signIn, signUp, signOut],
-//   );
-
-//   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-// }
-
-// export function useAuth() {
-//   const context = useContext(AuthContext);
-//   if (!context) {
-//     throw new Error("useAuth must be used within an AuthProvider");
-//   }
-//   return context;
-// }
