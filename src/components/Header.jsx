@@ -38,11 +38,15 @@ function Header() {
         Wine Prediction
       </NavLink>
       <nav aria-label="Primary navigation">
+        <NavLink end to="/">
+          Dashboard
+        </NavLink>
+        <NavLink to="/producers">Producers</NavLink>
         <NavLink to="/wines">Wines</NavLink>
-        <NavLink to="/">Finder</NavLink>
+        <NavLink to="/my-reviews">Reviews</NavLink>
+        <NavLink to="/finder">Finder</NavLink>
         <NavLink to="/search">Search</NavLink>
         <NavLink to="/quiz">Quiz</NavLink>
-        {user && <NavLink to="/my-reviews">My Reviews</NavLink>}
         <NavLink to="/about">About</NavLink>
 
         {user ? (
@@ -64,7 +68,7 @@ function Header() {
           </div>
         ) : (
           <NavLink className="site-header__auth" to="/login">
-            Sign in
+            Login / Sign up
           </NavLink>
         )}
       </nav>
