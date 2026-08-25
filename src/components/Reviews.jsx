@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { reviewsApi, winesApi } from "../services/api";
+import { reviewsApi, winesApi, vintagesApi } from "../services/api";
 import ReviewForm from "./ReviewForm";
+import WineQuickCreate from "./WineQuickCreate";
 import { useAuth } from "../contexts/AuthContext";
 import DOMPurify from "dompurify";
 
@@ -30,9 +31,23 @@ function Reviews() {
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [wines, setWines] = useState([]);
-  const [selectedWineSlug, setSelectedWineSlug] = useState("");
+
+  // Wine search state
+  const [query, setQuery] = useState("");
+  const [searchResults, setSearchResults] = useState(null); // null = not searched yet
+  const [searching, setSearching] = useState(false);
+  const [searchError, setSearchError] = useState(null);
+
+  // Selection / creation flow
+  const [selectedWine, setSelectedWine] = useState(null); // {id,name,slug,...,vintages}
   const [selectedVintageId, setSelectedVintageId] = useState("");
+  const [showNewVintage, setShowNewVintage] = useState(false);
+  const [newVintage, setNewVintage] = useState({ year: "", prompt: "" });
+  const [creatingVintage, setCreatingVintage] = useState(false);
+  const [vintageError, setVintageError] = useState(null);
+  const [createdWineName, setCreatedWineName] = useState("");
+
+  const searchTimerRef = useRef(null);
 
   async function loadReviews() {
     try {
@@ -49,27 +64,86 @@ function Reviews() {
     loadReviews();
   }, []);
 
-  // Load wines (with vintages) when the Add Review panel is opened.
-  useEffect(() => {
-    if (showForm && wines.length === 0) {
-      winesApi
-        .list()
-        .then((data) => setWines(Array.isArray(data) ? data : []))
-        .catch(() => setWines([]));
+  async function performSearch(q) {
+    const trimmed = q.trim();
+    if (trimmed.length < 2) {
+      setSearchResults(null);
+      setSelectedWine(null);
+      return;
     }
-  }, [showForm, wines.length]);
+    try {
+      setSearching(true);
+      setSearchError(null);
+      const data = await winesApi.search(trimmed);
+      setSearchResults(Array.isArray(data) ? data : []);
+      setSelectedWine(null);
+      setSelectedVintageId("");
+      setShowNewVintage(false);
+    } catch (err) {
+      setSearchError(err.message || "Search failed");
+      setSearchResults(null);
+    } finally {
+      setSearching(false);
+    }
+  }
 
-  const selectedWine = wines.find((w) => w.slug === selectedWineSlug);
+  function handleSearchChange(e) {
+    const value = e.target.value;
+    setQuery(value);
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    searchTimerRef.current = setTimeout(() => performSearch(value), 300);
+  }
 
-  function handleWineChange(e) {
-    setSelectedWineSlug(e.target.value);
+  function handleSelectWine(wine) {
+    setSelectedWine(wine);
     setSelectedVintageId("");
+    setShowNewVintage(false);
+    setVintageError(null);
+  }
+
+  async function handleCreateVintage(e) {
+    e.preventDefault();
+    setCreatingVintage(true);
+    setVintageError(null);
+    try {
+      const created = await vintagesApi.create(selectedWine.slug, {
+        year: parseInt(newVintage.year, 10),
+        prompt: newVintage.prompt || null,
+      });
+      // Refresh the wine's vintage list with the new vintage and select it.
+      const updatedWine = {
+        ...selectedWine,
+        vintages: [
+          { id: created.id, year: created.year },
+          ...(selectedWine.vintages || []),
+        ],
+      };
+      setSelectedWine(updatedWine);
+      setSelectedVintageId(created.id);
+      setShowNewVintage(false);
+      setNewVintage({ year: "", prompt: "" });
+    } catch (err) {
+      setVintageError(err.message || "Failed to create vintage");
+    } finally {
+      setCreatingVintage(false);
+    }
+  }
+
+  function handleWineCreated({ slug, vintageId, name }) {
+    setCreatedWineName(name);
+    setSelectedWine({ slug, name, vintages: [{ id: vintageId }] });
+    setSelectedVintageId(vintageId);
   }
 
   function closeForm() {
     setShowForm(false);
-    setSelectedWineSlug("");
+    setQuery("");
+    setSearchResults(null);
+    setSelectedWine(null);
     setSelectedVintageId("");
+    setShowNewVintage(false);
+    setNewVintage({ year: "", prompt: "" });
+    setCreatedWineName("");
   }
 
   return (
@@ -95,52 +169,210 @@ function Reviews() {
 
       {showForm && (
         <div className="review-form-wrapper">
-          {selectedVintageId ? (
-            <ReviewForm
-              wineSlug={selectedWineSlug}
-              vintageId={Number(selectedVintageId)}
-              onSaved={() => {
-                closeForm();
-                loadReviews();
-              }}
-              onCancel={closeForm}
-            />
+          {selectedVintageId && selectedWine ? (
+            <>
+              <div className="review-card review-card--draft">
+                <div className="review-card__top">
+                  <h3 className="review-card__title">{selectedWine.name}</h3>
+                  <span className="review-card__status">
+                    {selectedWine.vintages?.find(
+                      (v) => String(v.id) === String(selectedVintageId),
+                    )?.year || "Vintage"}
+                  </span>
+                </div>
+              </div>
+              <ReviewForm
+                wineSlug={selectedWine.slug}
+                vintageId={Number(selectedVintageId)}
+                onSaved={() => {
+                  closeForm();
+                  loadReviews();
+                }}
+                onCancel={closeForm}
+              />
+            </>
           ) : (
             <div className="review-form">
-              <div className="review-form__field">
-                <label htmlFor="add-review-wine">Wine</label>
-                <select
-                  id="add-review-wine"
-                  value={selectedWineSlug}
-                  onChange={handleWineChange}
-                >
-                  <option value="">Select a wine…</option>
-                  {wines.map((wine) => (
-                    <option key={wine.slug} value={wine.slug}>
-                      {wine.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {/* Step 1: search for a wine */}
+              {!selectedWine && (
+                <>
+                  <div className="review-form__field">
+                    <label htmlFor="add-review-wine-search">
+                      Search for a wine
+                    </label>
+                    <input
+                      id="add-review-wine-search"
+                      type="text"
+                      value={query}
+                      onChange={handleSearchChange}
+                      placeholder="Start typing a wine name…"
+                      autoFocus
+                    />
+                    {searching && (
+                      <p className="wine-management__loading">Searching…</p>
+                    )}
+                    {searchError && (
+                      <p className="review-form__error">{searchError}</p>
+                    )}
+                  </div>
 
-              <div className="review-form__field">
-                <label htmlFor="add-review-vintage">Vintage</label>
-                <select
-                  id="add-review-vintage"
-                  value={selectedVintageId}
-                  onChange={(e) => setSelectedVintageId(e.target.value)}
-                  disabled={!selectedWine}
-                >
-                  <option value="">
-                    {selectedWine ? "Select a vintage…" : "Choose a wine first"}
-                  </option>
-                  {(selectedWine?.vintages || []).map((vintage) => (
-                    <option key={vintage.id} value={vintage.id}>
-                      {vintage.year}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {searchResults !== null && searchResults.length > 0 && (
+                <div className="review-form__field">
+                  <span className="image-manager__label">
+                    {searchResults.length} wine
+                    {searchResults.length !== 1 ? "s" : ""} found — pick one
+                  </span>
+                  <div className="review-list">
+                    {searchResults.map((wine) => (
+                      <button
+                        key={wine.slug}
+                        type="button"
+                        className="review-card"
+                        onClick={() => handleSelectWine(wine)}
+                      >
+                        <div className="review-card__top">
+                          <strong>{wine.name}</strong>
+                          {wine.color && (
+                            <span className="review-card__status">
+                              {wine.color}
+                            </span>
+                          )}
+                        </div>
+                        {wine.region && (
+                          <span className="review-card__comment">
+                            {wine.region}
+                          </span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {query.trim().length >= 2 &&
+                !searching &&
+                searchResults !== null &&
+                searchResults.length === 0 && (
+                  <WineQuickCreate
+                    defaultName={query.trim()}
+                    onCreated={handleWineCreated}
+                    onCancel={() => setSearchResults(null)}
+                  />
+                )}
+                </>
+              )}
+
+              {/* Step 2: vintage selection for the chosen (or new) wine */}
+              {selectedWine && !selectedVintageId && (
+                <>
+                  <p className="wine-management__empty-state">
+                    Reviewing <strong>{selectedWine.name}</strong>
+                    {createdWineName ? " (just added)" : ""} — choose a
+                    vintage.
+                  </p>
+
+                  {(selectedWine.vintages || []).length > 0 ? (
+                    <div className="review-form__field">
+                      <span className="image-manager__label">Vintages</span>
+                      <div className="review-list">
+                        {selectedWine.vintages.map((vintage) => (
+                          <button
+                            key={vintage.id}
+                            type="button"
+                            className="review-card"
+                            onClick={() => setSelectedVintageId(vintage.id)}
+                          >
+                            <div className="review-card__top">
+                              <strong>{vintage.year}</strong>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="wine-management__empty-state">
+                      No vintages yet for this wine.
+                    </p>
+                  )}
+
+                  {showNewVintage ? (
+                    <form className="review-form" onSubmit={handleCreateVintage}>
+                      <div className="review-form__field">
+                        <label htmlFor="new-vintage-year">New Vintage Year *</label>
+                        <input
+                          id="new-vintage-year"
+                          type="number"
+                          required
+                          min={1900}
+                          max={new Date().getFullYear() + 5}
+                          value={newVintage.year}
+                          onChange={(e) =>
+                            setNewVintage((prev) => ({
+                              ...prev,
+                              year: e.target.value,
+                            }))
+                          }
+                          placeholder="e.g. 2021"
+                        />
+                      </div>
+                      <div className="review-form__field">
+                        <label htmlFor="new-vintage-prompt">Prompt (optional)</label>
+                        <input
+                          id="new-vintage-prompt"
+                          type="text"
+                          value={newVintage.prompt}
+                          onChange={(e) =>
+                            setNewVintage((prev) => ({
+                              ...prev,
+                              prompt: e.target.value,
+                            }))
+                          }
+                          placeholder="Tasting notes for this vintage"
+                        />
+                      </div>
+                      {vintageError && (
+                        <p className="review-form__error">{vintageError}</p>
+                      )}
+                      <div className="review-form__actions">
+                        <button
+                          className="auth-form__submit"
+                          type="submit"
+                          disabled={creatingVintage}
+                        >
+                          {creatingVintage ? "Creating…" : "Create Vintage"}
+                        </button>
+                        <button
+                          type="button"
+                          className="review-form__cancel"
+                          onClick={() => setShowNewVintage(false)}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </form>
+                  ) : (
+                    <div className="review-form__actions">
+                      <button
+                        type="button"
+                        className="auth-form__submit"
+                        onClick={() => setShowNewVintage(true)}
+                      >
+                        + New Vintage
+                      </button>
+                      <button
+                        type="button"
+                        className="review-form__cancel"
+                        onClick={() => {
+                          setSelectedWine(null);
+                          setSelectedVintageId("");
+                        }}
+                      >
+                        Back to search
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           )}
         </div>

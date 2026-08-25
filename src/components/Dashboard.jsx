@@ -42,7 +42,7 @@ function Dashboard() {
     articlesApi
       .list()
       .then((data) =>
-        setRecentArticles((Array.isArray(data) ? data : []).slice(0, 3)),
+        setRecentArticles((Array.isArray(data) ? data : []).slice(0, 10)),
       )
       .catch(() => setRecentArticles([]));
   }, []);

@@ -125,7 +125,9 @@ export const winesApi = {
     return request("/wines", { auth: false });
   },
   search(query) {
-    return request(`/wines/search?q=${encodeURIComponent(query)}`);
+    return request(`/wines/search?q=${encodeURIComponent(query)}`, {
+      auth: true,
+    });
   },
   show(id) {
     return request(`/wines/${id}`);
@@ -207,6 +209,16 @@ export const tasteParametersApi = {
   },
 };
 
+export const vintagesApi = {
+  create(wineSlug, vintageData) {
+    return request(`/wines/${wineSlug}/vintages`, {
+      method: "POST",
+      auth: true,
+      body: { vintage: vintageData },
+    });
+  },
+};
+
 export const reviewsApi = {
   all() {
     return request("/reviews", { auth: true });
@@ -252,17 +264,19 @@ export const articlesApi = {
     return request(`/articles/${id}`, { auth: true });
   },
   create(articleData) {
+    const isForm = articleData instanceof FormData;
     return request("/articles", {
       method: "POST",
       auth: true,
-      body: { article: articleData },
+      body: isForm ? articleData : { article: articleData },
     });
   },
   update(id, articleData) {
+    const isForm = articleData instanceof FormData;
     return request(`/articles/${id}`, {
       method: "PATCH",
       auth: true,
-      body: { article: articleData },
+      body: isForm ? articleData : { article: articleData },
     });
   },
   destroy(id) {

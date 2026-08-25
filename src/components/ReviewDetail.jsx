@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { reviewsApi } from "../services/api";
+import ReviewForm from "./ReviewForm";
+import { useAuth } from "../contexts/AuthContext";
 import DOMPurify from "dompurify";
 
 function RichComment({ html }) {
@@ -14,9 +16,16 @@ function RichComment({ html }) {
 
 function ReviewDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [review, setReview] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [editing, setEditing] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const isOwner =
+    Boolean(user && review && Number(review.user_id) === Number(user.id));
 
   const loadReview = useCallback(async () => {
     try {
@@ -34,6 +43,24 @@ function ReviewDetail() {
   useEffect(() => {
     loadReview();
   }, [loadReview]);
+
+  async function handleDelete() {
+    if (
+      !window.confirm(
+        "Delete this review? This action cannot be undone.",
+      )
+    ) {
+      return;
+    }
+    try {
+      setDeleting(true);
+      await reviewsApi.destroy(review.id);
+      navigate("/reviews");
+    } catch (err) {
+      setError(err.message || "Failed to delete review");
+      setDeleting(false);
+    }
+  }
 
   if (loading) {
     return (
@@ -68,6 +95,39 @@ function ReviewDetail() {
         </div>
       )}
 
+      {error && <p className="wine-management__error">{error}</p>}
+
+      {isOwner && !editing && (
+        <div className="review-form__actions">
+          <button
+            type="button"
+            className="auth-form__submit"
+            onClick={() => setEditing(true)}
+          >
+            Edit Review
+          </button>
+          <button
+            type="button"
+            className="review-form__cancel"
+            onClick={handleDelete}
+            disabled={deleting}
+          >
+            {deleting ? "Deleting…" : "Delete Review"}
+          </button>
+        </div>
+      )}
+
+      {isOwner && editing && (
+        <ReviewForm
+          review={review}
+          onSaved={() => {
+            setEditing(false);
+            loadReview();
+          }}
+          onCancel={() => setEditing(false)}
+        />
+      )}
+
       <div className="wine-detail__header">
         <h1>{review.title || "Untitled review"}</h1>
         <span className="review-card__score">{review.score}</span>
@@ -75,7 +135,9 @@ function ReviewDetail() {
 
       <p className="review-card__comment">
         {[
-          review.wine_name ? `${review.wine_name}${review.vintage_year ? ` ${review.vintage_year}` : ""}` : null,
+          review.wine_name
+            ? `${review.wine_name}${review.vintage_year ? ` ${review.vintage_year}` : ""}`
+            : null,
           `by ${review.reviewer_name}`,
           review.published_at
             ? new Date(review.published_at).toLocaleDateString()
@@ -85,14 +147,6 @@ function ReviewDetail() {
           .join(" · ")}
         <span className={`review-card__status`}> {review.status}</span>
       </p>
-
-      {review.wine_slug && (
-        <p>
-          <Link to={`/wines/${review.wine_slug}`} className="my-reviews__wine-link">
-            View the wine page &rarr;
-          </Link>
-        </p>
-      )}
 
       {review.comment && (
         <div className="wine-detail__section">
