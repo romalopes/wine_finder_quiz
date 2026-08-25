@@ -5,6 +5,7 @@ import Home from "./Home.jsx";
 import Login from "./Login.jsx";
 import MyReviews from "./MyReviews.jsx";
 import Reviews from "./Reviews.jsx";
+import ReviewDetail from "./ReviewDetail.jsx";
 import Articles from "./Articles.jsx";
 import ArticleDetail from "./ArticleDetail.jsx";
 import Quiz from "./Quiz.jsx";
@@ -30,6 +31,7 @@ function AppRoutes({ user, setUser }) {
         />
         <Route element={<MyReviews />} path="/my-reviews" />
         <Route element={<Reviews />} path="/reviews" />
+        <Route element={<ReviewDetail />} path="/reviews/:id" />
         <Route element={<Articles />} path="/articles" />
         <Route element={<ArticleDetail />} path="/articles/:id" />
         <Route element={<ArticleDetail />} path="/articles/:id/edit" />

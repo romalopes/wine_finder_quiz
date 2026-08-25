@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { articlesApi, categoriesApi, winesApi, producersApi, reviewsApi } from "../services/api";
 import ImageManager from "./ImageManager";
+import RichTextEditor from "./RichTextEditor";
 
 function ArticleForm({ article, onSaved, onCancel }) {
   const isEditing = Boolean(article);
@@ -190,13 +191,13 @@ function ArticleForm({ article, onSaved, onCancel }) {
       </div>
 
       <div className="review-form__field">
-        <label htmlFor="article-body">Body</label>
-        <textarea
-          id="article-body"
-          rows={12}
+        <span className="image-manager__label">Body</span>
+        <RichTextEditor
           value={form.body}
-          onChange={updateField("body")}
-          placeholder={"<p>Write your story…</p>"}
+          onChange={(html) =>
+            setForm((prev) => ({ ...prev, body: html }))
+          }
+          placeholder="Write your story…"
         />
       </div>
 

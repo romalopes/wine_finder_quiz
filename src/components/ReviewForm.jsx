@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { reviewsApi, imagesApi } from "../services/api";
 import ImageManager from "./ImageManager";
+import RichTextEditor from "./RichTextEditor";
 
 function ReviewForm({ wineSlug, vintageId, review, onSaved, onCancel }) {
   const isEditing = Boolean(review);
@@ -8,11 +9,13 @@ function ReviewForm({ wineSlug, vintageId, review, onSaved, onCancel }) {
   const [form, setForm] = useState(
     review
       ? {
+          title: review.title || "",
           comment: review.comment || "",
           score: review.score ?? 80,
           status: review.status || "draft",
         }
       : {
+          title: "",
           comment: "",
           score: 80,
           status: "draft",
@@ -66,6 +69,18 @@ function ReviewForm({ wineSlug, vintageId, review, onSaved, onCancel }) {
   return (
     <form className="review-form" onSubmit={handleSubmit}>
       <div className="review-form__field">
+        <label htmlFor="review-title">Title</label>
+        <input
+          id="review-title"
+          type="text"
+          required
+          value={form.title}
+          onChange={updateField("title")}
+          placeholder="Give your review a short title"
+        />
+      </div>
+
+      <div className="review-form__field">
         <label htmlFor="review-score">Score</label>
         <div className="review-form__score-row">
           <input
@@ -82,12 +97,12 @@ function ReviewForm({ wineSlug, vintageId, review, onSaved, onCancel }) {
       </div>
 
       <div className="review-form__field">
-        <label htmlFor="review-comment">Comment</label>
-        <textarea
-          id="review-comment"
-          rows={3}
+        <span className="image-manager__label">Comment</span>
+        <RichTextEditor
           value={form.comment}
-          onChange={updateField("comment")}
+          onChange={(html) =>
+            setForm((prev) => ({ ...prev, comment: html }))
+          }
           placeholder="What did you think of this vintage?"
         />
       </div>

@@ -160,12 +160,9 @@ function Reviews() {
               className={`review-card ${review.status === "draft" ? "review-card--draft" : ""}`}
             >
               <div className="review-card__top">
-                <Link
-                  to={`/wines/${review.wine_slug}`}
-                  className="my-reviews__wine-link"
-                >
-                  {review.wine_name} ({review.vintage_year})
-                </Link>
+                <h3 className="review-card__title">
+                  <Link to={`/reviews/${review.id}`}>{review.title || "Untitled review"}</Link>
+                </h3>
                 <span className="review-card__score">{review.score}</span>
                 <span className="review-card__status">{review.status}</span>
                 {review.published_at && (
@@ -174,16 +171,33 @@ function Reviews() {
                   </span>
                 )}
               </div>
+              {(review.wine_name || review.vintage_year) && (
+                <p className="review-card__comment">
+                  <Link
+                    to={review.wine_slug ? `/wines/${review.wine_slug}` : "#"}
+                    className="my-reviews__wine-link"
+                  >
+                    {review.wine_name || "Unknown wine"}
+                    {review.vintage_year ? ` (${review.vintage_year})` : ""}
+                  </Link>
+                </p>
+              )}
               {review.reviewer_name && (
                 <p className="review-card__comment">
                   by {review.reviewer_name}
                 </p>
               )}
               {review.comment && <RichComment html={review.comment} />}
-              {Array.isArray(review.images) && review.images.length > 0 && (
+              {(Array.isArray(review.images) && review.images.length > 0
+                ? review.images[0]
+                : review.wine_image) && (
                 <img
-                  src={review.images[0]}
-                  alt={review.title || "review"}
+                  src={
+                    Array.isArray(review.images) && review.images.length > 0
+                      ? review.images[0]
+                      : review.wine_image
+                  }
+                  alt={review.title || review.wine_name || "review"}
                   className="wine-management__thumb"
                 />
               )}
