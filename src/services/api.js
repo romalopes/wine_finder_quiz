@@ -112,6 +112,12 @@ export const imagesApi = {
       body: formData,
     });
   },
+  destroy(imageableType, imageableId, imageId) {
+    return request(`/images/${imageId}?imageable_type=${imageableType}&imageable_id=${imageableId}`, {
+      method: "DELETE",
+      auth: true,
+    });
+  },
 };
 
 export const winesApi = {

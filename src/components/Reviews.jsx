@@ -181,15 +181,11 @@ function Reviews() {
               )}
               {review.comment && <RichComment html={review.comment} />}
               {Array.isArray(review.images) && review.images.length > 0 && (
-                <div className="review-card__images">
-                  {review.images.map((src, i) => (
-                    <img
-                      key={i}
-                      src={src}
-                      alt={`${review.title || "review"} ${i + 1}`}
-                    />
-                  ))}
-                </div>
+                <img
+                  src={review.images[0]}
+                  alt={review.title || "review"}
+                  className="wine-management__thumb"
+                />
               )}
             </div>
           ))}

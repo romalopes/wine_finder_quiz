@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { reviewsApi, imagesApi } from "../services/api";
+import ImageManager from "./ImageManager";
 
 function ReviewForm({ wineSlug, vintageId, review, onSaved, onCancel }) {
   const isEditing = Boolean(review);
@@ -20,6 +21,8 @@ function ReviewForm({ wineSlug, vintageId, review, onSaved, onCancel }) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [images, setImages] = useState(null);
+  const [existingImages, setExistingImages] = useState(review?.images || []);
+  const [existingImageIds, setExistingImageIds] = useState(review?.image_ids || []);
 
   function updateField(field) {
     return (e) => {
@@ -90,13 +93,20 @@ function ReviewForm({ wineSlug, vintageId, review, onSaved, onCancel }) {
       </div>
 
       <div className="review-form__field">
-        <label htmlFor="review-images">Images</label>
-        <input
-          id="review-images"
-          type="file"
-          accept="image/*"
-          multiple
-          onChange={(e) => setImages(e.target.files)}
+        <span className="image-manager__label">Images (click + to add, × to remove)</span>
+        <ImageManager
+          imageableType="review"
+          images={existingImages}
+          imageIds={existingImageIds}
+          imageableId={isEditing ? review.id : null}
+          onFilesChange={(files) => setImages(files)}
+          onImagesChange={async () => {
+            if (isEditing) {
+              const reloaded = await reviewsApi.show(review.id);
+              setExistingImages(reloaded.images || []);
+              setExistingImageIds(reloaded.image_ids || []);
+            }
+          }}
         />
       </div>
 

@@ -41,7 +41,9 @@ function Dashboard() {
   useEffect(() => {
     articlesApi
       .list()
-      .then((data) => setRecentArticles((Array.isArray(data) ? data : []).slice(0, 3)))
+      .then((data) =>
+        setRecentArticles((Array.isArray(data) ? data : []).slice(0, 3)),
+      )
       .catch(() => setRecentArticles([]));
   }, []);
 
@@ -51,8 +53,7 @@ function Dashboard() {
         <div className="wine-hero__content">
           <p className="wine-kicker">Dashboard</p>
           <h1 id="dashboard-title">
-            Welcome{user ? `, ${user.email.split("@")[0]}` : ""} to Wine
-            Prediction
+            Welcome{user ? `, ${user.email.split("@")[0]}` : ""} to Wine Words
           </h1>
           <p>
             Your cellar command centre. Jump into producers, wines, or your
@@ -92,7 +93,11 @@ function Dashboard() {
               <h2>Latest Articles</h2>
             </div>
             {recentArticles.map((article) => (
-              <article className="wine-panel" key={article.id} style={{ marginBottom: 16 }}>
+              <article
+                className="wine-panel"
+                key={article.id}
+                style={{ marginBottom: 16 }}
+              >
                 {Array.isArray(article.images) && article.images.length > 0 && (
                   <img
                     src={article.images[0]}
@@ -112,7 +117,9 @@ function Dashboard() {
                   .filter(Boolean)
                   .join(" · ") && (
                   <p className="review-card__comment">
-                    {[article.category, `by ${article.author_name}`].filter(Boolean).join(" · ")}
+                    {[article.category, `by ${article.author_name}`]
+                      .filter(Boolean)
+                      .join(" · ")}
                   </p>
                 )}
                 {article.abstract && (

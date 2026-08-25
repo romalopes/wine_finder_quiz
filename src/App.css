@@ -1,3 +1,12 @@
+.image-manager { display: flex; flex-direction: column; gap: .75rem; }
+.image-manager__list { display: flex; flex-wrap: wrap; gap: .5rem; }
+.image-manager__item { position: relative; width: 6rem; height: 6rem; border-radius: .5rem; overflow: hidden; border: 1px solid #d8c8c0; }
+.image-manager__item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.image-manager__item--pending { outline: 2px dashed #27615e; }
+.image-manager__remove { position: absolute; top: .15rem; right: .15rem; width: 1.3rem; height: 1.3rem; line-height: 1rem; border: 0; border-radius: 50%; background: rgba(0,0,0,.65); color: #fff; cursor: pointer; font-size: 1rem; }
+.image-manager__remove:disabled { opacity: .5; }
+.image-manager__label { font-weight: 600; font-size: .9rem; }
+
 #root {
   max-width: 1280px;
   margin: 0 auto;

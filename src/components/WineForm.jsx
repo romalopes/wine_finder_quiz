@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { winesApi, tasteParametersApi, producersApi, imagesApi } from "../services/api";
+import ImageManager from "./ImageManager";
 
 const INITIAL_VINTAGE = { year: "", prompt: "" };
 
@@ -29,6 +30,8 @@ function WineForm() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [images, setImages] = useState(null);
+  const [existingImages, setExistingImages] = useState([]);
+  const [existingImageIds, setExistingImageIds] = useState([]);
   useEffect(() => {
     async function initFormData() {
       try {
@@ -54,6 +57,9 @@ function WineForm() {
         // 2. If editing, load the wine and merge its existing scores
         if (isEditing) {
           const wineData = await winesApi.show(slug);
+
+          setExistingImages(wineData.images || []);
+          setExistingImageIds(wineData.image_ids || []);
 
           setFormData({
             id: wineData.id || null,
@@ -411,15 +417,23 @@ function WineForm() {
           ))}
         </div>
 
-        <label className="auth-form__field">
-          <span>Images (you can select several)</span>
-          <input
-            type="file"
-            accept="image/*"
-            multiple
-            onChange={(e) => setImages(e.target.files)}
+        <div className="image-manager">
+          <span className="image-manager__label">Images (click + to add, × to remove)</span>
+          <ImageManager
+            imageableType="wine"
+            images={existingImages}
+            imageIds={existingImageIds}
+            imageableId={isEditing ? slug : null}
+            onFilesChange={(files) => setImages(files)}
+            onImagesChange={async () => {
+              if (isEditing) {
+                const reloaded = await winesApi.show(slug);
+                setExistingImages(reloaded.images || []);
+                setExistingImageIds(reloaded.image_ids || []);
+              }
+            }}
           />
-        </label>
+        </div>
 
         <div className="wine-form__actions">
           <button

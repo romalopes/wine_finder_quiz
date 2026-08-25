@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { articlesApi, categoriesApi, winesApi, producersApi } from "../services/api";
+import ImageManager from "./ImageManager";
 
 function ArticleForm({ article, onSaved, onCancel }) {
   const isEditing = Boolean(article);
@@ -18,6 +19,8 @@ function ArticleForm({ article, onSaved, onCancel }) {
   const [wines, setWines] = useState([]);
   const [producers, setProducers] = useState([]);
   const [images, setImages] = useState(null);
+  const [existingImages, setExistingImages] = useState(article?.images || []);
+  const [existingImageIds, setExistingImageIds] = useState(article?.image_ids || []);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
@@ -193,13 +196,20 @@ function ArticleForm({ article, onSaved, onCancel }) {
       </div>
 
       <div className="review-form__field">
-        <label htmlFor="article-images">Images (top of the article)</label>
-        <input
-          id="article-images"
-          type="file"
-          accept="image/*"
-          multiple
-          onChange={(e) => setImages(e.target.files)}
+        <span className="image-manager__label">Images (top of the article — click + to add, × to remove)</span>
+        <ImageManager
+          imageableType="article"
+          images={existingImages}
+          imageIds={existingImageIds}
+          imageableId={isEditing ? article.id : null}
+          onFilesChange={(files) => setImages(files)}
+          onImagesChange={async () => {
+            if (isEditing) {
+              const reloaded = await articlesApi.show(article.id);
+              setExistingImages(reloaded.images || []);
+              setExistingImageIds(reloaded.image_ids || []);
+            }
+          }}
         />
       </div>
 

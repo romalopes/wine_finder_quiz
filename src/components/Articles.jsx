@@ -83,6 +83,13 @@ function Articles() {
         <div className="review-list">
           {articles.map((article) => (
             <div key={article.id} className="review-card">
+              {Array.isArray(article.images) && article.images.length > 0 && (
+                <img
+                  src={article.images[0]}
+                  alt={article.title}
+                  className="wine-management__thumb"
+                />
+              )}
               <div className="review-card__top">
                 <Link to={`/articles/${article.id}`} className="my-reviews__wine-link">
                   {article.title}
