@@ -124,6 +124,9 @@ export const winesApi = {
   list() {
     return request("/wines", { auth: false });
   },
+  search(query) {
+    return request(`/wines/search?q=${encodeURIComponent(query)}`);
+  },
   show(id) {
     return request(`/wines/${id}`);
   },

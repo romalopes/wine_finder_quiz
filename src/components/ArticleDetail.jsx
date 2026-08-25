@@ -168,15 +168,18 @@ function ArticleDetail() {
         </div>
       )}
 
-      {(article.wines?.length > 0 || article.producers?.length > 0) && (
+      {(article.vintages?.length > 0 || article.producers?.length > 0) && (
         <div className="wine-detail__section">
-          {article.wines?.length > 0 && (
+          {article.vintages?.length > 0 && (
             <>
-              <h2>Wines</h2>
+              <h2>Wines &amp; vintages</h2>
               <ul>
-                {article.wines.map((wine) => (
-                  <li key={wine.id}>
-                    <Link to={`/wines/${wine.slug}`}>{wine.name}</Link>
+                {article.vintages.map((vintage) => (
+                  <li key={vintage.id}>
+                    <Link to={`/wines/${vintage.wine_slug}`}>
+                      {vintage.wine_name} {vintage.year}
+                    </Link>
+                    {vintage.region ? ` — ${vintage.region}` : ""}
                   </li>
                 ))}
               </ul>

@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { articlesApi, categoriesApi, winesApi, producersApi } from "../services/api";
+import { useEffect, useRef, useState } from "react";
+import { articlesApi, categoriesApi, winesApi, producersApi, reviewsApi } from "../services/api";
 import ImageManager from "./ImageManager";
 
 function ArticleForm({ article, onSaved, onCancel }) {
@@ -11,13 +11,30 @@ function ArticleForm({ article, onSaved, onCancel }) {
     body: article?.body || "",
     category_id: article?.category_id || "",
     tag_names: (article?.tags || []).join(", "),
-    wine_ids: article?.wines?.map((w) => w.id) || [],
     producer_ids: article?.producers?.map((p) => p.id) || [],
     status: article?.status || "draft",
   });
+  // Selected vintages keep the wine context so reviews can be listed per vintage.
+  const [selectedVintages, setSelectedVintages] = useState(
+    (article?.vintages || []).map((v) => ({
+      id: v.id,
+      year: v.year,
+      name: v.name,
+      wine_slug: v.wine_slug,
+    })),
+  );
+  const [linkedReviewIds, setLinkedReviewIds] = useState(
+    (article?.reviews || [])
+      .filter((r) => r.link_status === "published" || r.link_status === undefined)
+      .map((r) => r.id),
+  );
   const [categories, setCategories] = useState([]);
-  const [wines, setWines] = useState([]);
   const [producers, setProducers] = useState([]);
+  const [wineQuery, setWineQuery] = useState("");
+  const [wineResults, setWineResults] = useState([]);
+  const [searchingWines, setSearchingWines] = useState(false);
+  const [reviewsByVintage, setReviewsByVintage] = useState({});
+  const searchTimer = useRef(null);
   const [images, setImages] = useState(null);
   const [existingImages, setExistingImages] = useState(article?.images || []);
   const [existingImageIds, setExistingImageIds] = useState(article?.image_ids || []);
@@ -26,9 +43,64 @@ function ArticleForm({ article, onSaved, onCancel }) {
 
   useEffect(() => {
     categoriesApi.list().then(setCategories).catch(() => {});
-    winesApi.list().then((data) => setWines(Array.isArray(data) ? data : [])).catch(() => {});
     producersApi.list().then((data) => setProducers(Array.isArray(data) ? data : [])).catch(() => {});
   }, []);
+
+  // Debounced wine search for the vintage picker.
+  useEffect(() => {
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    if (!wineQuery.trim()) {
+      setWineResults([]);
+      return;
+    }
+    searchTimer.current = setTimeout(async () => {
+      setSearchingWines(true);
+      try {
+        const results = await winesApi.search(wineQuery.trim());
+        setWineResults(Array.isArray(results) ? results : []);
+      } catch {
+        setWineResults([]);
+      } finally {
+        setSearchingWines(false);
+      }
+    }, 300);
+    return () => clearTimeout(searchTimer.current);
+  }, [wineQuery]);
+
+  function isVintageSelected(id) {
+    return selectedVintages.some((v) => v.id === id);
+  }
+
+  async function toggleVintage(vintage, wine) {
+    if (isVintageSelected(vintage.id)) {
+      setSelectedVintages((prev) => prev.filter((v) => v.id !== vintage.id));
+      return;
+    }
+    setSelectedVintages((prev) => [
+      ...prev,
+      { id: vintage.id, year: vintage.year, name: `${wine.name} ${vintage.year}`, wine_slug: wine.slug },
+    ]);
+    // Load this vintage's published reviews so they can be linked.
+    if (!reviewsByVintage[vintage.id]) {
+      try {
+        const list = await reviewsApi.list(wine.slug, vintage.id);
+        setReviewsByVintage((prev) => ({
+          ...prev,
+          [vintage.id]: Array.isArray(list) ? list : [],
+        }));
+      } catch {
+        setReviewsByVintage((prev) => ({ ...prev, [vintage.id]: [] }));
+      }
+    }
+  }
+
+  function toggleReview(reviewId) {
+    setLinkedReviewIds((prev) =>
+      prev.includes(reviewId)
+        ? prev.filter((id) => id !== reviewId)
+        : [...prev, reviewId],
+    );
+  }
 
   function updateField(field) {
     return (e) => {
@@ -52,7 +124,8 @@ function ArticleForm({ article, onSaved, onCancel }) {
       status: form.status,
       category_id: form.category_id || null,
       tag_names: form.tag_names,
-      wine_ids: form.wine_ids,
+      vintage_ids: selectedVintages.map((v) => v.id),
+      review_ids: linkedReviewIds,
       producer_ids: form.producer_ids,
     };
   }
@@ -65,9 +138,8 @@ function ArticleForm({ article, onSaved, onCancel }) {
     formData.append("article[status]", form.status);
     if (form.category_id) formData.append("article[category_id]", form.category_id);
     formData.append("article[tag_names]", form.tag_names);
-    if (form.wine_ids.length > 0) {
-      form.wine_ids.forEach((id) => formData.append("article[wine_ids][]", id));
-    }
+    selectedVintages.forEach((v) => formData.append("article[vintage_ids][]", v.id));
+    linkedReviewIds.forEach((id) => formData.append("article[review_ids][]", id));
     if (form.producer_ids.length > 0) {
       form.producer_ids.forEach((id) => formData.append("article[producer_ids][]", id));
     }
@@ -152,25 +224,93 @@ function ArticleForm({ article, onSaved, onCancel }) {
       </div>
 
       <div className="review-form__field">
-        <label htmlFor="article-wines">Wines (ctrl/cmd-click for multiple)</label>
-        <select
-          id="article-wines"
-          multiple
-          size={5}
-          value={form.wine_ids.map(String)}
-          onChange={(e) =>
-            setForm((prev) => ({
-              ...prev,
-              wine_ids: Array.from(e.target.selectedOptions, (o) => Number(o.value)),
-            }))
-          }
-        >
-          {wines.map((wine) => (
-            <option key={wine.id ?? wine.slug} value={wine.id}>
-              {wine.name}
-            </option>
-          ))}
-        </select>
+        <label htmlFor="article-wine-search">Wine vintages</label>
+        <input
+          id="article-wine-search"
+          type="text"
+          value={wineQuery}
+          onChange={(e) => setWineQuery(e.target.value)}
+          placeholder="Type to search wines…"
+        />
+        {searchingWines && <p className="review-card__comment">Searching…</p>}
+        {!searchingWines && wineQuery.trim() && (
+          <div className="wine-search-results">
+            {wineResults.length === 0 && <p className="review-card__comment">No wines found.</p>}
+            {wineResults.map((wine) => (
+              <div key={wine.slug} className="wine-search-result">
+                <strong>{wine.name}</strong>
+                {wine.region ? <span className="review-card__comment"> — {wine.region}</span> : null}
+                <div className="wine-search-result__vintages">
+                  {(wine.vintages || []).length === 0 && (
+                    <span className="review-card__comment">No vintages</span>
+                  )}
+                  {(wine.vintages || []).map((vintage) => (
+                    <button
+                      key={vintage.id}
+                      type="button"
+                      className={`review-form__status-btn ${isVintageSelected(vintage.id) ? "review-form__status-btn--active" : ""}`}
+                      onClick={() => toggleVintage(vintage, wine)}
+                    >
+                      {vintage.year}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {selectedVintages.length > 0 && (
+          <div className="selected-vintages">
+            <p className="review-card__comment">Selected vintages (click to remove):</p>
+            <div className="wine-search-result__vintages">
+              {selectedVintages.map((vintage) => (
+                <button
+                  key={vintage.id}
+                  type="button"
+                  className="review-form__status-btn review-form__status-btn--active"
+                  onClick={() =>
+                    setSelectedVintages((prev) => prev.filter((v) => v.id !== vintage.id))
+                  }
+                >
+                  {vintage.name || `${vintage.wine_slug} ${vintage.year}`} ✕
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="review-form__field">
+        <span className="image-manager__label">
+          Reviews (optional — pick from the selected vintages)
+        </span>
+        {selectedVintages.length === 0 && (
+          <p className="review-card__comment">Select some vintages above to see their reviews.</p>
+        )}
+        {selectedVintages.map((vintage) => {
+          const list = reviewsByVintage[vintage.id];
+          return (
+            <div key={vintage.id} className="vintage-reviews">
+              <strong>{vintage.name}</strong>
+              {list === undefined && <p className="review-card__comment">Loading reviews…</p>}
+              {Array.isArray(list) && list.length === 0 && (
+                <p className="review-card__comment">No reviews for this vintage.</p>
+              )}
+              {Array.isArray(list) &&
+                list.map((review) => (
+                  <label key={review.id} style={{ display: "block", fontWeight: 400 }}>
+                    <input
+                      type="checkbox"
+                      checked={linkedReviewIds.includes(review.id)}
+                      onChange={() => toggleReview(review.id)}
+                    />{" "}
+                    {review.title || "Untitled"} (score {review.score})
+                  </label>
+                ))}
+            </div>
+          );
+        })}
       </div>
 
       <div className="review-form__field">
