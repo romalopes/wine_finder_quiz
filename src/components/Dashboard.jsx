@@ -1,4 +1,6 @@
 import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { articlesApi } from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
 
 const dashboardCards = [
@@ -23,10 +25,25 @@ const dashboardCards = [
     to: "/my-reviews",
     cta: "View reviews",
   },
+  {
+    title: "Articles",
+    description:
+      "Read community stories and guides about wines, regions and producers.",
+    to: "/articles",
+    cta: "Read articles",
+  },
 ];
 
 function Dashboard() {
   const { user } = useAuth();
+  const [recentArticles, setRecentArticles] = useState([]);
+
+  useEffect(() => {
+    articlesApi
+      .list()
+      .then((data) => setRecentArticles((Array.isArray(data) ? data : []).slice(0, 3)))
+      .catch(() => setRecentArticles([]));
+  }, []);
 
   return (
     <main className="wine-app">
@@ -67,6 +84,44 @@ function Dashboard() {
             </article>
           ))}
         </div>
+
+        {recentArticles.length > 0 && (
+          <div className="wine-detail__section">
+            <div className="section-heading">
+              <p>From the community</p>
+              <h2>Latest Articles</h2>
+            </div>
+            {recentArticles.map((article) => (
+              <article className="wine-panel" key={article.id} style={{ marginBottom: 16 }}>
+                {Array.isArray(article.images) && article.images.length > 0 && (
+                  <img
+                    src={article.images[0]}
+                    alt={article.title}
+                    style={{
+                      width: "100%",
+                      height: "8rem",
+                      objectFit: "cover",
+                      borderRadius: ".5rem",
+                    }}
+                  />
+                )}
+                <h3 style={{ margin: ".5rem 0 .25rem" }}>
+                  <Link to={`/articles/${article.id}`}>{article.title}</Link>
+                </h3>
+                {[article.category, `by ${article.author_name}`]
+                  .filter(Boolean)
+                  .join(" · ") && (
+                  <p className="review-card__comment">
+                    {[article.category, `by ${article.author_name}`].filter(Boolean).join(" · ")}
+                  </p>
+                )}
+                {article.abstract && (
+                  <p>{String(article.abstract).slice(0, 160)}</p>
+                )}
+              </article>
+            ))}
+          </div>
+        )}
       </section>
     </main>
   );

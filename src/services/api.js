@@ -31,7 +31,10 @@ async function request(
   };
 
   let payload;
-  if (body !== undefined) {
+  if (body instanceof FormData) {
+    // Let the browser set the multipart Content-Type boundary.
+    payload = body;
+  } else if (body !== undefined) {
     requestHeaders["Content-Type"] = "application/json";
     payload = JSON.stringify(body);
   }
@@ -94,6 +97,20 @@ export const authApi = {
   },
   me() {
     return request("/me", { auth: true });
+  },
+};
+
+export const imagesApi = {
+  upload(imageableType, imageableId, files) {
+    const formData = new FormData();
+    formData.append("imageable_type", imageableType);
+    formData.append("imageable_id", imageableId);
+    Array.from(files).forEach((file) => formData.append("images[]", file));
+    return request("/images", {
+      method: "POST",
+      auth: true,
+      body: formData,
+    });
   },
 };
 
@@ -182,6 +199,9 @@ export const tasteParametersApi = {
 };
 
 export const reviewsApi = {
+  all() {
+    return request("/reviews", { auth: true });
+  },
   list(wineSlug, vintageId) {
     return request(`/wines/${wineSlug}/vintages/${vintageId}/reviews`, {
       auth: true,
@@ -212,6 +232,41 @@ export const reviewsApi = {
   },
   myReviews() {
     return request("/reviews/my_reviews", { auth: true });
+  },
+};
+
+export const articlesApi = {
+  list() {
+    return request("/articles", { auth: true });
+  },
+  show(id) {
+    return request(`/articles/${id}`, { auth: true });
+  },
+  create(articleData) {
+    return request("/articles", {
+      method: "POST",
+      auth: true,
+      body: { article: articleData },
+    });
+  },
+  update(id, articleData) {
+    return request(`/articles/${id}`, {
+      method: "PATCH",
+      auth: true,
+      body: { article: articleData },
+    });
+  },
+  destroy(id) {
+    return request(`/articles/${id}`, {
+      method: "DELETE",
+      auth: true,
+    });
+  },
+};
+
+export const categoriesApi = {
+  list() {
+    return request("/categories");
   },
 };
 

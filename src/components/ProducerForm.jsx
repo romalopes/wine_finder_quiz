@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { producersApi } from "../services/api";
+import { producersApi, imagesApi } from "../services/api";
 
 function ProducerForm() {
   const { slug } = useParams();
   const navigate = useNavigate();
   const isEditing = Boolean(slug);
+  const [images, setImages] = useState(null);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -56,9 +57,15 @@ function ProducerForm() {
 
       if (isEditing) {
         await producersApi.update(slug, payload);
+        if (images && images.length > 0) {
+          await imagesApi.upload("producer", slug, images);
+        }
         navigate(`/producers/${slug}`, { replace: true });
       } else {
         const result = await producersApi.create(payload);
+        if (images && images.length > 0) {
+          await imagesApi.upload("producer", result.slug, images);
+        }
         navigate(`/producers/${result.slug}`, { replace: true });
       }
     } catch (err) {
@@ -124,6 +131,16 @@ function ProducerForm() {
             />
           </label>
         </div>
+
+        <label className="auth-form__field">
+          <span>Images (you can select several)</span>
+          <input
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={(e) => setImages(e.target.files)}
+          />
+        </label>
 
         <div className="wine-form__actions">
           <button

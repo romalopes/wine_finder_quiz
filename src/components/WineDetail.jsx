@@ -2,6 +2,16 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { winesApi, reviewsApi } from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
+import DOMPurify from "dompurify";
+
+function RichComment({ html }) {
+  return (
+    <div
+      className="review-card__comment"
+      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(html) }}
+    />
+  );
+}
 import ReviewForm from "./ReviewForm";
 
 function timeAgo(dateStr) {
@@ -135,6 +145,14 @@ function WineDetail() {
 
       {wine.prompt && <p className="wine-detail__prompt">{wine.prompt}</p>}
 
+      {Array.isArray(wine.images) && wine.images.length > 0 && (
+        <div className="wine-detail__images">
+          {wine.images.map((src, i) => (
+            <img key={i} src={src} alt={`${wine.name} ${i + 1}`} />
+          ))}
+        </div>
+      )}
+
       <div className="wine-detail__specs">
         <div className="wine-detail__spec">
           <span className="wine-detail__spec-label">Producer</span>
@@ -248,10 +266,20 @@ function WineDetail() {
                             )}
                           </div>
                           {review.comment && (
-                            <p className="review-card__comment">
-                              {review.comment}
-                            </p>
+                            <RichComment html={review.comment} />
                           )}
+                          {Array.isArray(review.images) &&
+                            review.images.length > 0 && (
+                              <div className="review-card__images">
+                                {review.images.map((src, i) => (
+                                  <img
+                                    key={i}
+                                    src={src}
+                                    alt={`${review.title || "Review"} ${i + 1}`}
+                                  />
+                                ))}
+                              </div>
+                            )}
                           <div className="review-card__meta">
                             <span className="review-card__reviewer">
                               {review.reviewer_name}

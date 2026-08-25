@@ -12,6 +12,7 @@
   "dependencies": {
     "@neondatabase/neon-js": "0.6.1-beta",
     "bootstrap": "^5.3.3",
+    "dompurify": "^3.4.14",
     "react": "^19.0.0",
     "react-bootstrap": "^2.10.9",
     "react-dom": "^19.0.0",

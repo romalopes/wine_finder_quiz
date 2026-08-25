@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { winesApi, tasteParametersApi, producersApi } from "../services/api";
+import { winesApi, tasteParametersApi, producersApi, imagesApi } from "../services/api";
 
 const INITIAL_VINTAGE = { year: "", prompt: "" };
 
@@ -28,7 +28,7 @@ function WineForm() {
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
-
+  const [images, setImages] = useState(null);
   useEffect(() => {
     async function initFormData() {
       try {
@@ -176,9 +176,15 @@ function WineForm() {
 
       if (isEditing) {
         await winesApi.update(slug, payload);
+        if (images && images.length > 0) {
+          await imagesApi.upload("wine", slug, images);
+        }
         navigate(`/wines/${slug}`, { replace: true });
       } else {
         const result = await winesApi.create(payload);
+        if (images && images.length > 0) {
+          await imagesApi.upload("wine", result.slug, images);
+        }
         navigate(`/wines/${result.slug}`, { replace: true });
       }
     } catch (err) {
@@ -404,6 +410,16 @@ function WineForm() {
             </div>
           ))}
         </div>
+
+        <label className="auth-form__field">
+          <span>Images (you can select several)</span>
+          <input
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={(e) => setImages(e.target.files)}
+          />
+        </label>
 
         <div className="wine-form__actions">
           <button

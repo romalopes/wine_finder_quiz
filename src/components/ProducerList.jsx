@@ -81,6 +81,13 @@ function ProducerList() {
                 }
               }}
             >
+              {Array.isArray(producer.images) && producer.images.length > 0 && (
+                <img
+                  src={producer.images[0]}
+                  alt={producer.name}
+                  className="wine-management__thumb"
+                />
+              )}
               <div className="wine-management__card-header">
                 <h3>{producer.name}</h3>
               </div>

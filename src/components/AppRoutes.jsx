@@ -4,6 +4,9 @@ import Dashboard from "./Dashboard.jsx";
 import Home from "./Home.jsx";
 import Login from "./Login.jsx";
 import MyReviews from "./MyReviews.jsx";
+import Reviews from "./Reviews.jsx";
+import Articles from "./Articles.jsx";
+import ArticleDetail from "./ArticleDetail.jsx";
 import Quiz from "./Quiz.jsx";
 import WineList from "./WineList.jsx";
 import WineDetail from "./WineDetail.jsx";
@@ -26,6 +29,10 @@ function AppRoutes({ user, setUser }) {
           element={<Login user={user} setUser={setUser} />}
         />
         <Route element={<MyReviews />} path="/my-reviews" />
+        <Route element={<Reviews />} path="/reviews" />
+        <Route element={<Articles />} path="/articles" />
+        <Route element={<ArticleDetail />} path="/articles/:id" />
+        <Route element={<ArticleDetail />} path="/articles/:id/edit" />
         <Route element={<WineSearch />} path="/search" />
         <Route element={<WineList />} path="/wines" />
         <Route element={<WineDetail />} path="/wines/:slug" />

@@ -59,6 +59,14 @@ function ProducerDetail() {
         </div>
       </div>
 
+      {Array.isArray(producer.images) && producer.images.length > 0 && (
+        <div className="wine-detail__images">
+          {producer.images.map((src, i) => (
+            <img key={i} src={src} alt={`${producer.name} ${i + 1}`} />
+          ))}
+        </div>
+      )}
+
       <div className="wine-detail__specs">
         <div className="wine-detail__spec">
           <span className="wine-detail__spec-label">Address</span>

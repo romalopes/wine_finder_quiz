@@ -3,6 +3,16 @@ import { Link } from "react-router-dom";
 import { reviewsApi } from "../services/api";
 import ReviewForm from "./ReviewForm";
 import { useAuth } from "../contexts/AuthContext";
+import DOMPurify from "dompurify";
+
+function RichComment({ html }) {
+  return (
+    <div
+      className="review-card__comment"
+      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(html) }}
+    />
+  );
+}
 
 function timeAgo(dateStr) {
   if (!dateStr) return null;
@@ -132,9 +142,7 @@ function MyReviews() {
                   </span>
                 )}
               </div>
-              {review.comment && (
-                <p className="review-card__comment">{review.comment}</p>
-              )}
+              {review.comment && <RichComment html={review.comment} />}
 
               <div className="review-card__actions">
                 <button

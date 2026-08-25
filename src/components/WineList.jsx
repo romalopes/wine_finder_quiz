@@ -96,6 +96,13 @@ function WineList() {
                 }
               }}
             >
+              {Array.isArray(wine.images) && wine.images.length > 0 && (
+                <img
+                  src={wine.images[0]}
+                  alt={wine.name}
+                  className="wine-management__thumb"
+                />
+              )}
               <div className="wine-management__card-header">
                 <h3>{wine.name}</h3>
                 <span

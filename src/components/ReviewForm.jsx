@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { reviewsApi } from "../services/api";
+import { reviewsApi, imagesApi } from "../services/api";
 
 function ReviewForm({ wineSlug, vintageId, review, onSaved, onCancel }) {
   const isEditing = Boolean(review);
@@ -19,6 +19,7 @@ function ReviewForm({ wineSlug, vintageId, review, onSaved, onCancel }) {
   );
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
+  const [images, setImages] = useState(null);
 
   function updateField(field) {
     return (e) => {
@@ -41,8 +42,14 @@ function ReviewForm({ wineSlug, vintageId, review, onSaved, onCancel }) {
 
       if (isEditing) {
         await reviewsApi.update(review.id, payload);
+        if (images && images.length > 0) {
+          await imagesApi.upload("review", review.id, images);
+        }
       } else {
-        await reviewsApi.create(wineSlug, vintageId, payload);
+        const saved = await reviewsApi.create(wineSlug, vintageId, payload);
+        if (images && images.length > 0 && saved?.id) {
+          await imagesApi.upload("review", saved.id, images);
+        }
       }
 
       onSaved();
@@ -79,6 +86,17 @@ function ReviewForm({ wineSlug, vintageId, review, onSaved, onCancel }) {
           value={form.comment}
           onChange={updateField("comment")}
           placeholder="What did you think of this vintage?"
+        />
+      </div>
+
+      <div className="review-form__field">
+        <label htmlFor="review-images">Images</label>
+        <input
+          id="review-images"
+          type="file"
+          accept="image/*"
+          multiple
+          onChange={(e) => setImages(e.target.files)}
         />
       </div>
 
