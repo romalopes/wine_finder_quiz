@@ -1,7 +1,19 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { winesApi, tasteParametersApi, producersApi, imagesApi } from "../services/api";
+import {
+  winesApi,
+  tasteParametersApi,
+  imagesApi,
+} from "../services/api";
 import ImageManager from "./ImageManager";
+import ProducerSearch from "./ProducerSearch";
+import {
+  VOLUMES,
+  DEFAULT_VOLUME,
+  DEFAULT_COLOR,
+  DEFAULT_CLOSURE,
+  DEFAULT_ALCOHOL_PERCENTAGE,
+} from "../data/wineVolumes";
 
 const INITIAL_VINTAGE = { year: "", prompt: "" };
 
@@ -14,18 +26,18 @@ function WineForm() {
     id: null,
     name: "",
     region: "",
-    color: "",
-    closure: "",
-    alcohol_percentage: "",
-    volume_ml: "",
+    color: DEFAULT_COLOR,
+    closure: DEFAULT_CLOSURE,
+    alcohol_percentage: String(DEFAULT_ALCOHOL_PERCENTAGE),
+    volume_ml: String(DEFAULT_VOLUME),
     prompt: "",
     producer_id: "",
+    producer_name: "",
   });
 
   const [vintages, setVintages] = useState([]);
   const [tasteParams, setTasteParams] = useState([]);
   const [tasteScores, setTasteScores] = useState([]);
-  const [producers, setProducers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
@@ -41,10 +53,6 @@ function WineForm() {
         // The API returns the array directly, not wrapped in data.parameters
         const paramsArray = Array.isArray(globalParams) ? globalParams : [];
         setTasteParams(paramsArray);
-
-        // Load producers
-        const producerData = await producersApi.list();
-        setProducers(Array.isArray(producerData) ? producerData : []);
 
         // Set baseline defaults
         let initialScores = paramsArray.map((p) => ({
@@ -65,16 +73,19 @@ function WineForm() {
             id: wineData.id || null,
             name: wineData.name || "",
             region: wineData.region || "",
-            color: wineData.color || "",
-            closure: wineData.closure || "",
+            color: wineData.color || DEFAULT_COLOR,
+            closure: wineData.closure || DEFAULT_CLOSURE,
             alcohol_percentage:
               wineData.alcohol_percentage != null
                 ? String(wineData.alcohol_percentage)
-                : "",
+                : String(DEFAULT_ALCOHOL_PERCENTAGE),
             volume_ml:
-              wineData.volume_ml != null ? String(wineData.volume_ml) : "",
+              wineData.volume_ml != null
+                ? String(wineData.volume_ml)
+                : String(DEFAULT_VOLUME),
             prompt: wineData.prompt || "",
             producer_id: wineData.producer?.id || "",
+            producer_name: wineData.producer?.name || "",
           });
 
           setVintages(
@@ -144,11 +155,19 @@ function WineForm() {
     setVintages((prev) => prev.filter((_, i) => i !== index));
   }
 
+  function handleProducerChange(id, name) {
+    setFormData((prev) => ({ ...prev, producer_id: id ? String(id) : "", producer_name: name || "" }));
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     try {
       setSubmitting(true);
       setError(null);
+
+      if (!formData.producer_id) {
+        throw new Error("Please select or create a producer");
+      }
 
       const wineTasteParametersAttributes = tasteScores.map((ts) => ({
         id: ts.id || null,
@@ -224,21 +243,12 @@ function WineForm() {
       {error && <p className="auth-form__error">{error}</p>}
       <form onSubmit={handleSubmit} className="wine-form">
         <div className="wine-form__fields">
-          <label className="auth-form__field">
-            <span>Producer</span>
-            <select
-              name="producer_id"
-              value={formData.producer_id}
-              onChange={handleChange}
-            >
-              <option value="">Select producer…</option>
-              {producers.map((producer) => (
-                <option key={producer.id} value={producer.id}>
-                  {producer.name}
-                </option>
-              ))}
-            </select>
-          </label>
+          <div className="auth-form__field">
+            <ProducerSearch
+              value={formData.producer_name}
+              onChange={handleProducerChange}
+            />
+          </div>
           <label className="auth-form__field">
             <span>Name *</span>
             <input
@@ -262,14 +272,14 @@ function WineForm() {
             />
           </label>
           <label className="auth-form__field">
-            <span>Color * </span>
+            <span>Colour * </span>
             <select
               name="color"
               value={formData.color}
               onChange={handleChange}
               required
             >
-              <option value="">Select color…</option>
+              <option value="">Select colour…</option>
               <option value="Red">Red</option>
               <option value="White">White</option>
               <option value="Rosé">Rosé</option>
@@ -279,45 +289,53 @@ function WineForm() {
             </select>
           </label>
           <label className="auth-form__field">
-            <span>Closure</span>
+            <span>Closure *</span>
             <select
               name="closure"
               value={formData.closure}
               onChange={handleChange}
+              required
             >
               <option value="">Select closure…</option>
               <option value="Cork">Cork</option>
               <option value="Screw cap">Screw cap</option>
-              <option value="Synthetic cork">Synthetic cork</option>
               <option value="Diam">Diam</option>
-              <option value="Glass stopper">Glass stopper</option>
+              <option value="Crownseal">Crownseal</option>
+              <option value="Synthetic">Synthetic</option>
+              <option value="Glass Stopper">Glass Stopper</option>
+              <option value="Nomacorc PlantCorc">Nomacorc PlantCorc</option>
+              <option value="Agglomerate">Agglomerate</option>
             </select>
           </label>
           <div className="wine-form__row">
             <label className="auth-form__field wine-form__row-item">
-              <span>Alcohol %</span>
+              <span>Alcohol % *</span>
               <input
                 type="number"
                 name="alcohol_percentage"
                 value={formData.alcohol_percentage}
                 onChange={handleChange}
-                step="0.1"
+                step="0.5"
                 min="0"
                 max="25"
                 placeholder="e.g. 13.5"
+                required
               />
             </label>
             <label className="auth-form__field wine-form__row-item">
-              <span>Volume (ml)</span>
-              <input
-                type="number"
+              <span>Volume (ml) *</span>
+              <select
                 name="volume_ml"
-                value={formData.volume_ml}
+                value={formData.volume_ml || ""}
                 onChange={handleChange}
-                min="0"
-                step="1"
-                placeholder="e.g. 750"
-              />
+                required
+              >
+                {VOLUMES.map((v) => (
+                  <option key={v.value} value={v.value}>
+                    {v.label}
+                  </option>
+                ))}
+              </select>
             </label>
           </div>
           <label className="auth-form__field">
@@ -418,7 +436,9 @@ function WineForm() {
         </div>
 
         <div className="image-manager">
-          <span className="image-manager__label">Images (click + to add, × to remove)</span>
+          <span className="image-manager__label">
+            Images (click + to add, × to remove)
+          </span>
           <ImageManager
             imageableType="wine"
             images={existingImages}

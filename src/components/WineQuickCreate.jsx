@@ -1,17 +1,29 @@
 import { useState, useEffect } from "react";
 import { winesApi, producersApi } from "../services/api";
+import {
+  VOLUMES,
+  DEFAULT_VOLUME,
+  DEFAULT_COLOR,
+  DEFAULT_CLOSURE,
+  DEFAULT_ALCOHOL_PERCENTAGE,
+} from "../data/wineVolumes";
 
 // Inline wine creation form used by the Reviews page when a searched wine
 // is not found. Creates the wine (with a single vintage) and returns
 // { slug, vintageId } via onCreated so the review flow can continue.
-function WineQuickCreate({ defaultName = "", defaultVintageYear = "", onCreated, onCancel }) {
+function WineQuickCreate({
+  defaultName = "",
+  defaultVintageYear = "",
+  onCreated,
+  onCancel,
+}) {
   const [form, setForm] = useState({
     name: defaultName,
     region: "",
-    color: "",
-    closure: "",
-    alcohol_percentage: "",
-    volume_ml: "",
+    color: DEFAULT_COLOR,
+    closure: DEFAULT_CLOSURE,
+    alcohol_percentage: String(DEFAULT_ALCOHOL_PERCENTAGE),
+    volume_ml: String(DEFAULT_VOLUME),
     prompt: "",
     producer_id: "",
     vintage_year: defaultVintageYear,
@@ -85,7 +97,6 @@ function WineQuickCreate({ defaultName = "", defaultVintageYear = "", onCreated,
 
       {error && <p className="review-form__error">{error}</p>}
 
-
       <div className="review-form__field">
         <label htmlFor="quick-wine-name">Wine Name *</label>
         <input
@@ -130,7 +141,7 @@ function WineQuickCreate({ defaultName = "", defaultVintageYear = "", onCreated,
       </div>
 
       <div className="review-form__field">
-        <label htmlFor="quick-wine-color">Color *</label>
+        <label htmlFor="quick-wine-color">Colour *</label>
         <select
           id="quick-wine-color"
           name="color"
@@ -138,7 +149,6 @@ function WineQuickCreate({ defaultName = "", defaultVintageYear = "", onCreated,
           value={form.color}
           onChange={handleChange}
         >
-          <option value="">Select color…</option>
           <option value="Red">Red</option>
           <option value="White">White</option>
           <option value="Rosé">Rosé</option>
@@ -149,26 +159,29 @@ function WineQuickCreate({ defaultName = "", defaultVintageYear = "", onCreated,
       </div>
 
       <div className="review-form__field">
-        <label htmlFor="quick-wine-closure">Closure</label>
+        <label htmlFor="quick-wine-closure">Closure *</label>
         <select
           id="quick-wine-closure"
           name="closure"
           value={form.closure}
           onChange={handleChange}
+          required
         >
-          <option value="">Select closure…</option>
           <option value="Cork">Cork</option>
           <option value="Screw cap">Screw cap</option>
-          <option value="Synthetic cork">Synthetic cork</option>
           <option value="Diam">Diam</option>
-          <option value="Glass stopper">Glass stopper</option>
+          <option value="Crownseal">Crownseal</option>
+          <option value="Synthetic">Synthetic</option>
+          <option value="Glass Stopper">Glass Stopper</option>
+          <option value="Nomacorc PlantCorc">Nomacorc PlantCorc</option>
+          <option value="Agglomerate">Agglomerate</option>
         </select>
       </div>
 
       <div className="review-form__field">
         <div className="wine-form__row">
           <label className="auth-form__field wine-form__row-item">
-            <span>Alcohol %</span>
+            <span>Alcohol % *</span>
             <input
               type="number"
               name="alcohol_percentage"
@@ -178,19 +191,23 @@ function WineQuickCreate({ defaultName = "", defaultVintageYear = "", onCreated,
               value={form.alcohol_percentage}
               onChange={handleChange}
               placeholder="e.g. 13.5"
+              required
             />
           </label>
           <label className="auth-form__field wine-form__row-item">
-            <span>Volume (ml)</span>
-            <input
-              type="number"
+            <span>Volume (ml) *</span>
+            <select
               name="volume_ml"
-              min="0"
-              step="1"
-              value={form.volume_ml}
+              value={form.volume_ml || ""}
               onChange={handleChange}
-              placeholder="e.g. 750"
-            />
+              required
+            >
+              {VOLUMES.map((v) => (
+                <option key={v.value} value={v.value}>
+                  {v.label}
+                </option>
+              ))}
+            </select>
           </label>
         </div>
       </div>
@@ -223,11 +240,19 @@ function WineQuickCreate({ defaultName = "", defaultVintageYear = "", onCreated,
       </div>
 
       <div className="review-form__actions">
-        <button className="auth-form__submit" type="submit" disabled={submitting}>
+        <button
+          className="auth-form__submit"
+          type="submit"
+          disabled={submitting}
+        >
           {submitting ? "Creating…" : "Create Wine & Continue"}
         </button>
         {onCancel && (
-          <button type="button" className="review-form__cancel" onClick={onCancel}>
+          <button
+            type="button"
+            className="review-form__cancel"
+            onClick={onCancel}
+          >
             Cancel
           </button>
         )}

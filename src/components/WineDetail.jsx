@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { winesApi, reviewsApi } from "../services/api";
+import { winesApi, reviewsApi, tasteParametersApi } from "../services/api";
+import { volumeLabel } from "../data/wineVolumes";
 import { useAuth } from "../contexts/AuthContext";
 import DOMPurify from "dompurify";
 
@@ -47,6 +48,21 @@ function WineDetail() {
   const [loadingReviews, setLoadingReviews] = useState({});
   const [activeFormVintage, setActiveFormVintage] = useState(null);
   const [editingReview, setEditingReview] = useState(null);
+  const [tasteLabels, setTasteLabels] = useState({});
+
+  // Map taste parameter slug -> human label for the detail view.
+  useEffect(() => {
+    tasteParametersApi
+      .list()
+      .then((params) => {
+        const map = {};
+        (Array.isArray(params) ? params : []).forEach((p) => {
+          if (p?.slug) map[p.slug] = p.label || p.slug;
+        });
+        setTasteLabels(map);
+      })
+      .catch(() => {});
+  }, []);
 
   const loadWine = useCallback(async () => {
     try {
@@ -185,7 +201,9 @@ function WineDetail() {
         <div className="wine-detail__spec">
           <span className="wine-detail__spec-label">Volume</span>
           <span className="wine-detail__spec-value">
-            {wine.volume_ml != null ? `${wine.volume_ml}ml` : "—"}
+            {wine.volume_ml != null
+              ? (volumeLabel(wine.volume_ml) ?? `${wine.volume_ml}ml`)
+              : "—"}
           </span>
         </div>
       </div>
@@ -414,7 +432,8 @@ function WineDetail() {
                 className="wine-detail__param"
               >
                 <span className="wine-detail__param-label">
-                  {param.taste_parameter_slug}
+                  {tasteLabels[param.taste_parameter_slug] ||
+                    param.taste_parameter_slug}
                 </span>
                 <div className="wine-meter">
                   <span style={{ width: `${(param.score / 5) * 100}%` }} />

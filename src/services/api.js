@@ -158,6 +158,9 @@ export const producersApi = {
   list() {
     return request("/producers");
   },
+  search(query) {
+    return request(`/producers/search?q=${encodeURIComponent(query)}`);
+  },
   show(id) {
     return request(`/producers/${id}`);
   },

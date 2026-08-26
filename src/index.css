@@ -1478,13 +1478,14 @@ textarea {
 }
 
 .review-card__unpublish {
-  color: #766963;
-  border-color: #d7c8bb;
+  background: rgba(138, 39, 60, 0.06);
+  color: #8a273c;
+  border-color: rgba(138, 39, 60, 0.4);
 }
 
 .review-card__unpublish:hover {
-  background: #766963;
-  border-color: #766963;
+  background: #8a273c;
+  border-color: #8a273c;
   color: #fff8f2;
 }
 
