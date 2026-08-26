@@ -203,6 +203,22 @@ export const userApi = {
   },
 };
 
+export const usersApi = {
+  roles() {
+    return request("/roles", { auth: true });
+  },
+  search(q) {
+    return request(`/users/search?q=${encodeURIComponent(q)}`, { auth: true });
+  },
+  assignRoles(userId, roleIds) {
+    return request(`/users/${userId}/assign_roles`, {
+      method: "PATCH",
+      auth: true,
+      body: { role_ids: roleIds },
+    });
+  },
+};
+
 export const tasteParametersApi = {
   list() {
     return request("/taste_parameters");

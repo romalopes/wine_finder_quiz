@@ -16,6 +16,7 @@ import WineSearch from "./WineSearch.jsx";
 import ProducerList from "./ProducerList.jsx";
 import ProducerDetail from "./ProducerDetail.jsx";
 import ProducerForm from "./ProducerForm.jsx";
+import UserRoles from "./UserRoles.jsx";
 
 function AppRoutes({ user, setUser }) {
   return (
@@ -44,6 +45,7 @@ function AppRoutes({ user, setUser }) {
         <Route element={<ProducerDetail />} path="/producers/:slug" />
         <Route element={<ProducerForm />} path="/producers/new" />
         <Route element={<ProducerForm />} path="/producers/:slug/edit" />
+        <Route element={<UserRoles />} path="/users" />
       </Routes>
     </>
   );

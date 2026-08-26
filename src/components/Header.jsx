@@ -16,6 +16,8 @@ function Header() {
   const { user, session, signOut } = useAuth();
   const navigate = useNavigate();
 
+  const isSuperUser = Array.isArray(user?.roles) && user.roles.includes("Super User");
+
   async function handleSignOut() {
     await signOut();
     navigate("/login");
@@ -55,6 +57,7 @@ function Header() {
         <NavLink to="/search">Search</NavLink>
         <NavLink to="/quiz">Quiz</NavLink>
         <NavLink to="/about">About</NavLink>
+        {isSuperUser && <NavLink to="/users">Users &amp; Roles</NavLink>}
 
         {user ? (
           <div className="site-header__user">

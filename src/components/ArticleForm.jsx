@@ -47,6 +47,32 @@ function ArticleForm({ article, onSaved, onCancel }) {
     producersApi.list().then((data) => setProducers(Array.isArray(data) ? data : [])).catch(() => {});
   }, []);
 
+  // On edit, pre-existing vintages never run through toggleVintage, so their
+  // reviews would stay "Loading…" forever. Fetch them once on mount.
+  useEffect(() => {
+    if (!isEditing || selectedVintages.length === 0) return;
+    let cancelled = false;
+    Promise.all(
+      selectedVintages.map(async (v) => {
+        if (!v.wine_slug) return { id: v.id, reviews: [] };
+        try {
+          const list = await reviewsApi.list(v.wine_slug, v.id);
+          return { id: v.id, reviews: Array.isArray(list) ? list : [] };
+        } catch {
+          return { id: v.id, reviews: [] };
+        }
+      }),
+    ).then((results) => {
+      if (cancelled) return;
+      const next = {};
+      results.forEach((r) => {
+        next[r.id] = r.reviews;
+      });
+      setReviewsByVintage((prev) => ({ ...prev, ...next }));
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Debounced wine search for the vintage picker.
   useEffect(() => {
     if (searchTimer.current) clearTimeout(searchTimer.current);
