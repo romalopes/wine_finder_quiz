@@ -279,6 +279,9 @@ export const articlesApi = {
   list() {
     return request("/articles", { auth: true });
   },
+  myArticles() {
+    return request("/articles/my_articles", { auth: true });
+  },
   show(id) {
     return request(`/articles/${id}`, { auth: true });
   },

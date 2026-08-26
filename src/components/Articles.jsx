@@ -1,14 +1,20 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { articlesApi } from "../services/api";
 import ArticleForm from "./ArticleForm";
 import { useAuth } from "../contexts/AuthContext";
 
 function Articles() {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const isSuperUser =
+    Array.isArray(user?.roles) && user.roles.includes("Super User");
   const [articles, setArticles] = useState([]);
+  const [myArticles, setMyArticles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [scope, setScope] = useState("all"); // "all" | "mine"
+  const [statusFilter, setStatusFilter] = useState("all");
 
   const loadArticles = useCallback(async () => {
     try {
@@ -21,9 +27,26 @@ function Articles() {
     }
   }, []);
 
+  const loadMyArticles = useCallback(async () => {
+    try {
+      const data = await articlesApi.myArticles();
+      setMyArticles(Array.isArray(data) ? data : []);
+    } catch {
+      setMyArticles([]);
+    }
+  }, []);
+
   useEffect(() => {
     loadArticles();
-  }, [loadArticles]);
+    if (user) loadMyArticles();
+    else setMyArticles([]);
+  }, [user, loadArticles, loadMyArticles]);
+
+  function canManage(article) {
+    return Boolean(
+      user && (isSuperUser || Number(article.user_id) === Number(user.id)),
+    );
+  }
 
   async function handleDelete(id) {
     if (!window.confirm("Delete this article?")) return;
@@ -73,16 +96,92 @@ function Articles() {
         </div>
       )}
 
-      {loading ? (
-        <p className="wine-management__loading">Loading articles…</p>
-      ) : articles.length === 0 ? (
-        <p className="wine-management__empty-state">
-          No articles yet{user ? ". Write the first one!" : "."}
-        </p>
-      ) : (
+      {!showForm &&
+        (loading ? (
+          <p className="wine-management__loading">Loading articles…</p>
+        ) : (
+        <>
+          {/* Scope toggle: All Articles / My Articles */}
+          <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+            {[
+              { key: "all", label: "All Articles" },
+              ...(user ? [{ key: "mine", label: "My Articles" }] : []),
+            ].map(({ key, label }) => (
+              <button
+                key={key}
+                type="button"
+                style={{
+                  border: "1px solid #d7c8bb",
+                  borderRadius: "999px",
+                  padding: "8px 14px",
+                  fontWeight: 800,
+                  fontSize: "0.85rem",
+                  cursor: "pointer",
+                  background: scope === key ? "#27615e" : "#fff",
+                  color: scope === key ? "#f7fff9" : "#4f4440",
+                  borderColor: scope === key ? "#27615e" : "#d7c8bb",
+                }}
+                onClick={() => setScope(key)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {/* Status filter: All / Draft / Published */}
+          <div style={{ display: "flex", gap: 8, marginBottom: 24 }}>
+            {["all", "draft", "published"].map((filter) => (
+              <button
+                key={filter}
+                type="button"
+                style={{
+                  border: "1px solid #d7c8bb",
+                  borderRadius: "999px",
+                  padding: "6px 12px",
+                  fontWeight: 700,
+                  fontSize: "0.8rem",
+                  cursor: "pointer",
+                  background: statusFilter === filter ? "#8a273c" : "#fff",
+                  color: statusFilter === filter ? "#fff8f2" : "#4f4440",
+                  borderColor: statusFilter === filter ? "#8a273c" : "#d7c8bb",
+                }}
+                onClick={() => setStatusFilter(filter)}
+              >
+                {filter.charAt(0).toUpperCase() + filter.slice(1)}
+              </button>
+            ))}
+          </div>
+
+          {(() => {
+            const source = scope === "mine" ? myArticles : articles;
+            const filtered =
+              statusFilter === "all"
+                ? source
+                : source.filter((a) => a.status === statusFilter);
+
+            if (scope === "mine" && !user) {
+              return (
+                <p className="wine-management__empty-state">
+                  Sign in to see your articles.
+                </p>
+              );
+            }
+            if (filtered.length === 0) {
+              return (
+                <p className="wine-management__empty-state">
+                  {source.length === 0
+                    ? scope === "mine"
+                      ? "You haven't written any articles yet."
+                      : "No articles yet. Write the first one!"
+                    : `No ${statusFilter} articles.`}
+                </p>
+              );
+            }
+            return (
         <div className="review-list">
-          {articles.map((article) => (
-            <div key={article.id} className="review-card">
+          {filtered.map((article) => (
+            <div key={article.id} className="review-card" style={{ cursor: "pointer" }}
+              onClick={() => navigate(`/articles/${article.id}`)}>
               {Array.isArray(article.images) && article.images.length > 0 && (
                 <img
                   src={article.images[0]}
@@ -91,9 +190,7 @@ function Articles() {
                 />
               )}
               <div className="review-card__top">
-                <Link to={`/articles/${article.id}`} className="my-reviews__wine-link">
-                  {article.title}
-                </Link>
+                <span className="my-reviews__wine-link">{article.title}</span>
                 <span className="review-card__status">{article.status}</span>
                 {article.published_at && (
                   <span className="review-card__time">
@@ -111,8 +208,8 @@ function Articles() {
                 <p className="review-card__comment">{article.abstract}</p>
               )}
 
-              {user?.id === article.user_id && (
-                <div className="review-card__actions">
+              {canManage(article) && (
+                <div className="review-card__actions" onClick={(e) => e.stopPropagation()}>
                   <Link to={`/articles/${article.id}/edit`} className="review-card__edit">
                     Edit
                   </Link>
@@ -136,6 +233,10 @@ function Articles() {
             </div>
           ))}
         </div>
+            );
+          })()}
+        </>
+        )
       )}
     </main>
   );

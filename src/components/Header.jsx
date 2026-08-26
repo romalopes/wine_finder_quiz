@@ -52,7 +52,6 @@ function Header() {
         <NavLink to="/wines">Wines</NavLink>
         <NavLink to="/reviews">Reviews</NavLink>
         <NavLink to="/articles">Articles</NavLink>
-        <NavLink to="/my-reviews">My Reviews</NavLink>
         <NavLink to="/finder">Finder</NavLink>
         <NavLink to="/search">Search</NavLink>
         <NavLink to="/quiz">Quiz</NavLink>

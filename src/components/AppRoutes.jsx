@@ -1,9 +1,8 @@
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes, Navigate } from "react-router-dom";
 import About from "./About.jsx";
 import Dashboard from "./Dashboard.jsx";
 import Home from "./Home.jsx";
 import Login from "./Login.jsx";
-import MyReviews from "./MyReviews.jsx";
 import Reviews from "./Reviews.jsx";
 import ReviewDetail from "./ReviewDetail.jsx";
 import Articles from "./Articles.jsx";
@@ -30,7 +29,7 @@ function AppRoutes({ user, setUser }) {
           path="/login"
           element={<Login user={user} setUser={setUser} />}
         />
-        <Route element={<MyReviews />} path="/my-reviews" />
+        <Route element={<Navigate replace to="/reviews" />} path="/my-reviews" />
         <Route element={<Reviews />} path="/reviews" />
         <Route element={<ReviewDetail />} path="/reviews/:id" />
         <Route element={<Articles />} path="/articles" />

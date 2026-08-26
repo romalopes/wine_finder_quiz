@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { reviewsApi, winesApi, vintagesApi } from "../services/api";
 import ReviewForm from "./ReviewForm";
 import WineQuickCreate from "./WineQuickCreate";
@@ -28,9 +28,15 @@ function timeAgo(dateStr) {
 
 function Reviews() {
   const { user } = useAuth();
+  const isSuperUser =
+    Array.isArray(user?.roles) && user.roles.includes("Super User");
   const [reviews, setReviews] = useState([]);
+  const [myReviews, setMyReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [scope, setScope] = useState("all"); // "all" | "mine"
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [editingReview, setEditingReview] = useState(null);
 
   // Wine search state
   const [query, setQuery] = useState("");
@@ -60,9 +66,53 @@ function Reviews() {
     }
   }
 
+  async function loadMyReviews() {
+    try {
+      const data = await reviewsApi.myReviews();
+      setMyReviews(Array.isArray(data) ? data : []);
+    } catch {
+      setMyReviews([]);
+    }
+  }
+
   useEffect(() => {
     loadReviews();
-  }, []);
+    if (user) loadMyReviews();
+    else setMyReviews([]);
+  }, [user]);
+
+  function canManage(review) {
+    return Boolean(
+      user && (isSuperUser || Number(review.user_id) === Number(user.id)),
+    );
+  }
+
+  async function handleDelete(reviewId) {
+    if (!window.confirm("Delete this review?")) return;
+    try {
+      await reviewsApi.destroy(reviewId);
+      loadReviews();
+      loadMyReviews();
+    } catch (err) {
+      alert(err.message || "Failed to delete review");
+    }
+  }
+
+  async function handleStatusChange(review, status) {
+    try {
+      await reviewsApi.update(review.id, {
+        status,
+        ...(status === "published"
+          ? { published_at: new Date().toISOString() }
+          : {}),
+      });
+      loadReviews();
+      loadMyReviews();
+    } catch (err) {
+      alert(err.message || `Failed to ${status === "published" ? "publish" : "unpublish"}`);
+    }
+  }
+
 
   async function performSearch(q) {
     const trimmed = q.trim();
@@ -378,22 +428,132 @@ function Reviews() {
         </div>
       )}
 
-      {loading ? (
-        <p className="wine-management__loading">Loading reviews…</p>
-      ) : reviews.length === 0 ? (
-        <p className="wine-management__empty-state">
-          No reviews yet. Be the first!
-        </p>
-      ) : (
-        <div className="review-list">
-          {reviews.map((review) => (
+      {!showForm &&
+        (loading ? (
+          <p className="wine-management__loading">Loading reviews…</p>
+        ) : (
+        <>
+          {/* Scope toggle: everyone's reviews vs my reviews */}
+          <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+            {[
+              { key: "all", label: "All Reviews" },
+              ...(user ? [{ key: "mine", label: "My Reviews" }] : []),
+            ].map(({ key, label }) => (
+              <button
+                key={key}
+                type="button"
+                className={`wine-segmented button ${scope === key ? "active" : ""}`}
+                style={{
+                  border: "1px solid #d7c8bb",
+                  borderRadius: "999px",
+                  padding: "8px 14px",
+                  fontWeight: 800,
+                  fontSize: "0.85rem",
+                  cursor: "pointer",
+                  background: scope === key ? "#27615e" : "#fff",
+                  color: scope === key ? "#f7fff9" : "#4f4440",
+                  borderColor: scope === key ? "#27615e" : "#d7c8bb",
+                }}
+                onClick={() => setScope(key)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {/* Status filter: All / Draft / Published */}
+          <div style={{ display: "flex", gap: 8, marginBottom: 24 }}>
+            {["all", "draft", "published"].map((filter) => (
+              <button
+                key={filter}
+                type="button"
+                style={{
+                  border: "1px solid #d7c8bb",
+                  borderRadius: "999px",
+                  padding: "6px 12px",
+                  fontWeight: 700,
+                  fontSize: "0.8rem",
+                  cursor: "pointer",
+                  background: statusFilter === filter ? "#8a273c" : "#fff",
+                  color: statusFilter === filter ? "#fff8f2" : "#4f4440",
+                  borderColor: statusFilter === filter ? "#8a273c" : "#d7c8bb",
+                }}
+                onClick={() => setStatusFilter(filter)}
+              >
+                {filter.charAt(0).toUpperCase() + filter.slice(1)}
+              </button>
+            ))}
+          </div>
+
+          <ReviewsList
+            reviews={scope === "mine" ? myReviews : reviews}
+            scope={scope}
+            user={user}
+            statusFilter={statusFilter}
+            canManage={canManage}
+            editingReview={editingReview}
+            setEditingReview={setEditingReview}
+            onDelete={handleDelete}
+            onStatusChange={handleStatusChange}
+            onSaved={() => {
+              setEditingReview(null);
+              loadReviews();
+              loadMyReviews();
+            }}
+          />
+        </>
+        )
+      )}
+    </main>
+  );
+}
+
+function ReviewsList({
+  reviews,
+  scope,
+  user,
+  statusFilter,
+  canManage,
+  editingReview,
+  setEditingReview,
+  onDelete,
+  onStatusChange,
+  onSaved,
+}) {
+  const navigate = useNavigate();
+  const filtered =
+    statusFilter === "all"
+      ? reviews
+      : reviews.filter((r) => r.status === statusFilter);
+
+  if (scope === "mine" && !user) {
+    return (
+      <p className="wine-management__empty-state">Sign in to see your reviews.</p>
+    );
+  }
+  if (filtered.length === 0) {
+    return (
+      <p className="wine-management__empty-state">
+        {reviews.length === 0
+          ? scope === "mine"
+            ? "You haven't written any reviews yet."
+            : "No reviews yet. Be the first!"
+          : `No ${statusFilter} reviews.`}
+      </p>
+    );
+  }
+  return (
+    <div className="review-list">
+          {filtered.map((review) => (
             <div
               key={review.id}
               className={`review-card ${review.status === "draft" ? "review-card--draft" : ""}`}
+              style={{ cursor: "pointer" }}
+              onClick={() => navigate(`/reviews/${review.id}`)}
             >
               <div className="review-card__top">
                 <h3 className="review-card__title">
-                  <Link to={`/reviews/${review.id}`}>{review.title || "Untitled review"}</Link>
+                  {review.title || "Untitled review"}
                 </h3>
                 <span className="review-card__score">{review.score}</span>
                 <span className="review-card__status">{review.status}</span>
@@ -408,6 +568,7 @@ function Reviews() {
                   <Link
                     to={review.wine_slug ? `/wines/${review.wine_slug}` : "#"}
                     className="my-reviews__wine-link"
+                    onClick={(e) => e.stopPropagation()}
                   >
                     {review.wine_name || "Unknown wine"}
                     {review.vintage_year ? ` (${review.vintage_year})` : ""}
@@ -415,9 +576,7 @@ function Reviews() {
                 </p>
               )}
               {review.reviewer_name && (
-                <p className="review-card__comment">
-                  by {review.reviewer_name}
-                </p>
+                <p className="review-card__comment">by {review.reviewer_name}</p>
               )}
               {review.comment && <RichComment html={review.comment} />}
               {(Array.isArray(review.images) && review.images.length > 0
@@ -433,11 +592,65 @@ function Reviews() {
                   className="wine-management__thumb"
                 />
               )}
+
+              {canManage(review) && (
+                <div
+                  className="review-card__actions"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <button
+                    type="button"
+                    className="review-card__edit"
+                    onClick={() => setEditingReview(review)}
+                  >
+                    Edit
+                  </button>
+                  {review.status === "draft" ? (
+                    <button
+                      type="button"
+                      className="review-card__publish"
+                      onClick={() => onStatusChange(review, "published")}
+                    >
+                      Publish
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className="review-card__unpublish"
+                      onClick={() => onStatusChange(review, "draft")}
+                    >
+                      Unpublish
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    className="review-card__delete"
+                    onClick={() => onDelete(review.id)}
+                    title="Delete review"
+                  >
+                    &times;
+                  </button>
+                </div>
+              )}
+
+              {editingReview && editingReview.id === review.id && (
+                <div
+                  className="review-form-wrapper"
+                  style={{ marginTop: 12 }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <ReviewForm
+                    wineSlug={review.wine_slug}
+                    vintageId={review.vintage_id}
+                    review={editingReview}
+                    onSaved={onSaved}
+                    onCancel={() => setEditingReview(null)}
+                  />
+                </div>
+              )}
             </div>
           ))}
         </div>
-      )}
-    </main>
   );
 }
 

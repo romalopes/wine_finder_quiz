@@ -22,7 +22,7 @@ const dashboardCards = [
     title: "Reviews",
     description:
       "Read community tasting notes and keep track of the reviews you have written.",
-    to: "/my-reviews",
+    to: "/reviews",
     cta: "View reviews",
   },
   {
