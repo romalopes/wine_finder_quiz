@@ -234,6 +234,11 @@ function Reviews() {
               <ReviewForm
                 wineSlug={selectedWine.slug}
                 vintageId={Number(selectedVintageId)}
+                vintageYear={
+                  selectedWine.vintages?.find(
+                    (v) => String(v.id) === String(selectedVintageId),
+                  )?.year
+                }
                 onSaved={() => {
                   closeForm();
                   loadReviews();
@@ -578,6 +583,13 @@ function ReviewsList({
               {review.reviewer_name && (
                 <p className="review-card__comment">by {review.reviewer_name}</p>
               )}
+              {(review.drink_from != null || review.drink_to != null) && (
+                <p className="review-card__comment">
+                  Drink {review.drink_from ?? ""}
+                  {review.drink_to != null ? `–${review.drink_to}` : ""}
+                  {review.drink_plus ? "+" : ""}
+                </p>
+              )}
               {review.comment && <RichComment html={review.comment} />}
               {(Array.isArray(review.images) && review.images.length > 0
                 ? review.images[0]
@@ -642,6 +654,7 @@ function ReviewsList({
                   <ReviewForm
                     wineSlug={review.wine_slug}
                     vintageId={review.vintage_id}
+                    vintageYear={editingReview?.vintage_year}
                     review={editingReview}
                     onSaved={onSaved}
                     onCancel={() => setEditingReview(null)}

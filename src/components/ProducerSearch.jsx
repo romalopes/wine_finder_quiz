@@ -61,7 +61,10 @@ function ProducerSearch({ value, onChange }) {
       const created = await producersApi.create({
         name: query.trim(),
         address: "",
-        email: "",
+        // Email and producer_type are mandatory on the backend; the inline
+        // quick-create fills in sensible defaults (placeholder email, winery).
+        email: `${query.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${Date.now().toString(36)}@example.com`,
+        producer_type: "winery",
       });
       handleSelect(created);
     } catch (err) {

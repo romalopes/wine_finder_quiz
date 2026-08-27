@@ -15,7 +15,7 @@ import {
   DEFAULT_ALCOHOL_PERCENTAGE,
 } from "../data/wineVolumes";
 
-const INITIAL_VINTAGE = { year: "", prompt: "" };
+const INITIAL_VINTAGE = { year: "", prompt: "", price: "", no_vintage: false };
 
 function WineForm() {
   const { slug } = useParams();
@@ -93,6 +93,8 @@ function WineForm() {
               id: v.id,
               year: v.year,
               prompt: v.prompt || "",
+              price: v.price ?? "",
+              no_vintage: Boolean(v.no_vintage),
             })),
           );
 
@@ -192,7 +194,13 @@ function WineForm() {
           ? parseInt(formData.producer_id, 10)
           : null,
         vintages_attributes: vintages.map((v) => {
-          const attr = { year: parseInt(v.year, 10), prompt: v.prompt || null };
+          const attr = {
+            year: parseInt(v.year, 10),
+            prompt: v.prompt || null,
+            price:
+              v.price === "" || v.price == null ? null : parseFloat(v.price),
+            no_vintage: Boolean(v.no_vintage),
+          };
           if (v.id) attr.id = v.id;
           return attr;
         }),
@@ -411,6 +419,36 @@ function WineForm() {
                   required
                   placeholder="e.g. 2020"
                 />
+              </label>
+              <label className="auth-form__field">
+                <span>Price</span>
+                <input
+                  type="number"
+                  value={vintage.price}
+                  onChange={(e) =>
+                    handleVintageChange(index, "price", e.target.value)
+                  }
+                  min={0}
+                  step={0.01}
+                  placeholder="e.g. 89.50"
+                />
+              </label>
+              <label
+                className="auth-form__field"
+                style={{ display: "flex", alignItems: "center", gap: 6 }}
+              >
+                <input
+                  type="checkbox"
+                  checked={Boolean(vintage.no_vintage)}
+                  onChange={(e) =>
+                    handleVintageChange(
+                      index,
+                      "no_vintage",
+                      e.target.checked,
+                    )
+                  }
+                />
+                <span>NV</span>
               </label>
               <label className="auth-form__field wine-form__vintage-prompt">
                 <span>Prompt</span>

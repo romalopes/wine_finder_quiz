@@ -3,7 +3,7 @@ import { reviewsApi, imagesApi } from "../services/api";
 import ImageManager from "./ImageManager";
 import RichTextEditor from "./RichTextEditor";
 
-function ReviewForm({ wineSlug, vintageId, review, onSaved, onCancel }) {
+function ReviewForm({ wineSlug, vintageId, vintageYear, review, onSaved, onCancel }) {
   const isEditing = Boolean(review);
 
   const [form, setForm] = useState(
@@ -13,12 +13,18 @@ function ReviewForm({ wineSlug, vintageId, review, onSaved, onCancel }) {
           comment: review.comment || "",
           score: review.score ?? 80,
           status: review.status || "draft",
+          drink_from: review.drink_from ?? "",
+          drink_to: review.drink_to ?? "",
+          drink_plus: Boolean(review.drink_plus),
         }
       : {
           title: "",
           comment: "",
           score: 80,
           status: "draft",
+          drink_from: "",
+          drink_to: "",
+          drink_plus: false,
         },
   );
   const [submitting, setSubmitting] = useState(false);
@@ -29,7 +35,18 @@ function ReviewForm({ wineSlug, vintageId, review, onSaved, onCancel }) {
 
   function updateField(field) {
     return (e) => {
-      const value = field === "score" ? Number(e.target.value) : e.target.value;
+      let value;
+      if (field === "drink_plus") {
+        value = e.target.checked;
+      } else if (
+        field === "score" ||
+        field === "drink_from" ||
+        field === "drink_to"
+      ) {
+        value = e.target.value === "" ? "" : Number(e.target.value);
+      } else {
+        value = e.target.value;
+      }
       setForm((prev) => ({ ...prev, [field]: value }));
     };
   }
@@ -44,6 +61,9 @@ function ReviewForm({ wineSlug, vintageId, review, onSaved, onCancel }) {
         ...form,
         published_at:
           form.status === "published" ? new Date().toISOString() : null,
+        drink_from: form.drink_from === "" ? null : Number(form.drink_from),
+        drink_to: form.drink_to === "" ? null : Number(form.drink_to),
+        drink_plus: Boolean(form.drink_plus),
       };
 
       if (isEditing) {
@@ -94,6 +114,47 @@ function ReviewForm({ wineSlug, vintageId, review, onSaved, onCancel }) {
           />
           <output className="review-form__score-value">{form.score}</output>
         </div>
+      </div>
+
+      <div className="review-form__field">
+        <label htmlFor="review-drink-from">Drink From</label>
+        <div className="review-form__score-row">
+          <input
+            id="review-drink-from"
+            type="number"
+            min={vintageYear || 1900}
+            value={form.drink_from}
+            onChange={updateField("drink_from")}
+            placeholder={vintageYear ? `e.g. ${vintageYear}` : "e.g. 2026"}
+          />
+        </div>
+      </div>
+      <div className="review-form__field">
+        <label htmlFor="review-drink-to">Drink To</label>
+        <div className="review-form__score-row">
+          <input
+            id="review-drink-to"
+            type="number"
+            min={form.drink_from === "" ? undefined : form.drink_from}
+            value={form.drink_to}
+            onChange={updateField("drink_to")}
+            placeholder="e.g. 2035"
+          />
+        </div>
+      </div>
+      <div
+        className="review-form__field"
+        style={{ display: "flex", alignItems: "center", gap: 8 }}
+      >
+        <input
+          id="review-drink-plus"
+          type="checkbox"
+          checked={form.drink_plus}
+          onChange={updateField("drink_plus")}
+        />
+        <label htmlFor="review-drink-plus" style={{ margin: 0 }}>
+          Drinking window can be extended (+)
+        </label>
       </div>
 
       <div className="review-form__field">

@@ -1,8 +1,16 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { winesApi } from "../services/api";
+import { useAuth } from "../contexts/AuthContext";
 
 function WineList() {
+  const { user } = useAuth();
+  // Only Super Users and Reviewers may add, edit or delete wines.
+  const canManageWines = Boolean(
+    user &&
+      Array.isArray(user.roles) &&
+      (user.roles.includes("Super User") || user.roles.includes("Reviewer")),
+  );
   const [wines, setWines] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -66,20 +74,24 @@ function WineList() {
           <p className="wine-kicker">Cellar</p>
           <h1>Wine List</h1>
         </div>
-        <Link
-          to="/wines/new"
-          className="auth-form__submit wine-management__add-btn"
-        >
-          + Add Wine
-        </Link>
+        {canManageWines && (
+          <Link
+            to="/wines/new"
+            className="auth-form__submit wine-management__add-btn"
+          >
+            + Add Wine
+          </Link>
+        )}
       </div>
 
       {wines.length === 0 ? (
         <div className="wine-management__empty">
-          <p>No wines found. Start by adding a new wine!</p>
-          <Link to="/wines/new" className="auth-form__submit">
-            + Add Your First Wine
-          </Link>
+          <p>No wines found{canManageWines ? ". Start by adding a new wine!" : "."}</p>
+          {canManageWines && (
+            <Link to="/wines/new" className="auth-form__submit">
+              + Add Your First Wine
+            </Link>
+          )}
         </div>
       ) : (
         <div className="wine-management__grid">
@@ -123,21 +135,23 @@ function WineList() {
                   {wine.vintages.length !== 1 ? "s" : ""}
                 </p>
               )}
-              <div className="wine-management__card-actions">
-                <Link
-                  to={`/wines/${wine.slug}/edit`}
-                  className="wine-management__edit-btn"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  Edit
-                </Link>
-                <button
-                  className="wine-management__delete-btn"
-                  onClick={(e) => handleDelete(wine, e)}
-                >
-                  Delete
-                </button>
-              </div>
+              {canManageWines && (
+                <div className="wine-management__card-actions">
+                  <Link
+                    to={`/wines/${wine.slug}/edit`}
+                    className="wine-management__edit-btn"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    Edit
+                  </Link>
+                  <button
+                    className="wine-management__delete-btn"
+                    onClick={(e) => handleDelete(wine, e)}
+                  >
+                    Delete
+                  </button>
+                </div>
+              )}
             </div>
           ))}
         </div>

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { winesApi, reviewsApi, tasteParametersApi } from "../services/api";
+import { winesApi, reviewsApi, tasteParametersApi, vintagesApi } from "../services/api";
 import { volumeLabel } from "../data/wineVolumes";
 import { useAuth } from "../contexts/AuthContext";
 import DOMPurify from "dompurify";
@@ -41,11 +41,50 @@ function WineDetail() {
   const { slug } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  // Only Super Users and Reviewers may edit or delete wines.
+  const canManageWines = Boolean(
+    user &&
+      Array.isArray(user.roles) &&
+      (user.roles.includes("Super User") || user.roles.includes("Reviewer")),
+  );
   const [wine, setWine] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [reviewsByVintage, setReviewsByVintage] = useState({});
   const [loadingReviews, setLoadingReviews] = useState({});
+
+  // Inline "add vintage" form (any signed-in user; enforced by the API too).
+  const [showVintageForm, setShowVintageForm] = useState(false);
+  const [newVintage, setNewVintage] = useState({
+    year: "",
+    prompt: "",
+    price: "",
+    no_vintage: false,
+  });
+  const [addingVintage, setAddingVintage] = useState(false);
+  const [vintageError, setVintageError] = useState(null);
+
+  async function handleAddVintage(e) {
+    e.preventDefault();
+    setAddingVintage(true);
+    setVintageError(null);
+    try {
+      await vintagesApi.create(slug, {
+        year: parseInt(newVintage.year, 10),
+        prompt: newVintage.prompt || null,
+        price:
+          newVintage.price === "" ? null : parseFloat(newVintage.price),
+        no_vintage: newVintage.no_vintage,
+      });
+      setNewVintage({ year: "", prompt: "", price: "", no_vintage: false });
+      setShowVintageForm(false);
+      await loadWine();
+    } catch (err) {
+      setVintageError(err.message || "Failed to add vintage");
+    } finally {
+      setAddingVintage(false);
+    }
+  }
   const [activeFormVintage, setActiveFormVintage] = useState(null);
   const [editingReview, setEditingReview] = useState(null);
   const [tasteLabels, setTasteLabels] = useState({});
@@ -208,39 +247,154 @@ function WineDetail() {
         </div>
       </div>
 
-      <div className="wine-detail__actions">
-        <Link to={`/wines/${wine.slug}/edit`} className="auth-form__submit">
-          Edit Wine
-        </Link>
-        <button
-          className="wine-management__delete-btn"
-          onClick={async () => {
-            if (
-              !window.confirm(
-                `Delete "${wine.name}"? This action cannot be undone.`,
+      {canManageWines && (
+        <div className="wine-detail__actions">
+          <Link to={`/wines/${wine.slug}/edit`} className="auth-form__submit">
+            Edit Wine
+          </Link>
+          <button
+            className="wine-management__delete-btn"
+            onClick={async () => {
+              if (
+                !window.confirm(
+                  `Delete "${wine.name}"? This action cannot be undone.`,
+                )
               )
-            )
-              return;
-            try {
-              await winesApi.destroy(wine.slug);
-              navigate("/wines", { replace: true });
-            } catch (err) {
-              alert(err.message || "Failed to delete wine");
-            }
-          }}
-        >
-          Delete Wine
-        </button>
-      </div>
+                return;
+              try {
+                await winesApi.destroy(wine.slug);
+                navigate("/wines", { replace: true });
+              } catch (err) {
+                alert(err.message || "Failed to delete wine");
+              }
+            }}
+          >
+            Delete Wine
+          </button>
+        </div>
+      )}
 
       <div className="wine-detail__section">
         <h2>Vintages</h2>
+        {user &&
+          (showVintageForm ? (
+            <form
+              className="review-form"
+              onSubmit={handleAddVintage}
+              style={{ marginBottom: 16 }}
+            >
+              {vintageError && (
+                <p className="review-form__error">{vintageError}</p>
+              )}
+              <div className="review-form__field">
+                <label htmlFor="new-vintage-year">Vintage Year *</label>
+                <input
+                  id="new-vintage-year"
+                  type="number"
+                  required
+                  min={1900}
+                  max={new Date().getFullYear() + 5}
+                  value={newVintage.year}
+                  onChange={(e) =>
+                    setNewVintage((prev) => ({ ...prev, year: e.target.value }))
+                  }
+                  placeholder="e.g. 2020"
+                  autoFocus
+                />
+              </div>
+              <div className="review-form__field">
+                <label htmlFor="new-vintage-prompt">Prompt (optional)</label>
+                <input
+                  id="new-vintage-prompt"
+                  type="text"
+                  value={newVintage.prompt}
+                  onChange={(e) =>
+                    setNewVintage((prev) => ({
+                      ...prev,
+                      prompt: e.target.value,
+                    }))
+                  }
+                  placeholder="Tasting notes for this vintage"
+                />
+              </div>
+              <div className="review-form__field">
+                <label htmlFor="new-vintage-price">Price (optional)</label>
+                <input
+                  id="new-vintage-price"
+                  type="number"
+                  min={0}
+                  step={0.01}
+                  value={newVintage.price}
+                  onChange={(e) =>
+                    setNewVintage((prev) => ({
+                      ...prev,
+                      price: e.target.value,
+                    }))
+                  }
+                  placeholder="e.g. 89.50"
+                />
+              </div>
+              <div
+                className="review-form__field"
+                style={{ display: "flex", alignItems: "center", gap: 8 }}
+              >
+                <input
+                  id="new-vintage-nv"
+                  type="checkbox"
+                  checked={Boolean(newVintage.no_vintage)}
+                  onChange={(e) =>
+                    setNewVintage((prev) => ({
+                      ...prev,
+                      no_vintage: e.target.checked,
+                    }))
+                  }
+                />
+                <label htmlFor="new-vintage-nv" style={{ margin: 0 }}>
+                  No vintage (NV)
+                </label>
+              </div>
+              <div className="review-form__actions">
+                <button
+                  type="submit"
+                  className="auth-form__submit"
+                  disabled={addingVintage}
+                >
+                  {addingVintage ? "Adding…" : "Add Vintage"}
+                </button>
+                <button
+                  type="button"
+                  className="review-form__cancel"
+                  onClick={() => {
+                    setShowVintageForm(false);
+                    setVintageError(null);
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          ) : (
+            <p style={{ marginBottom: 16 }}>
+              <button
+                type="button"
+                className="review-add-btn"
+                onClick={() => setShowVintageForm(true)}
+              >
+                + Add Vintage
+              </button>
+            </p>
+          ))}
         {wine.vintages && wine.vintages.length > 0 ? (
           <div className="wine-detail__vintages">
             {wine.vintages.map((vintage) => (
               <div key={vintage.id} className="wine-detail__vintage">
                 <div className="wine-detail__vintage-header">
-                  <strong>{vintage.year}</strong>
+                  <strong>{vintage.no_vintage ? "NV" : vintage.year}</strong>
+                  {vintage.price != null && (
+                    <span style={{ marginLeft: 8, fontWeight: 400 }}>
+                      ${Number(vintage.price).toFixed(2)}
+                    </span>
+                  )}
                   <button
                     type="button"
                     className="review-toggle-btn"
@@ -280,6 +434,16 @@ function WineDetail() {
                             {review.published_at && (
                               <span className="review-card__time">
                                 {timeAgo(review.published_at)}
+                              </span>
+                            )}
+                            {(review.drink_from != null ||
+                              review.drink_to != null) && (
+                              <span className="review-card__time">
+                                Drink {review.drink_from ?? ""}
+                                {review.drink_to != null
+                                  ? `–${review.drink_to}`
+                                  : ""}
+                                {review.drink_plus ? "+" : ""}
                               </span>
                             )}
                           </div>
@@ -382,6 +546,7 @@ function WineDetail() {
                     <ReviewForm
                       wineSlug={slug}
                       vintageId={vintage.id}
+                      vintageYear={vintage.year}
                       review={editingReview}
                       onSaved={() => handleReviewSaved(vintage.id)}
                       onCancel={() => setEditingReview(null)}
@@ -395,6 +560,7 @@ function WineDetail() {
                       <ReviewForm
                         wineSlug={slug}
                         vintageId={vintage.id}
+                        vintageYear={vintage.year}
                         onSaved={() => handleReviewSaved(vintage.id)}
                         onCancel={() => setActiveFormVintage(null)}
                       />

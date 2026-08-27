@@ -120,6 +120,7 @@ function ReviewDetail() {
       {isOwner && editing && (
         <ReviewForm
           review={review}
+          vintageYear={review.vintage_year}
           onSaved={() => {
             setEditing(false);
             loadReview();

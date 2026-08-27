@@ -12,6 +12,11 @@ function ProducerForm() {
     name: "",
     address: "",
     email: "",
+    producer_type: "",
+    website: "",
+    instagram: "",
+    facebook: "",
+    description: "",
   });
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -27,6 +32,11 @@ function ProducerForm() {
             name: data.name || "",
             address: data.address || "",
             email: data.email || "",
+            producer_type: data.producer_type || "",
+            website: data.website || "",
+            instagram: data.instagram || "",
+            facebook: data.facebook || "",
+            description: data.description || "",
           });
         } catch (err) {
           setError(err.message || "Failed to load producer");
@@ -53,6 +63,11 @@ function ProducerForm() {
         name: formData.name,
         address: formData.address || null,
         email: formData.email || null,
+        producer_type: formData.producer_type || null,
+        website: formData.website || null,
+        instagram: formData.instagram || null,
+        facebook: formData.facebook || null,
+        description: formData.description || null,
       };
 
       if (isEditing) {
@@ -121,13 +136,72 @@ function ProducerForm() {
             />
           </label>
           <label className="auth-form__field">
-            <span>Email</span>
+            <span>Email *</span>
             <input
               type="email"
               name="email"
               value={formData.email}
               onChange={handleChange}
+              required
               placeholder="e.g. contact@producer.com"
+            />
+          </label>
+          <label className="auth-form__field">
+            <span>Producer Type *</span>
+            <select
+              name="producer_type"
+              value={formData.producer_type}
+              onChange={handleChange}
+              required
+            >
+              <option value="">Select a type…</option>
+              <option value="winery">Winery</option>
+              <option value="negociant">Negociant</option>
+              <option value="cooperative">Cooperative</option>
+              <option value="wine_company">Wine Company</option>
+              <option value="independent_producer">
+                Independent Producer
+              </option>
+            </select>
+          </label>
+          <label className="auth-form__field">
+            <span>Website</span>
+            <input
+              type="url"
+              name="website"
+              value={formData.website}
+              onChange={handleChange}
+              placeholder="https://producer.com"
+            />
+          </label>
+          <label className="auth-form__field">
+            <span>Instagram</span>
+            <input
+              type="text"
+              name="instagram"
+              value={formData.instagram}
+              onChange={handleChange}
+              placeholder="@handle or full URL"
+            />
+          </label>
+          <label className="auth-form__field">
+            <span>Facebook</span>
+            <input
+              type="text"
+              name="facebook"
+              value={formData.facebook}
+              onChange={handleChange}
+              placeholder="Page name or full URL"
+            />
+          </label>
+          <label className="auth-form__field" style={{ gridColumn: "1 / -1" }}>
+            <span>Description</span>
+            <textarea
+              name="description"
+              rows={4}
+              value={formData.description}
+              onChange={handleChange}
+              placeholder="About this producer…"
             />
           </label>
         </div>

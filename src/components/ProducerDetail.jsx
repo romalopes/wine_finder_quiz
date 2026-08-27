@@ -1,13 +1,25 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { producersApi } from "../services/api";
+import { producersApi, winesApi } from "../services/api";
+import { useAuth } from "../contexts/AuthContext";
 
 function ProducerDetail() {
   const { slug } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  // Only Super Users and Reviewers may manage producers / link wines.
+  const canManageProducers = Boolean(
+    user && (user.roles.includes("Super User") || user.roles.includes("Reviewer")),
+  );
   const [producer, setProducer] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Inline wine search for linking wines to this producer.
+  const [wineQuery, setWineQuery] = useState("");
+  const [wineResults, setWineResults] = useState(null);
+  const [linking, setLinking] = useState(false);
+  const [linkError, setLinkError] = useState(null);
 
   const loadProducer = useCallback(async () => {
     try {
@@ -25,6 +37,48 @@ function ProducerDetail() {
   useEffect(() => {
     loadProducer();
   }, [loadProducer]);
+
+  // Debounced wine search for the linking UI.
+  useEffect(() => {
+    if (!canManageProducers) return undefined;
+    const query = wineQuery.trim();
+    if (query.length < 2) {
+      setWineResults(null);
+      return undefined;
+    }
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      try {
+        const results = await winesApi.search(query);
+        if (!cancelled) setWineResults(results.slice(0, 8));
+      } catch {
+        if (!cancelled) setWineResults([]);
+      }
+    }, 300);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [wineQuery, canManageProducers]);
+
+  async function handleLinkWine(wine) {
+    const current = wine.producer?.name;
+    const message =
+      current && current !== producer.name
+        ? `"${wine.name}" is currently linked to "${current}". Reassign it to "${producer.name}"?`
+        : `Link "${wine.name}" to "${producer.name}"?`;
+    if (!window.confirm(message)) return;
+    setLinking(true);
+    setLinkError(null);
+    try {
+      await winesApi.update(wine.slug, { producer_id: producer.id });
+      await loadProducer();
+    } catch (err) {
+      setLinkError(err.message || "Failed to link wine");
+    } finally {
+      setLinking(false);
+    }
+  }
 
   if (loading) {
     return (
@@ -75,14 +129,85 @@ function ProducerDetail() {
           </span>
         </div>
         <div className="wine-detail__spec">
+          <span className="wine-detail__spec-label">Type</span>
+          <span className="wine-detail__spec-value">
+            {producer.producer_type
+              ? producer.producer_type.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
+              : "—"}
+          </span>
+        </div>
+        <div className="wine-detail__spec">
           <span className="wine-detail__spec-label">Email</span>
           <span className="wine-detail__spec-value">
             {producer.email || "—"}
           </span>
         </div>
+        <div className="wine-detail__spec">
+          <span className="wine-detail__spec-label">Website</span>
+          <span className="wine-detail__spec-value">
+            {producer.website ? (
+              <a
+                href={producer.website}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {producer.website}
+              </a>
+            ) : (
+              "—"
+            )}
+          </span>
+        </div>
+        <div className="wine-detail__spec">
+          <span className="wine-detail__spec-label">Instagram</span>
+          <span className="wine-detail__spec-value">
+            {producer.instagram ? (
+              <a
+                href={
+                  producer.instagram.startsWith("http")
+                    ? producer.instagram
+                    : `https://instagram.com/${producer.instagram.replace("@", "")}`
+                }
+                target="_blank"
+                rel="noreferrer"
+              >
+                {producer.instagram}
+              </a>
+            ) : (
+              "—"
+            )}
+          </span>
+        </div>
+        <div className="wine-detail__spec">
+          <span className="wine-detail__spec-label">Facebook</span>
+          <span className="wine-detail__spec-value">
+            {producer.facebook ? (
+              <a
+                href={
+                  producer.facebook.startsWith("http")
+                    ? producer.facebook
+                    : `https://facebook.com/${producer.facebook}`
+                }
+                target="_blank"
+                rel="noreferrer"
+              >
+                {producer.facebook}
+              </a>
+            ) : (
+              "—"
+            )}
+          </span>
+        </div>
+        <div className="wine-detail__spec">
+          <span className="wine-detail__spec-label">Description</span>
+          <span className="wine-detail__spec-value">
+            {producer.description || "—"}
+          </span>
+        </div>
       </div>
 
-      <div className="wine-detail__actions">
+      {canManageProducers && (
+        <div className="wine-detail__actions">
         <Link
           to={`/producers/${producer.slug}/edit`}
           className="auth-form__submit"
@@ -108,7 +233,79 @@ function ProducerDetail() {
         >
           Delete Producer
         </button>
-      </div>
+        </div>
+      )}
+
+      {canManageProducers && (
+        <div className="wine-detail__section">
+          <h2>Link a Wine</h2>
+          <div className="review-form__field">
+            <label htmlFor="producer-wine-search">
+              Search wines by name to link them to {producer.name}
+            </label>
+            <input
+              id="producer-wine-search"
+              type="text"
+              value={wineQuery}
+              onChange={(e) => setWineQuery(e.target.value)}
+              placeholder="Search wines by name…"
+            />
+          </div>
+          {linkError && <p className="review-form__error">{linkError}</p>}
+          {wineResults != null &&
+            (wineResults.length === 0 ? (
+              <p className="wine-management__empty-state">No matching wines.</p>
+            ) : (
+              <ul
+                className="wine-list"
+                style={{ display: "grid", gap: 6, listStyle: "none", padding: 0 }}
+              >
+                {wineResults.map((wine) => {
+                  const linkedHere =
+                    wine.producer?.slug === producer.slug ||
+                    wine.producer?.id === producer.id;
+                  return (
+                    <li
+                      key={wine.slug}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 10,
+                        border: "1px solid #d8c8c0",
+                        borderRadius: 8,
+                        padding: "8px 12px",
+                        background: "#fff",
+                      }}
+                    >
+                      <strong>{wine.name}</strong>
+                      {linkedHere ? (
+                        <span style={{ color: "#2e7d43", fontWeight: 700 }}>
+                          Linked here ✓
+                        </span>
+                      ) : (
+                        <>
+                          <span style={{ color: "#666", fontSize: ".85rem" }}>
+                            {wine.producer?.name
+                              ? `currently with ${wine.producer.name}`
+                              : "no producer"}
+                          </span>
+                          <button
+                            type="button"
+                            className="review-form__status-btn"
+                            disabled={linking}
+                            onClick={() => handleLinkWine(wine)}
+                          >
+                            Link
+                          </button>
+                        </>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            ))}
+        </div>
+      )}
 
       <div className="wine-detail__section">
         <h2>Wines</h2>
