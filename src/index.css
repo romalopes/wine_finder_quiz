@@ -2001,3 +2001,42 @@ textarea {
   border-radius: 0.6rem;
   margin-bottom: 0.75rem;
 }
+
+/* ===== Content Grid by Category (4 columns) ===== */
+.content-grid-group {
+  margin-bottom: 2.5rem;
+}
+
+.content-grid-group__title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #4f4440;
+  margin: 0 0 1rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e4d9cd;
+}
+
+.content-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+}
+
+@media (max-width: 1200px) {
+  .content-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 900px) {
+  .content-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
+}
+

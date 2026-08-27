@@ -91,67 +91,93 @@ function WineList() {
           )}
         </div>
       ) : (
-        <div className="wine-management__grid">
-          {wines.map((wine) => (
-            <div
-              key={wine.slug}
-              className="wine-management__card"
-              onClick={() => navigate(`/wines/${wine.slug}`)}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  navigate(`/wines/${wine.slug}`);
-                }
-              }}
-            >
-              {Array.isArray(wine.images) && wine.images.length > 0 && (
-                <img
-                  src={wine.images[0]}
-                  alt={wine.name}
-                  className="wine-management__thumb"
-                />
-              )}
-              <div className="wine-management__card-header">
-                <h3>{wine.name}</h3>
-                <span
-                  className={`wine-management__color-badge wine-management__color-badge--${wine.color}`}
-                >
-                  {wine.color}
-                </span>
-              </div>
-              <p className="wine-management__region">{wine.region}</p>
-              {wine.producer && (
-                <p className="wine-management__producer">
-                  {wine.producer.name}
-                </p>
-              )}
-              {wine.vintages && wine.vintages.length > 0 && (
-                <p className="wine-management__vintage-count">
-                  {wine.vintages.length} vintage
-                  {wine.vintages.length !== 1 ? "s" : ""}
-                </p>
-              )}
-              {canManageWines && (
-                <div className="wine-management__card-actions">
-                  <Link
-                    to={`/wines/${wine.slug}/edit`}
-                    className="wine-management__edit-btn"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    Edit
-                  </Link>
-                  <button
-                    className="wine-management__delete-btn"
-                    onClick={(e) => handleDelete(wine, e)}
-                  >
-                    Delete
-                  </button>
-                </div>
-              )}
+        (() => {
+          // Group wines by category
+          const grouped = wines.reduce((acc, wine) => {
+            const key = wine.category || "Uncategorized";
+            if (!acc[key]) acc[key] = [];
+            acc[key].push(wine);
+            return acc;
+          }, {});
+
+          // Sort categories: Uncategorized last, others alphabetically
+          const sortedCategories = Object.keys(grouped).sort((a, b) => {
+            if (a === "Uncategorized") return 1;
+            if (b === "Uncategorized") return -1;
+            return a.localeCompare(b);
+          });
+
+          return (
+            <div className="content-grid-groups">
+              {sortedCategories.map((category) => (
+                <section key={category} className="content-grid-group">
+                  <h2 className="content-grid-group__title">{category}</h2>
+                  <div className="content-grid">
+                    {grouped[category].map((wine) => (
+                      <div
+                        key={wine.slug}
+                        className="wine-management__card"
+                        onClick={() => navigate(`/wines/${wine.slug}`)}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            navigate(`/wines/${wine.slug}`);
+                          }
+                        }}
+                      >
+                        {Array.isArray(wine.images) && wine.images.length > 0 && (
+                          <img
+                            src={wine.images[0]}
+                            alt={wine.name}
+                            className="wine-management__thumb"
+                          />
+                        )}
+                        <div className="wine-management__card-header">
+                          <h3>{wine.name}</h3>
+                          <span
+                            className={`wine-management__color-badge wine-management__color-badge--${wine.color}`}
+                          >
+                            {wine.color}
+                          </span>
+                        </div>
+                        <p className="wine-management__region">{wine.region}</p>
+                        {wine.producer && (
+                          <p className="wine-management__producer">
+                            {wine.producer.name}
+                          </p>
+                        )}
+                        {wine.vintages && wine.vintages.length > 0 && (
+                          <p className="wine-management__vintage-count">
+                            {wine.vintages.length} vintage
+                            {wine.vintages.length !== 1 ? "s" : ""}
+                          </p>
+                        )}
+                        {canManageWines && (
+                          <div className="wine-management__card-actions">
+                            <Link
+                              to={`/wines/${wine.slug}/edit`}
+                              className="wine-management__edit-btn"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              Edit
+                            </Link>
+                            <button
+                              className="wine-management__delete-btn"
+                              onClick={(e) => handleDelete(wine, e)}
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              ))}
             </div>
-          ))}
-        </div>
+          );
+        })()
       )}
     </div>
   );

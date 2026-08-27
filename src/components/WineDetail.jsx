@@ -219,6 +219,18 @@ function WineDetail() {
           </span>
         </div>
         <div className="wine-detail__spec">
+          <span className="wine-detail__spec-label">Category</span>
+          <span className="wine-detail__spec-value">
+            {wine.category ? (
+              <Link to={`/categories/${wine.category.slug}`}>
+                {wine.category.name}
+              </Link>
+            ) : (
+              "—"
+            )}
+          </span>
+        </div>
+        <div className="wine-detail__spec">
           <span className="wine-detail__spec-label">Closure</span>
           <span className="wine-detail__spec-value">{wine.closure || "—"}</span>
         </div>

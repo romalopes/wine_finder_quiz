@@ -5,6 +5,14 @@ import ArticleForm from "./ArticleForm";
 import { useAuth } from "../contexts/AuthContext";
 import { isSuperUser, canManageWinesRole } from "../constants/roles";
 
+function excerpt(text, max = 50) {
+  if (!text) return "";
+  // Strip HTML tags for a plain-text excerpt
+  const stripped = text.replace(/<[^>]+>/g, "").trim();
+  if (stripped.length <= max) return stripped;
+  return stripped.slice(0, max) + "…";
+}
+
 function Articles() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -189,64 +197,79 @@ function Articles() {
                 </p>
               );
             }
-            return (
-        <div className="review-list">
-          {filtered.map((article) => (
-            <div key={article.id} className="review-card" style={{ cursor: "pointer" }}
-              onClick={() => navigate(`/articles/${article.id}`)}>
-              {Array.isArray(article.images) && article.images.length > 0 && (
-                <img
-                  src={article.images[0]}
-                  alt={article.title}
-                  className="wine-management__thumb"
-                />
-              )}
-              <div className="review-card__top">
-                <span className="my-reviews__wine-link">{article.title}</span>
-                {canManageContent && (
-                  <span className="review-card__status">{article.status}</span>
-                )}
-                {canManageContent && article.published_at && (
-                  <span className="review-card__time">
-                    {new Date(article.published_at).toLocaleDateString()}
-                  </span>
-                )}
-              </div>
-              <p className="review-card__comment">
-                {[article.category, `by ${article.author_name}`].filter(Boolean).join(" · ")}
-              </p>
-              {Array.isArray(article.tags) && article.tags.length > 0 && (
-                <p className="review-card__comment">Tags: {article.tags.join(", ")}</p>
-              )}
-              {article.abstract && (
-                <p className="review-card__comment">{article.abstract}</p>
-              )}
+            // Group by category
+            const grouped = filtered.reduce((acc, article) => {
+              const key = article.category || "Uncategorized";
+              if (!acc[key]) acc[key] = [];
+              acc[key].push(article);
+              return acc;
+            }, {});
 
-              {canManage(article) && (
-                <div className="review-card__actions" onClick={(e) => e.stopPropagation()}>
-                  <Link to={`/articles/${article.id}/edit`} className="review-card__edit">
-                    Edit
-                  </Link>
-                  <button
-                    type="button"
-                    className={article.status === "draft" ? "review-card__publish" : "review-card__unpublish"}
-                    onClick={() => togglePublish(article)}
-                  >
-                    {article.status === "draft" ? "Publish" : "Unpublish"}
-                  </button>
-                  <button
-                    type="button"
-                    className="review-card__delete"
-                    onClick={() => handleDelete(article.id)}
-                    title="Delete article"
-                  >
-                    &times;
-                  </button>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
+            return (
+              <div className="content-grid-groups">
+                {Object.entries(grouped).map(([category, articlesInGroup]) => (
+                  <section key={category} className="content-grid-group">
+                    <h2 className="content-grid-group__title">{category}</h2>
+                    <div className="content-grid">
+                      {articlesInGroup.map((article) => (
+                        <div key={article.id} className="review-card" style={{ cursor: "pointer" }}
+                          onClick={() => navigate(`/articles/${article.id}`)}>
+                          {Array.isArray(article.images) && article.images.length > 0 && (
+                            <img
+                              src={article.images[0]}
+                              alt={article.title}
+                              className="wine-management__thumb"
+                            />
+                          )}
+                          <div className="review-card__top">
+                            <span className="my-reviews__wine-link">{article.title}</span>
+                            {canManageContent && (
+                              <span className="review-card__status">{article.status}</span>
+                            )}
+                            {canManageContent && article.published_at && (
+                              <span className="review-card__time">
+                                {new Date(article.published_at).toLocaleDateString()}
+                              </span>
+                            )}
+                          </div>
+                          <p className="review-card__comment">
+                            {[`by ${article.author_name}`].filter(Boolean).join(" · ")}
+                          </p>
+                          {Array.isArray(article.tags) && article.tags.length > 0 && (
+                            <p className="review-card__comment">Tags: {article.tags.join(", ")}</p>
+                          )}
+                          {excerpt(article.body, 50) && (
+                            <p className="review-card__comment">{excerpt(article.body, 50)}</p>
+                          )}
+
+                          {canManage(article) && (
+                            <div className="review-card__actions" onClick={(e) => e.stopPropagation()}>
+                              <Link to={`/articles/${article.id}/edit`} className="review-card__edit">
+                                Edit
+                              </Link>
+                              <button
+                                type="button"
+                                className={article.status === "draft" ? "review-card__publish" : "review-card__unpublish"}
+                                onClick={() => togglePublish(article)}
+                              >
+                                {article.status === "draft" ? "Publish" : "Unpublish"}
+                              </button>
+                              <button
+                                type="button"
+                                className="review-card__delete"
+                                onClick={() => handleDelete(article.id)}
+                                title="Delete article"
+                              >
+                                &times;
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                ))}
+              </div>
             );
           })()}
         </>

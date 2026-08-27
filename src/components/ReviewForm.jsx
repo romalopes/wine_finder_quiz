@@ -1,9 +1,16 @@
-import { useState } from "react";
-import { reviewsApi, imagesApi } from "../services/api";
+import { useEffect, useState } from "react";
+import { reviewsApi, imagesApi, categoriesApi } from "../services/api";
 import ImageManager from "./ImageManager";
 import RichTextEditor from "./RichTextEditor";
 
-function ReviewForm({ wineSlug, vintageId, vintageYear, review, onSaved, onCancel }) {
+function ReviewForm({
+  wineSlug,
+  vintageId,
+  vintageYear,
+  review,
+  onSaved,
+  onCancel,
+}) {
   const isEditing = Boolean(review);
 
   const [form, setForm] = useState(
@@ -16,6 +23,7 @@ function ReviewForm({ wineSlug, vintageId, vintageYear, review, onSaved, onCance
           drink_from: review.drink_from ?? "",
           drink_to: review.drink_to ?? "",
           drink_plus: Boolean(review.drink_plus),
+          category_id: review.category_id || "",
         }
       : {
           title: "",
@@ -25,14 +33,33 @@ function ReviewForm({ wineSlug, vintageId, vintageYear, review, onSaved, onCance
           drink_from: "",
           drink_to: "",
           drink_plus: false,
+          category_id: "",
         },
   );
+
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [images, setImages] = useState(null);
   const [existingImages, setExistingImages] = useState(review?.images || []);
-  const [existingImageIds, setExistingImageIds] = useState(review?.image_ids || []);
+  const [existingImageIds, setExistingImageIds] = useState(
+    review?.image_ids || [],
+  );
+  const [categories, setCategories] = useState([]);
 
+  useEffect(() => {
+    async function loadCategories() {
+      try {
+        const allCategories = await categoriesApi.list();
+        const reviewCategories = allCategories
+          .filter((c) => c.for_review)
+          .sort((a, b) => a.sort_order_review - b.sort_order_review);
+        setCategories(reviewCategories);
+      } catch {
+        setCategories([]);
+      }
+    }
+    loadCategories();
+  }, []);
   function updateField(field) {
     return (e) => {
       let value;
@@ -89,6 +116,25 @@ function ReviewForm({ wineSlug, vintageId, vintageYear, review, onSaved, onCance
   return (
     <form className="review-form" onSubmit={handleSubmit}>
       <div className="review-form__field">
+        <div className="review-form__field">
+          <label htmlFor="review-category">Category</label>
+          <select
+            id="review-category"
+            name="review-category"
+            value={form.category_id}
+            onChange={updateField("category_id")}
+            required
+          >
+            <option value="" disabled>
+              Select a category
+            </option>
+            {categories.map((category) => (
+              <option key={category.id} value={category.id}>
+                {category.name}
+              </option>
+            ))}
+          </select>
+        </div>
         <label htmlFor="review-title">Title</label>
         <input
           id="review-title"
@@ -161,15 +207,15 @@ function ReviewForm({ wineSlug, vintageId, vintageYear, review, onSaved, onCance
         <span className="image-manager__label">Comment</span>
         <RichTextEditor
           value={form.comment}
-          onChange={(html) =>
-            setForm((prev) => ({ ...prev, comment: html }))
-          }
+          onChange={(html) => setForm((prev) => ({ ...prev, comment: html }))}
           placeholder="What did you think of this vintage?"
         />
       </div>
 
       <div className="review-form__field">
-        <span className="image-manager__label">Images (click + to add, × to remove)</span>
+        <span className="image-manager__label">
+          Images (click + to add, × to remove)
+        </span>
         <ImageManager
           imageableType="review"
           images={existingImages}

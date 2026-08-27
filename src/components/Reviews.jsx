@@ -7,6 +7,14 @@ import { useAuth } from "../contexts/AuthContext";
 import { isSuperUser, canManageWinesRole } from "../constants/roles";
 import DOMPurify from "dompurify";
 
+function excerpt(html, max = 50) {
+  if (!html) return "";
+  const stripped = html.replace(/<[^>]+>/g, "").trim();
+  if (stripped.length <= max) return stripped;
+  return stripped.slice(0, max) + "…";
+}
+
+
 function RichComment({ html }) {
   return (
     <div
@@ -538,6 +546,14 @@ function ReviewsList({
       ? reviews
       : reviews.filter((r) => r.status === statusFilter);
 
+  // Group by category
+  const grouped = filtered.reduce((acc, review) => {
+    const key = review.category || "Uncategorized";
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(review);
+    return acc;
+  }, {});
+
   if (scope === "mine" && !user) {
     return (
       <p className="wine-management__empty-state">Sign in to see your reviews.</p>
@@ -555,8 +571,12 @@ function ReviewsList({
     );
   }
   return (
-    <div className="review-list">
-          {filtered.map((review) => (
+    <div className="content-grid-groups">
+      {Object.entries(grouped).map(([category, reviewsInGroup]) => (
+        <section key={category} className="content-grid-group">
+          <h2 className="content-grid-group__title">{category}</h2>
+          <div className="content-grid">
+            {reviewsInGroup.map((review) => (
             <div
               key={review.id}
               className={`review-card ${review.status === "draft" ? "review-card--draft" : ""}`}
@@ -599,7 +619,9 @@ function ReviewsList({
                   {review.drink_plus ? "+" : ""}
                 </p>
               )}
-              {review.comment && <RichComment html={review.comment} />}
+              {excerpt(review.comment, 50) && (
+                <p className="review-card__comment">{excerpt(review.comment, 50)}</p>
+              )}
               {(Array.isArray(review.images) && review.images.length > 0
                 ? review.images[0]
                 : review.wine_image) && (
@@ -673,6 +695,9 @@ function ReviewsList({
             </div>
           ))}
         </div>
+      </section>
+    ))}
+  </div>
   );
 }
 

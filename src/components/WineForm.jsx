@@ -4,6 +4,7 @@ import {
   winesApi,
   tasteParametersApi,
   imagesApi,
+  categoriesApi,
 } from "../services/api";
 import ImageManager from "./ImageManager";
 import ProducerSearch from "./ProducerSearch";
@@ -33,8 +34,10 @@ function WineForm() {
     prompt: "",
     producer_id: "",
     producer_name: "",
+    category_id: "",
   });
 
+  const [wineCategories, setWineCategories] = useState([]);
   const [vintages, setVintages] = useState([]);
   const [tasteParams, setTasteParams] = useState([]);
   const [tasteScores, setTasteScores] = useState([]);
@@ -48,11 +51,14 @@ function WineForm() {
     async function initFormData() {
       try {
         setLoading(true);
-        // 1. Load global taste parameters first
-        const globalParams = await tasteParametersApi.list();
-        // The API returns the array directly, not wrapped in data.parameters
+                        // 1. Load taste parameters and wine categories (for this form)
+        const [globalParams, wineCats] = await Promise.all([
+          tasteParametersApi.list(),
+          categoriesApi.list("wine"),
+        ]);
         const paramsArray = Array.isArray(globalParams) ? globalParams : [];
         setTasteParams(paramsArray);
+        setWineCategories(wineCats || []);
 
         // Set baseline defaults
         let initialScores = paramsArray.map((p) => ({
@@ -83,9 +89,10 @@ function WineForm() {
               wineData.volume_ml != null
                 ? String(wineData.volume_ml)
                 : String(DEFAULT_VOLUME),
-            prompt: wineData.prompt || "",
+                        prompt: wineData.prompt || "",
             producer_id: wineData.producer?.id || "",
             producer_name: wineData.producer?.name || "",
+            category_id: wineData.category_id ?? "",
           });
 
           setVintages(
@@ -190,8 +197,11 @@ function WineForm() {
           : null,
         volume_ml: formData.volume_ml ? parseInt(formData.volume_ml, 10) : null,
         prompt: formData.prompt || null,
-        producer_id: formData.producer_id
+                producer_id: formData.producer_id
           ? parseInt(formData.producer_id, 10)
+          : null,
+        category_id: formData.category_id
+          ? parseInt(formData.category_id, 10)
           : null,
         vintages_attributes: vintages.map((v) => {
           const attr = {
@@ -256,7 +266,25 @@ function WineForm() {
               value={formData.producer_name}
               onChange={handleProducerChange}
             />
-          </div>
+                    </div>
+          <label className="auth-form__field">
+            <span>Category</span>
+            <select
+              name="category_id"
+              value={formData.category_id}
+              onChange={handleChange}
+            >
+              <option value="">Select a category (optional)</option>
+              {wineCategories.map(
+                (cat) =>
+                  cat && (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </option>
+                  ),
+              )}
+            </select>
+          </label>
           <label className="auth-form__field">
             <span>Name *</span>
             <input

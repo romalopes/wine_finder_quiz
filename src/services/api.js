@@ -310,8 +310,11 @@ export const articlesApi = {
 };
 
 export const categoriesApi = {
-  list() {
-    return request("/categories");
+  list(type = null) {
+    const params = new URLSearchParams();
+    if (type) params.set("type", type);
+    const query = params.toString();
+    return request(`/categories${query ? `?${query}` : ""}`);
   },
 };
 
