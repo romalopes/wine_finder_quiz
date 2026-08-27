@@ -1,8 +1,13 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { producersApi } from "../services/api";
+import { useAuth } from "../contexts/AuthContext";
+import { canManageWinesRole } from "../constants/roles";
 
 function ProducerList() {
+  const { user } = useAuth();
+  // Super Users, Reviewers and Editors may add, edit or delete wines.
+  const canManageProducers = canManageWinesRole(user);
   const [producers, setProducers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -51,12 +56,14 @@ function ProducerList() {
           <p className="wine-kicker">Cellar</p>
           <h1>Producers</h1>
         </div>
-        <Link
-          to="/producers/new"
-          className="auth-form__submit wine-management__add-btn"
-        >
-          + Add Producer
-        </Link>
+        {canManageProducers && (
+          <Link
+            to="/producers/new"
+            className="auth-form__submit wine-management__add-btn"
+          >
+            + Add Producer
+          </Link>
+        )}
       </div>
 
       {producers.length === 0 ? (

@@ -3,12 +3,15 @@ import { Link, useNavigate } from "react-router-dom";
 import { articlesApi } from "../services/api";
 import ArticleForm from "./ArticleForm";
 import { useAuth } from "../contexts/AuthContext";
+import { isSuperUser, canManageWinesRole } from "../constants/roles";
 
 function Articles() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const isSuperUser =
-    Array.isArray(user?.roles) && user.roles.includes("Super User");
+  const canSeeAll = isSuperUser(user);
+  // Super Users, Editors and Reviewers see the management filters and the
+  // add button; Guests/Readers only see published articles.
+  const canManageContent = canManageWinesRole(user);
   const [articles, setArticles] = useState([]);
   const [myArticles, setMyArticles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -44,7 +47,7 @@ function Articles() {
 
   function canManage(article) {
     return Boolean(
-      user && (isSuperUser || Number(article.user_id) === Number(user.id)),
+      user && (canSeeAll || Number(article.user_id) === Number(user.id)),
     );
   }
 
@@ -73,7 +76,7 @@ function Articles() {
     <main className="wine-app">
       <div className="wine-management__header">
         <h1>Articles</h1>
-        {user && (
+        {canManageContent && (
           <button
             type="button"
             className="auth-form__submit"
@@ -101,33 +104,34 @@ function Articles() {
           <p className="wine-management__loading">Loading articles…</p>
         ) : (
         <>
-          {/* Scope toggle: All Articles / My Articles */}
           <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-            {[
-              { key: "all", label: "All Articles" },
-              ...(user ? [{ key: "mine", label: "My Articles" }] : []),
-            ].map(({ key, label }) => (
-              <button
-                key={key}
-                type="button"
-                style={{
-                  border: "1px solid #d7c8bb",
-                  borderRadius: "999px",
-                  padding: "8px 14px",
-                  fontWeight: 800,
-                  fontSize: "0.85rem",
-                  cursor: "pointer",
-                  background: scope === key ? "#27615e" : "#fff",
-                  color: scope === key ? "#f7fff9" : "#4f4440",
-                  borderColor: scope === key ? "#27615e" : "#d7c8bb",
-                }}
-                onClick={() => setScope(key)}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
+          {(!canManageContent ? [] : [
+            { key: "all", label: "All Articles" },
+            ...(user ? [{ key: "mine", label: "My Articles" }] : []),
+          ]).map(({ key, label }) => (
+            <button
+              key={key}
+              type="button"
+              style={{
+                border: "1px solid #d7c8bb",
+                borderRadius: "999px",
+                padding: "8px 14px",
+                fontWeight: 800,
+                fontSize: "0.85rem",
+                cursor: "pointer",
+                background: scope === key ? "#27615e" : "#fff",
+                color: scope === key ? "#f7fff9" : "#4f4440",
+                borderColor: scope === key ? "#27615e" : "#d7c8bb",
+              }}
+              onClick={() => setScope(key)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
 
+        {canManageContent && (
+          <>
           {/* Status filter: All / Draft / Published */}
           <div style={{ display: "flex", gap: 8, marginBottom: 24 }}>
             {["all", "draft", "published"].map((filter) => (
@@ -151,15 +155,23 @@ function Articles() {
               </button>
             ))}
           </div>
+          </>
+        )}
 
           {(() => {
-            const source = scope === "mine" ? myArticles : articles;
+            // Guests/Readers only ever see published articles.
+            const effectiveScope = canManageContent ? scope : "all";
+            const effectiveStatus = canManageContent
+              ? statusFilter
+              : "published";
+            const source =
+              effectiveScope === "mine" ? myArticles : articles;
             const filtered =
-              statusFilter === "all"
+              effectiveStatus === "all"
                 ? source
-                : source.filter((a) => a.status === statusFilter);
+                : source.filter((a) => a.status === effectiveStatus);
 
-            if (scope === "mine" && !user) {
+            if (effectiveScope === "mine" && !user) {
               return (
                 <p className="wine-management__empty-state">
                   Sign in to see your articles.
@@ -191,8 +203,10 @@ function Articles() {
               )}
               <div className="review-card__top">
                 <span className="my-reviews__wine-link">{article.title}</span>
-                <span className="review-card__status">{article.status}</span>
-                {article.published_at && (
+                {canManageContent && (
+                  <span className="review-card__status">{article.status}</span>
+                )}
+                {canManageContent && article.published_at && (
                   <span className="review-card__time">
                     {new Date(article.published_at).toLocaleDateString()}
                   </span>

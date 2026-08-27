@@ -2,10 +2,11 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { usersApi } from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
+import { isSuperUser } from "../constants/roles";
 
 function UserRoles() {
   const { user } = useAuth();
-  const isSuperUser = Array.isArray(user?.roles) && user.roles.includes("Super User");
+  const isAdmin = isSuperUser(user);
 
   const [allRoles, setAllRoles] = useState([]);
   const [query, setQuery] = useState("");
@@ -85,7 +86,7 @@ function UserRoles() {
     }
   }
 
-  if (!isSuperUser) {
+  if (!isAdmin) {
     return (
       <main className="wine-app">
         <p className="wine-management__empty-state">

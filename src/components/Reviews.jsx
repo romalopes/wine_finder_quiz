@@ -4,6 +4,7 @@ import { reviewsApi, winesApi, vintagesApi } from "../services/api";
 import ReviewForm from "./ReviewForm";
 import WineQuickCreate from "./WineQuickCreate";
 import { useAuth } from "../contexts/AuthContext";
+import { isSuperUser, canManageWinesRole } from "../constants/roles";
 import DOMPurify from "dompurify";
 
 function RichComment({ html }) {
@@ -28,8 +29,10 @@ function timeAgo(dateStr) {
 
 function Reviews() {
   const { user } = useAuth();
-  const isSuperUser =
-    Array.isArray(user?.roles) && user.roles.includes("Super User");
+  const canSeeAll = isSuperUser(user);
+  // Super Users, Editors and Reviewers see the management filters and the
+  // add button; Guests/Readers only see published reviews.
+  const canManageContent = canManageWinesRole(user);
   const [reviews, setReviews] = useState([]);
   const [myReviews, setMyReviews] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -83,7 +86,7 @@ function Reviews() {
 
   function canManage(review) {
     return Boolean(
-      user && (isSuperUser || Number(review.user_id) === Number(user.id)),
+      user && (canSeeAll || Number(review.user_id) === Number(user.id)),
     );
   }
 
@@ -200,7 +203,7 @@ function Reviews() {
     <main className="wine-app">
       <div className="wine-management__header">
         <h1>Reviews</h1>
-        {user && (
+        {canManageContent && (
           <button
             type="button"
             className="auth-form__submit"
@@ -440,10 +443,10 @@ function Reviews() {
         <>
           {/* Scope toggle: everyone's reviews vs my reviews */}
           <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-            {[
+            {(!canManageContent ? [] : [
               { key: "all", label: "All Reviews" },
               ...(user ? [{ key: "mine", label: "My Reviews" }] : []),
-            ].map(({ key, label }) => (
+            ]).map(({ key, label }) => (
               <button
                 key={key}
                 type="button"
@@ -466,6 +469,8 @@ function Reviews() {
             ))}
           </div>
 
+          {canManageContent && (
+          <>
           {/* Status filter: All / Draft / Published */}
           <div style={{ display: "flex", gap: 8, marginBottom: 24 }}>
             {["all", "draft", "published"].map((filter) => (
@@ -489,12 +494,14 @@ function Reviews() {
               </button>
             ))}
           </div>
+          </>
+          )}
 
           <ReviewsList
             reviews={scope === "mine" ? myReviews : reviews}
             scope={scope}
             user={user}
-            statusFilter={statusFilter}
+            statusFilter={canManageContent ? statusFilter : "published"}
             canManage={canManage}
             editingReview={editingReview}
             setEditingReview={setEditingReview}
@@ -561,8 +568,10 @@ function ReviewsList({
                   {review.title || "Untitled review"}
                 </h3>
                 <span className="review-card__score">{review.score}</span>
-                <span className="review-card__status">{review.status}</span>
-                {review.published_at && (
+                {statusFilter !== "published" && (
+                  <span className="review-card__status">{review.status}</span>
+                )}
+                {statusFilter !== "published" && review.published_at && (
                   <span className="review-card__time">
                     {timeAgo(review.published_at)}
                   </span>

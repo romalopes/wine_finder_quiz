@@ -2,15 +2,14 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { producersApi, winesApi } from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
+import { canManageWinesRole } from "../constants/roles";
 
 function ProducerDetail() {
   const { slug } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  // Only Super Users and Reviewers may manage producers / link wines.
-  const canManageProducers = Boolean(
-    user && (user.roles.includes("Super User") || user.roles.includes("Reviewer")),
-  );
+  // Super Users, Reviewers and Editors may manage producers / link wines.
+  const canManageProducers = canManageWinesRole(user);
   const [producer, setProducer] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);

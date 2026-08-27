@@ -2,15 +2,12 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { winesApi } from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
+import { canManageWinesRole } from "../constants/roles";
 
 function WineList() {
   const { user } = useAuth();
-  // Only Super Users and Reviewers may add, edit or delete wines.
-  const canManageWines = Boolean(
-    user &&
-      Array.isArray(user.roles) &&
-      (user.roles.includes("Super User") || user.roles.includes("Reviewer")),
-  );
+  // Super Users, Reviewers and Editors may add, edit or delete wines.
+  const canManageWines = canManageWinesRole(user);
   const [wines, setWines] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);

@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { winesApi, reviewsApi, tasteParametersApi, vintagesApi } from "../services/api";
 import { volumeLabel } from "../data/wineVolumes";
 import { useAuth } from "../contexts/AuthContext";
+import { canManageWinesRole } from "../constants/roles";
 import DOMPurify from "dompurify";
 
 function RichComment({ html }) {
@@ -41,12 +42,8 @@ function WineDetail() {
   const { slug } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  // Only Super Users and Reviewers may edit or delete wines.
-  const canManageWines = Boolean(
-    user &&
-      Array.isArray(user.roles) &&
-      (user.roles.includes("Super User") || user.roles.includes("Reviewer")),
-  );
+  // Super Users, Reviewers and Editors may edit or delete wines.
+  const canManageWines = canManageWinesRole(user);
   const [wine, setWine] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -276,7 +273,7 @@ function WineDetail() {
 
       <div className="wine-detail__section">
         <h2>Vintages</h2>
-        {user &&
+        {canManageWines &&
           (showVintageForm ? (
             <form
               className="review-form"
@@ -554,7 +551,7 @@ function WineDetail() {
                   </div>
                 )}
 
-                {user && (
+                {canManageWines && (
                   <div className="review-form-wrapper">
                     {activeFormVintage === vintage.id ? (
                       <ReviewForm

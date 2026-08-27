@@ -1,5 +1,6 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { isSuperUser } from "../constants/roles";
 
 
 function getInitials(name) {
@@ -16,7 +17,7 @@ function Header() {
   const { user, session, signOut } = useAuth();
   const navigate = useNavigate();
 
-  const isSuperUser = Array.isArray(user?.roles) && user.roles.includes("Super User");
+  const isAdmin = isSuperUser(user);
 
   async function handleSignOut() {
     await signOut();
@@ -56,7 +57,7 @@ function Header() {
         <NavLink to="/search">Search</NavLink>
         <NavLink to="/quiz">Quiz</NavLink>
         <NavLink to="/about">About</NavLink>
-        {isSuperUser && <NavLink to="/users">Users &amp; Roles</NavLink>}
+        {isAdmin && <NavLink to="/users">Users &amp; Roles</NavLink>}
 
         {user ? (
           <div className="site-header__user">

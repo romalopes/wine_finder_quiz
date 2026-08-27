@@ -154,14 +154,11 @@ function ProducerForm() {
               onChange={handleChange}
               required
             >
-              <option value="">Select a type…</option>
               <option value="winery">Winery</option>
               <option value="negociant">Negociant</option>
               <option value="cooperative">Cooperative</option>
               <option value="wine_company">Wine Company</option>
-              <option value="independent_producer">
-                Independent Producer
-              </option>
+              <option value="independent_producer">Independent Producer</option>
             </select>
           </label>
           <label className="auth-form__field">
