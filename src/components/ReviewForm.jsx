@@ -116,25 +116,6 @@ function ReviewForm({
   return (
     <form className="review-form" onSubmit={handleSubmit}>
       <div className="review-form__field">
-        <div className="review-form__field">
-          <label htmlFor="review-category">Category</label>
-          <select
-            id="review-category"
-            name="review-category"
-            value={form.category_id}
-            onChange={updateField("category_id")}
-            required
-          >
-            <option value="" disabled>
-              Select a category
-            </option>
-            {categories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </select>
-        </div>
         <label htmlFor="review-title">Title</label>
         <input
           id="review-title"
@@ -202,7 +183,25 @@ function ReviewForm({
           Drinking window can be extended (+)
         </label>
       </div>
-
+      <div className="review-form__field">
+        <label htmlFor="review-category">Category</label>
+        <select
+          id="review-category"
+          name="review-category"
+          value={form.category_id}
+          onChange={updateField("category_id")}
+          required
+        >
+          <option value="" disabled>
+            Select a category
+          </option>
+          {categories.map((category) => (
+            <option key={category.id} value={category.id}>
+              {category.name}
+            </option>
+          ))}
+        </select>
+      </div>
       <div className="review-form__field">
         <span className="image-manager__label">Comment</span>
         <RichTextEditor

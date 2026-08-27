@@ -205,15 +205,32 @@ function Articles() {
               return acc;
             }, {});
 
+            // Sort categories: Uncategorized last, others alphabetically
+            const sortedCategories = Object.keys(grouped).sort((a, b) => {
+              if (a === "Uncategorized") return 1;
+              if (b === "Uncategorized") return -1;
+              return a.localeCompare(b);
+            });
+
             return (
               <div className="content-grid-groups">
-                {Object.entries(grouped).map(([category, articlesInGroup]) => (
+                {sortedCategories.map((category) => (
                   <section key={category} className="content-grid-group">
                     <h2 className="content-grid-group__title">{category}</h2>
                     <div className="content-grid">
-                      {articlesInGroup.map((article) => (
-                        <div key={article.id} className="review-card" style={{ cursor: "pointer" }}
-                          onClick={() => navigate(`/articles/${article.id}`)}>
+                      {grouped[category].map((article) => (
+                        <div 
+                          key={article.id} 
+                          className="wine-management__card"
+                          onClick={() => navigate(`/articles/${article.id}`)}
+                          role="button"
+                          tabIndex={0}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              navigate(`/articles/${article.id}`);
+                            }
+                          }}
+                        >
                           {Array.isArray(article.images) && article.images.length > 0 && (
                             <img
                               src={article.images[0]}
@@ -221,46 +238,41 @@ function Articles() {
                               className="wine-management__thumb"
                             />
                           )}
-                          <div className="review-card__top">
-                            <span className="my-reviews__wine-link">{article.title}</span>
+                          <div className="wine-management__card-header">
+                            <h3>{article.title}</h3>
                             {canManageContent && (
-                              <span className="review-card__status">{article.status}</span>
-                            )}
-                            {canManageContent && article.published_at && (
-                              <span className="review-card__time">
-                                {new Date(article.published_at).toLocaleDateString()}
+                              <span className={`wine-management__color-badge wine-management__color-badge--${article.status}`}>
+                                {article.status}
                               </span>
                             )}
                           </div>
-                          <p className="review-card__comment">
-                            {[`by ${article.author_name}`].filter(Boolean).join(" · ")}
-                          </p>
+                          <p className="wine-management__region">{`by ${article.author_name}`}</p>
                           {Array.isArray(article.tags) && article.tags.length > 0 && (
-                            <p className="review-card__comment">Tags: {article.tags.join(", ")}</p>
+                            <p className="wine-management__vintage-count">Tags: {article.tags.join(", ")}</p>
                           )}
                           {excerpt(article.body, 50) && (
-                            <p className="review-card__comment">{excerpt(article.body, 50)}</p>
+                            <p className="wine-management__region">{excerpt(article.body, 50)}</p>
                           )}
 
                           {canManage(article) && (
-                            <div className="review-card__actions" onClick={(e) => e.stopPropagation()}>
-                              <Link to={`/articles/${article.id}/edit`} className="review-card__edit">
+                            <div className="wine-management__card-actions" onClick={(e) => e.stopPropagation()}>
+                              <Link to={`/articles/${article.id}/edit`} className="wine-management__edit-btn">
                                 Edit
                               </Link>
                               <button
                                 type="button"
-                                className={article.status === "draft" ? "review-card__publish" : "review-card__unpublish"}
+                                className={article.status === "draft" ? "wine-management__edit-btn" : "wine-management__delete-btn"}
                                 onClick={() => togglePublish(article)}
                               >
                                 {article.status === "draft" ? "Publish" : "Unpublish"}
                               </button>
                               <button
                                 type="button"
-                                className="review-card__delete"
+                                className="wine-management__delete-btn"
                                 onClick={() => handleDelete(article.id)}
                                 title="Delete article"
                               >
-                                &times;
+                                ×
                               </button>
                             </div>
                           )}

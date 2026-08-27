@@ -1148,6 +1148,16 @@ textarea {
   color: #b86c00;
 }
 
+.wine-management__color-badge--draft {
+  background: rgba(118, 105, 99, 0.15);
+  color: #766963;
+}
+
+.wine-management__color-badge--published {
+  background: rgba(39, 97, 94, 0.15);
+  color: #27615e;
+}
+
 .wine-management__card-actions {
   border-top: 1px solid #eee4db;
   display: flex;
@@ -1377,11 +1387,12 @@ textarea {
 }
 
 .review-card {
-  background: #faf5ed;
+  background: #fff;
   border: 1px solid #e4d9cd;
   border-radius: 8px;
   padding: 12px 14px;
   position: relative;
+  box-shadow: 0 2px 10px rgba(63, 24, 24, .06);
 }
 
 .review-card--draft {
@@ -2037,6 +2048,25 @@ textarea {
 @media (max-width: 600px) {
   .content-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+/* Producer grid responsive (when set to 4 columns) */
+@media (max-width: 1200px) {
+  .wine-management__grid[style*="repeat(4"] {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+}
+
+@media (max-width: 900px) {
+  .wine-management__grid[style*="repeat(4"] {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .wine-management__grid[style*="repeat(4"] {
+    grid-template-columns: 1fr !important;
   }
 }
 

@@ -318,4 +318,10 @@ export const categoriesApi = {
   },
 };
 
+export const statsApi = {
+  get() {
+    return request("/stats", { auth: false });
+  },
+};
+
 export { API_BASE_URL };

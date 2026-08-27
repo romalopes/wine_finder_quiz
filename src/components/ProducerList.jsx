@@ -74,7 +74,7 @@ function ProducerList() {
           </Link>
         </div>
       ) : (
-        <div className="wine-management__grid">
+        <div className="wine-management__grid" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
           {producers.map((producer) => (
             <div
               key={producer.slug}

@@ -1,135 +1,96 @@
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { articlesApi } from "../services/api";
+import { articlesApi, reviewsApi, statsApi } from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
 
 const dashboardCards = [
-  {
-    title: "Producers",
-    description:
-      "Browse wineries and growers, explore their stories, and manage producer records.",
-    to: "/producers",
-    cta: "View producers",
-  },
-  {
-    title: "Wines",
-    description:
-      "Explore the full wine catalogue, open a bottle's detail page, or add a new wine.",
-    to: "/wines",
-    cta: "View wines",
-  },
-  {
-    title: "Reviews",
-    description:
-      "Read community tasting notes and keep track of the reviews you have written.",
-    to: "/reviews",
-    cta: "View reviews",
-  },
-  {
-    title: "Articles",
-    description:
-      "Read community stories and guides about wines, regions and producers.",
-    to: "/articles",
-    cta: "Read articles",
-  },
+  { title: "Producers", bandColor: "#6b5855", to: "/producers", cta: "Browse wineries →" },
+  { title: "Wines", bandColor: "#c49b38", to: "/wines", cta: "Explore the catalogue →" },
+  { title: "Reviews", bandColor: "#d47386", to: "/reviews", cta: "Read reviews →" },
+  { title: "Articles", bandColor: "#c49b38", to: "/articles", cta: "Read articles →" },
 ];
 
 function Dashboard() {
   const { user } = useAuth();
+  const [stats, setStats] = useState({ producers: 0, wines: 0, reviews: 0, articles: 0 });
   const [recentArticles, setRecentArticles] = useState([]);
+  const [recentReviews, setRecentReviews] = useState([]);
 
   useEffect(() => {
-    articlesApi
-      .list()
-      .then((data) =>
-        setRecentArticles((Array.isArray(data) ? data : []).slice(0, 10)),
-      )
-      .catch(() => setRecentArticles([]));
+    statsApi.get().then(setStats).catch(() => {});
+    articlesApi.list().then((data) => setRecentArticles((Array.isArray(data) ? data : []).slice(0, 10))).catch(() => setRecentArticles([]));
+    reviewsApi.all().then((data) => setRecentReviews((Array.isArray(data) ? data : []).slice(0, 10))).catch(() => setRecentReviews([]));
   }, []);
+
+  const statsMap = { Producers: stats.producers, Wines: stats.wines, Reviews: stats.reviews, Articles: stats.articles };
 
   return (
     <main className="wine-app">
-      <section className="wine-hero" aria-labelledby="dashboard-title">
-        <div className="wine-hero__content">
-          <p className="wine-kicker">Dashboard</p>
-          <h1 id="dashboard-title">
-            Welcome{user ? `, ${user.email.split("@")[0]}` : ""} to Wine Words
-          </h1>
-          <p>
-            Your cellar command centre. Jump into producers, wines, or your
-            tasting reviews — everything starts here.
-          </p>
-          {!user && (
-            <p className="dashboard-auth-hint">
-              <Link className="text-link" to="/login">
-                Sign in or create an account
-              </Link>{" "}
-              to save tasting profiles and write reviews.
-            </p>
-          )}
-        </div>
-      </section>
-
-      <section aria-label="Dashboard sections" className="wine-workspace">
-        <div className="dashboard-grid">
-          {dashboardCards.map((card) => (
-            <article className="wine-panel dashboard-card" key={card.title}>
-              <div className="section-heading">
-                <p>Navigate</p>
-                <h2>{card.title}</h2>
-              </div>
-              <p>{card.description}</p>
-              <Link className="dashboard-card__cta" to={card.to}>
+      <p className="lede" style={{ marginBottom: "1.5rem" }}>
+        Welcome{user ? `, ${user.email.split("@")[0]}` : ""} to Wine Words. Your cellar command centre.
+      </p>
+      {!user && (
+        <p style={{ marginBottom: "1.5rem" }}>
+          <Link className="text-link" to="/login">Sign in or create an account</Link> to save tasting profiles and write reviews.
+        </p>
+      )}
+      <div className="content-grid" style={{ marginBottom: "2rem" }}>
+        {dashboardCards.map((card) => (
+          <Link key={card.title} to={card.to} className="wine-management__card" style={{ padding: 0, overflow: "hidden", display: "flex", flexDirection: "column", textDecoration: "none", color: "inherit" }}>
+            <div style={{ height: "0.5rem", background: card.bandColor }} />
+            <div style={{ padding: "1.1rem" }}>
+              <h2 style={{ fontSize: "1.25rem", marginBottom: "0.3rem" }}>{card.title}</h2>
+              <p style={{ color: "#6b5855", fontSize: "0.9rem", marginBottom: "0.7rem" }}>
+                {statsMap[card.title] || 0} {card.title.toLowerCase()} in the library.
+              </p>
+              <span style={{ display: "inline-block", background: "#f3e9e3", borderRadius: "99px", color: "#6b2834", fontSize: "0.78rem", fontWeight: 600, padding: "0.22rem 0.5rem" }}>
                 {card.cta}
-              </Link>
-            </article>
-          ))}
-        </div>
-
-        {recentArticles.length > 0 && (
-          <div className="wine-detail__section">
-            <div className="section-heading">
-              <p>From the community</p>
-              <h2>Latest Articles</h2>
+              </span>
             </div>
+          </Link>
+        ))}
+      </div>
+
+      {recentArticles.length > 0 && (
+        <>
+          <h2 style={{ marginTop: "2rem", marginBottom: "1rem" }}>Latest Articles</h2>
+          <div className="content-grid" style={{ marginBottom: "2rem" }}>
             {recentArticles.map((article) => (
-              <article
-                className="wine-panel"
-                key={article.id}
-                style={{ marginBottom: 16 }}
-              >
+              <Link key={article.id} to={`/articles/${article.id}`} className="wine-management__card" style={{ padding: 0, overflow: "hidden", display: "flex", flexDirection: "column", textDecoration: "none", color: "inherit" }}>
                 {Array.isArray(article.images) && article.images.length > 0 && (
-                  <img
-                    src={article.images[0]}
-                    alt={article.title}
-                    style={{
-                      width: "100%",
-                      height: "8rem",
-                      objectFit: "cover",
-                      borderRadius: ".5rem",
-                    }}
-                  />
+                  <img src={article.images[0]} alt={article.title} style={{ width: "100%", height: "8rem", objectFit: "cover" }} />
                 )}
-                <h3 style={{ margin: ".5rem 0 .25rem" }}>
-                  <Link to={`/articles/${article.id}`}>{article.title}</Link>
-                </h3>
-                {[article.category, `by ${article.author_name}`]
-                  .filter(Boolean)
-                  .join(" · ") && (
-                  <p className="review-card__comment">
-                    {[article.category, `by ${article.author_name}`]
-                      .filter(Boolean)
-                      .join(" · ")}
+                <div style={{ height: "0.5rem", background: "#8a273c" }} />
+                <div style={{ padding: "1.1rem" }}>
+                  <h3 style={{ fontSize: "1.1rem", marginBottom: "0.3rem" }}>{article.title}</h3>
+                  <p style={{ color: "#6b5855", fontSize: "0.85rem", marginBottom: "0.5rem" }}>
+                    {[article.category, `by ${article.author_name}`].filter(Boolean).join(" · ")}
                   </p>
-                )}
-                {article.abstract && (
-                  <p>{String(article.abstract).slice(0, 160)}</p>
-                )}
-              </article>
+                  {article.abstract && <p style={{ color: "#6b5855", fontSize: "0.85rem", lineHeight: 1.5 }}>{String(article.abstract).slice(0, 120)}...</p>}
+                </div>
+              </Link>
             ))}
           </div>
-        )}
-      </section>
+        </>
+      )}
+
+      {recentReviews.length > 0 && (
+        <>
+          <h2 style={{ marginTop: "2rem", marginBottom: "1rem" }}>Latest Reviews</h2>
+          <div className="content-grid">
+            {recentReviews.map((review) => (
+              <Link key={review.id} to={`/reviews/${review.id}`} className="wine-management__card" style={{ padding: 0, overflow: "hidden", display: "flex", flexDirection: "column", textDecoration: "none", color: "inherit" }}>
+                <div style={{ height: "0.5rem", background: "#d47386" }} />
+                <div style={{ padding: "1.1rem" }}>
+                  <h3 style={{ fontSize: "1.1rem", marginBottom: "0.3rem" }}>{review.title || "Untitled review"}</h3>
+                  <p style={{ color: "#6b5855", fontSize: "0.85rem", marginBottom: "0.5rem" }}>Score {review.score} · by {review.reviewer_name}</p>
+                  {review.comment && <p style={{ color: "#6b5855", fontSize: "0.85rem", lineHeight: 1.5 }}>{String(review.comment).replace(/<[^>]+>/g, "").slice(0, 120)}...</p>}
+                </div>
+              </Link>
+            ))}
+          </div>
+        </>
+      )}
     </main>
   );
 }
