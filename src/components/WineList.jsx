@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { winesApi } from "../services/api";
+import { useCategoryOrder, sortCategoryNames } from "../hooks/useCategoryOrder";
 import { useAuth } from "../contexts/AuthContext";
 import { canManageWinesRole } from "../constants/roles";
 
@@ -12,6 +13,7 @@ function WineList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+  const categoryOrder = useCategoryOrder("sort_order_wine");
 
   useEffect(() => {
     loadWines();
@@ -100,12 +102,8 @@ function WineList() {
             return acc;
           }, {});
 
-          // Sort categories: Uncategorized last, others alphabetically
-          const sortedCategories = Object.keys(grouped).sort((a, b) => {
-            if (a === "Uncategorized") return 1;
-            if (b === "Uncategorized") return -1;
-            return a.localeCompare(b);
-          });
+          // Sort categories: by admin-defined sort order, Uncategorized last
+          const sortedCategories = sortCategoryNames(Object.keys(grouped), categoryOrder);
 
           return (
             <div className="content-grid-groups">

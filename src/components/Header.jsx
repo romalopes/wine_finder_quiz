@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { isSuperUser } from "../constants/roles";
@@ -18,6 +19,8 @@ function Header() {
   const navigate = useNavigate();
 
   const isAdmin = isSuperUser(user);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [extrasOpen, setExtrasOpen] = useState(false);
 
   async function handleSignOut() {
     await signOut();
@@ -53,11 +56,60 @@ function Header() {
         <NavLink to="/wines">Wines</NavLink>
         <NavLink to="/reviews">Reviews</NavLink>
         <NavLink to="/articles">Articles</NavLink>
-        <NavLink to="/finder">Finder</NavLink>
+        <div
+          className="settings-menu"
+          onMouseEnter={() => setExtrasOpen(true)}
+          onMouseLeave={() => setExtrasOpen(false)}
+        >
+          <button
+            type="button"
+            className="settings-menu__toggle"
+            aria-haspopup="true"
+            aria-expanded={extrasOpen}
+            onClick={() => setExtrasOpen((open) => !open)}
+          >
+            Extras
+          </button>
+          {extrasOpen && (
+            <div className="settings-menu__dropdown">
+              <NavLink to="/finder" onClick={() => setExtrasOpen(false)}>
+                Finder
+              </NavLink>
+              <NavLink to="/quiz" onClick={() => setExtrasOpen(false)}>
+                Quiz
+              </NavLink>
+            </div>
+          )}
+        </div>
         <NavLink to="/search">Search</NavLink>
-        <NavLink to="/quiz">Quiz</NavLink>
         <NavLink to="/about">About</NavLink>
-        {isAdmin && <NavLink to="/users">Users &amp; Roles</NavLink>}
+        {isAdmin && (
+          <div
+            className="settings-menu"
+            onMouseEnter={() => setSettingsOpen(true)}
+            onMouseLeave={() => setSettingsOpen(false)}
+          >
+            <button
+              type="button"
+              className="settings-menu__toggle"
+              aria-haspopup="true"
+              aria-expanded={settingsOpen}
+              onClick={() => setSettingsOpen((open) => !open)}
+            >
+              Settings
+            </button>
+            {settingsOpen && (
+              <div className="settings-menu__dropdown">
+                <NavLink to="/users" onClick={() => setSettingsOpen(false)}>
+                  Users &amp; Roles
+                </NavLink>
+                <NavLink to="/categories" onClick={() => setSettingsOpen(false)}>
+                  Categories
+                </NavLink>
+              </div>
+            )}
+          </div>
+        )}
 
         {user ? (
           <div className="site-header__user">

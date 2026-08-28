@@ -316,6 +316,33 @@ export const categoriesApi = {
     const query = params.toString();
     return request(`/categories${query ? `?${query}` : ""}`);
   },
+  create(categoryData) {
+    return request("/categories", {
+      method: "POST",
+      auth: true,
+      body: { category: categoryData },
+    });
+  },
+  update(id, categoryData) {
+    return request(`/categories/${id}`, {
+      method: "PATCH",
+      auth: true,
+      body: { category: categoryData },
+    });
+  },
+  remove(id) {
+    return request(`/categories/${id}`, {
+      method: "DELETE",
+      auth: true,
+    });
+  },
+  reorder(type, orderedIds) {
+    return request("/categories/reorder", {
+      method: "PATCH",
+      auth: true,
+      body: { type, ordered_ids: orderedIds },
+    });
+  },
 };
 
 export const statsApi = {

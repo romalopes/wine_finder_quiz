@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { articlesApi } from "../services/api";
+import { useCategoryOrder, sortCategoryNames } from "../hooks/useCategoryOrder";
 import ArticleForm from "./ArticleForm";
 import { useAuth } from "../contexts/AuthContext";
 import { isSuperUser, canManageWinesRole } from "../constants/roles";
@@ -20,6 +21,7 @@ function Articles() {
   // Super Users, Editors and Reviewers see the management filters and the
   // add button; Guests/Readers only see published articles.
   const canManageContent = canManageWinesRole(user);
+  const categoryOrder = useCategoryOrder("sort_order_article");
   const [articles, setArticles] = useState([]);
   const [myArticles, setMyArticles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -205,12 +207,8 @@ function Articles() {
               return acc;
             }, {});
 
-            // Sort categories: Uncategorized last, others alphabetically
-            const sortedCategories = Object.keys(grouped).sort((a, b) => {
-              if (a === "Uncategorized") return 1;
-              if (b === "Uncategorized") return -1;
-              return a.localeCompare(b);
-            });
+            // Sort categories: by admin-defined sort order, Uncategorized last
+            const sortedCategories = sortCategoryNames(Object.keys(grouped), categoryOrder);
 
             return (
               <div className="content-grid-groups">

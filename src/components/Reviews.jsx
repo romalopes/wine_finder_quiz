@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { reviewsApi, winesApi, vintagesApi } from "../services/api";
+import { useCategoryOrder, sortCategoryNames } from "../hooks/useCategoryOrder";
 import ReviewForm from "./ReviewForm";
 import WineQuickCreate from "./WineQuickCreate";
 import { useAuth } from "../contexts/AuthContext";
@@ -223,11 +224,11 @@ function Reviews() {
         )}
       </div>
 
-      {!user && (
+      {/* {!user && (
         <p className="wine-management__empty-state">
           Sign in to manage reviews
         </p>
-      )}
+      )} */}
 
       {showForm && (
         <div className="review-form-wrapper">
@@ -552,6 +553,7 @@ function ReviewsList({
   onSaved,
 }) {
   const navigate = useNavigate();
+  const categoryOrder = useCategoryOrder("sort_order_review");
   const filtered =
     statusFilter === "all"
       ? reviews
@@ -565,12 +567,8 @@ function ReviewsList({
     return acc;
   }, {});
 
-  // Sort categories: Uncategorized last, others alphabetically
-  const sortedCategories = Object.keys(grouped).sort((a, b) => {
-    if (a === "Uncategorized") return 1;
-    if (b === "Uncategorized") return -1;
-    return a.localeCompare(b);
-  });
+  // Sort categories: by admin-defined sort order, Uncategorized last
+  const sortedCategories = sortCategoryNames(Object.keys(grouped), categoryOrder);
 
   if (scope === "mine" && !user) {
     return (
@@ -611,7 +609,9 @@ function ReviewsList({
               >
                 <div className="wine-management__card-header">
                   <h3>{review.title || "Untitled review"}</h3>
-                  <span className={`wine-management__color-badge wine-management__color-badge--${review.status}`}>
+                  <span
+                    className={`wine-management__color-badge wine-management__color-badge--${review.status}`}
+                  >
                     {review.score}
                   </span>
                 </div>
