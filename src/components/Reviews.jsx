@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { reviewsApi, winesApi, vintagesApi } from "../services/api";
 import { useCategoryOrder, sortCategoryNames } from "../hooks/useCategoryOrder";
+import { useSelectedCategory } from "../hooks/useSelectedCategory";
 import ReviewForm from "./ReviewForm";
 import WineQuickCreate from "./WineQuickCreate";
 import { useAuth } from "../contexts/AuthContext";
@@ -554,10 +555,13 @@ function ReviewsList({
 }) {
   const navigate = useNavigate();
   const categoryOrder = useCategoryOrder("sort_order_review");
-  const filtered =
-    statusFilter === "all"
-      ? reviews
-      : reviews.filter((r) => r.status === statusFilter);
+  const selectedCategory = useSelectedCategory();
+  const filtered = (statusFilter === "all"
+    ? reviews
+    : reviews.filter((r) => r.status === statusFilter)
+  ).filter(
+    (r) => !selectedCategory || (r.category || "Uncategorized") === selectedCategory,
+  );
 
   // Group by category
   const grouped = filtered.reduce((acc, review) => {

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { articlesApi } from "../services/api";
 import { useCategoryOrder, sortCategoryNames } from "../hooks/useCategoryOrder";
+import { useSelectedCategory } from "../hooks/useSelectedCategory";
 import ArticleForm from "./ArticleForm";
 import { useAuth } from "../contexts/AuthContext";
 import { isSuperUser, canManageWinesRole } from "../constants/roles";
@@ -22,6 +23,7 @@ function Articles() {
   // add button; Guests/Readers only see published articles.
   const canManageContent = canManageWinesRole(user);
   const categoryOrder = useCategoryOrder("sort_order_article");
+  const selectedCategory = useSelectedCategory();
   const [articles, setArticles] = useState([]);
   const [myArticles, setMyArticles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -176,10 +178,14 @@ function Articles() {
               : "published";
             const source =
               effectiveScope === "mine" ? myArticles : articles;
-            const filtered =
-              effectiveStatus === "all"
-                ? source
-                : source.filter((a) => a.status === effectiveStatus);
+            const filtered = (effectiveStatus === "all"
+              ? source
+              : source.filter((a) => a.status === effectiveStatus)
+            ).filter(
+              (a) =>
+                !selectedCategory ||
+                (a.category || "Uncategorized") === selectedCategory,
+            );
 
             if (effectiveScope === "mine" && !user) {
               return (

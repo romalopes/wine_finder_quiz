@@ -67,6 +67,7 @@ textarea {
 
 .site-header nav {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
@@ -710,6 +711,20 @@ textarea {
   .site-header nav a {
     text-align: center;
     flex: 1;
+  }
+
+  .site-header nav .settings-menu {
+    flex: 1;
+  }
+
+  .site-header nav .settings-menu__toggle {
+    width: 100%;
+    text-align: center;
+  }
+
+  .site-header__user {
+    flex-wrap: wrap;
+    justify-content: center;
   }
 
   .wine-hero {

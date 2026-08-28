@@ -1,7 +1,49 @@
-import { useState } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { NavLink, Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { isSuperUser } from "../constants/roles";
+import { categoriesApi } from "../services/api";
+
+function NavDropdown({ label, items }) {
+  const [open, setOpen] = useState(false);
+  const location = useLocation();
+  return (
+    <div
+      className="settings-menu"
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+    >
+      <button
+        type="button"
+        className="settings-menu__toggle"
+        aria-haspopup="true"
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
+      >
+        {label}
+      </button>
+      {open && (
+        <div className="settings-menu__dropdown">
+          {items.map((item) => {
+            // NavLink would mark every sibling active because all items share
+            // the same pathname; compare the full path + query instead.
+            const isActive = location.pathname + location.search === item.to;
+            return (
+              <Link
+                key={item.label}
+                to={item.to}
+                className={isActive ? "active" : undefined}
+                onClick={() => setOpen(false)}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
 
 
 function getInitials(name) {
@@ -21,6 +63,24 @@ function Header() {
   const isAdmin = isSuperUser(user);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [extrasOpen, setExtrasOpen] = useState(false);
+  const [categories, setCategories] = useState([]);
+
+  useEffect(() => {
+    categoriesApi
+      .list()
+      .then((cats) => setCategories(Array.isArray(cats) ? cats : []))
+      .catch(() => {});
+  }, []);
+
+  function navCategories(flag, sortKey) {
+    return categories
+      .filter((c) => c[flag])
+      .sort((a, b) => (a[sortKey] ?? 9999) - (b[sortKey] ?? 9999))
+      .map((c) => ({
+        label: c.name,
+        to: "/" + flag.replace("for_", "") + "s?category=" + encodeURIComponent(c.name),
+      }));
+  }
 
   async function handleSignOut() {
     await signOut();
@@ -53,9 +113,27 @@ function Header() {
           Dashboard
         </NavLink>
         <NavLink to="/producers">Producers</NavLink>
-        <NavLink to="/wines">Wines</NavLink>
-        <NavLink to="/reviews">Reviews</NavLink>
-        <NavLink to="/articles">Articles</NavLink>
+        <NavDropdown
+          label="Wines"
+          items={[
+            { label: "All Wines", to: "/wines" },
+            ...navCategories("for_wine", "sort_order_wine"),
+          ]}
+        />
+        <NavDropdown
+          label="Reviews"
+          items={[
+            { label: "All Reviews", to: "/reviews" },
+            ...navCategories("for_review", "sort_order_review"),
+          ]}
+        />
+        <NavDropdown
+          label="Articles"
+          items={[
+            { label: "All Articles", to: "/articles" },
+            ...navCategories("for_article", "sort_order_article"),
+          ]}
+        />
         <div
           className="settings-menu"
           onMouseEnter={() => setExtrasOpen(true)}

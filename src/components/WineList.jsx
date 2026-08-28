@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { winesApi } from "../services/api";
 import { useCategoryOrder, sortCategoryNames } from "../hooks/useCategoryOrder";
+import { useSelectedCategory } from "../hooks/useSelectedCategory";
 import { useAuth } from "../contexts/AuthContext";
 import { canManageWinesRole } from "../constants/roles";
 
@@ -14,6 +15,7 @@ function WineList() {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
   const categoryOrder = useCategoryOrder("sort_order_wine");
+  const selectedCategory = useSelectedCategory();
 
   useEffect(() => {
     loadWines();
@@ -94,8 +96,13 @@ function WineList() {
         </div>
       ) : (
         (() => {
+          // When a category is selected via ?category=, show only that one.
+          const visible = selectedCategory
+            ? wines.filter((w) => (w.category || "Uncategorized") === selectedCategory)
+            : wines;
+
           // Group wines by category
-          const grouped = wines.reduce((acc, wine) => {
+          const grouped = visible.reduce((acc, wine) => {
             const key = wine.category || "Uncategorized";
             if (!acc[key]) acc[key] = [];
             acc[key].push(wine);
