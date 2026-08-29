@@ -34,8 +34,12 @@ function ArticleForm({ article, onSaved, onCancel }) {
   const [wineQuery, setWineQuery] = useState("");
   const [wineResults, setWineResults] = useState([]);
   const [searchingWines, setSearchingWines] = useState(false);
+  const [producerQuery, setProducerQuery] = useState("");
+  const [producerResults, setProducerResults] = useState([]);
+  const [searchingProducers, setSearchingProducers] = useState(false);
   const [reviewsByVintage, setReviewsByVintage] = useState({});
   const searchTimer = useRef(null);
+  const producerSearchTimer = useRef(null);
   const [images, setImages] = useState(null);
   const [existingImages, setExistingImages] = useState(article?.images || []);
   const [existingImageIds, setExistingImageIds] = useState(article?.image_ids || []);
@@ -94,6 +98,27 @@ function ArticleForm({ article, onSaved, onCancel }) {
     return () => clearTimeout(searchTimer.current);
   }, [wineQuery]);
 
+  // Debounced producer search for the producer picker.
+  useEffect(() => {
+    if (producerSearchTimer.current) clearTimeout(producerSearchTimer.current);
+    if (!producerQuery.trim()) {
+      setProducerResults([]);
+      return;
+    }
+    producerSearchTimer.current = setTimeout(async () => {
+      setSearchingProducers(true);
+      try {
+        const results = await producersApi.search(producerQuery.trim());
+        setProducerResults(Array.isArray(results) ? results : []);
+      } catch {
+        setProducerResults([]);
+      } finally {
+        setSearchingProducers(false);
+      }
+    }, 300);
+    return () => clearTimeout(producerSearchTimer.current);
+  }, [producerQuery]);
+
   function isVintageSelected(id) {
     return selectedVintages.some((v) => v.id === id);
   }
@@ -127,6 +152,29 @@ function ArticleForm({ article, onSaved, onCancel }) {
         ? prev.filter((id) => id !== reviewId)
         : [...prev, reviewId],
     );
+  }
+
+  function isProducerSelected(id) {
+    return form.producer_ids.includes(id);
+  }
+
+  function toggleProducer(producer) {
+    const id = Number(producer.id);
+    setForm((prev) => ({
+      ...prev,
+      producer_ids: isProducerSelected(id)
+        ? prev.producer_ids.filter((pid) => pid !== id)
+        : [...prev.producer_ids, id],
+    }));
+    setProducerQuery("");
+    setProducerResults([]);
+  }
+
+  function removeProducer(id) {
+    setForm((prev) => ({
+      ...prev,
+      producer_ids: prev.producer_ids.filter((pid) => pid !== id),
+    }));
   }
 
   function updateField(field) {
@@ -341,25 +389,57 @@ function ArticleForm({ article, onSaved, onCancel }) {
       </div>
 
       <div className="review-form__field">
-        <label htmlFor="article-producers">Producers (ctrl/cmd-click for multiple)</label>
-        <select
-          id="article-producers"
-          multiple
-          size={5}
-          value={form.producer_ids.map(String)}
-          onChange={(e) =>
-            setForm((prev) => ({
-              ...prev,
-              producer_ids: Array.from(e.target.selectedOptions, (o) => Number(o.value)),
-            }))
-          }
-        >
-          {producers.map((producer) => (
-            <option key={producer.id} value={producer.id}>
-              {producer.name}
-            </option>
-          ))}
-        </select>
+        <label htmlFor="article-producers">Producers</label>
+        <div className="producer-picker">
+          <input
+            type="text"
+            id="article-producers"
+            value={producerQuery}
+            onChange={(e) => setProducerQuery(e.target.value)}
+            placeholder="Search producers to add…"
+            autoComplete="off"
+          />
+          {searchingProducers && <p className="wine-management__loading">Searching…</p>}
+          {producerResults.length > 0 && (
+            <div className="review-list">
+              {producerResults.map((producer) => (
+                <button
+                  key={producer.id}
+                  type="button"
+                  className="review-card"
+                  onClick={() => toggleProducer(producer)}
+                >
+                  <div className="review-card__top">
+                    <strong>{producer.name}</strong>
+                  </div>
+                  {producer.address && (
+                    <span className="review-card__comment">{producer.address}</span>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+          {form.producer_ids.length > 0 && (
+            <div className="producer-picker__chips">
+              {form.producer_ids.map((id) => {
+                const producer = producers.find((p) => Number(p.id) === Number(id));
+                return (
+                  <span key={id} className="vintage-chip">
+                    <strong>{producer ? producer.name : `Producer #${id}`}</strong>
+                    <button
+                      type="button"
+                      className="vintage-chip__remove"
+                      onClick={() => removeProducer(id)}
+                      title="Remove producer"
+                    >
+                      &times;
+                    </button>
+                  </span>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="review-form__field">

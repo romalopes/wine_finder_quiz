@@ -5,7 +5,7 @@ import { useCategoryOrder, sortCategoryNames } from "../hooks/useCategoryOrder";
 import { useSelectedCategory } from "../hooks/useSelectedCategory";
 import ArticleForm from "./ArticleForm";
 import { useAuth } from "../contexts/AuthContext";
-import { isSuperUser, canManageWinesRole } from "../constants/roles";
+import { canManageWinesRole } from "../constants/roles";
 
 function excerpt(text, max = 50) {
   if (!text) return "";
@@ -18,7 +18,7 @@ function excerpt(text, max = 50) {
 function Articles() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const canSeeAll = isSuperUser(user);
+  const canSeeAll = canManageWinesRole(user);
   // Super Users, Editors and Reviewers see the management filters and the
   // add button; Guests/Readers only see published articles.
   const canManageContent = canManageWinesRole(user);

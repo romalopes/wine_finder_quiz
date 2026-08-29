@@ -24,3 +24,7 @@ export const isContentManager = canManageWinesRole;
 export function isSuperUser(user) {
   return user?.roles.some((role) => role === ROLES.SUPER_USER) ?? false;
 }
+
+export function canManageGrapes(user) {
+  return user?.roles.some((role) => role === ROLES.SUPER_USER || role === ROLES.EDITOR) ?? false;
+}

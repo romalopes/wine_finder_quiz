@@ -51,7 +51,7 @@ function WineForm() {
     async function initFormData() {
       try {
         setLoading(true);
-                        // 1. Load taste parameters and wine categories (for this form)
+        // 1. Load taste parameters and wine categories (for this form)
         const [globalParams, wineCats] = await Promise.all([
           tasteParametersApi.list(),
           categoriesApi.list("wine"),
@@ -89,7 +89,7 @@ function WineForm() {
               wineData.volume_ml != null
                 ? String(wineData.volume_ml)
                 : String(DEFAULT_VOLUME),
-                        prompt: wineData.prompt || "",
+            prompt: wineData.prompt || "",
             producer_id: wineData.producer?.id || "",
             producer_name: wineData.producer?.name || "",
             category_id: wineData.category_id ?? "",
@@ -165,7 +165,11 @@ function WineForm() {
   }
 
   function handleProducerChange(id, name) {
-    setFormData((prev) => ({ ...prev, producer_id: id ? String(id) : "", producer_name: name || "" }));
+    setFormData((prev) => ({
+      ...prev,
+      producer_id: id ? String(id) : "",
+      producer_name: name || "",
+    }));
   }
 
   async function handleSubmit(e) {
@@ -197,7 +201,7 @@ function WineForm() {
           : null,
         volume_ml: formData.volume_ml ? parseInt(formData.volume_ml, 10) : null,
         prompt: formData.prompt || null,
-                producer_id: formData.producer_id
+        producer_id: formData.producer_id
           ? parseInt(formData.producer_id, 10)
           : null,
         category_id: formData.category_id
@@ -266,7 +270,7 @@ function WineForm() {
               value={formData.producer_name}
               onChange={handleProducerChange}
             />
-                    </div>
+          </div>
           <label className="auth-form__field">
             <span>Category</span>
             <select
@@ -320,7 +324,6 @@ function WineForm() {
               <option value="White">White</option>
               <option value="Rosé">Rosé</option>
               <option value="Orange">Orange</option>
-              <option value="Sparkling">Sparkling</option>
               <option value="Dessert">Dessert</option>
             </select>
           </label>
@@ -469,11 +472,7 @@ function WineForm() {
                   type="checkbox"
                   checked={Boolean(vintage.no_vintage)}
                   onChange={(e) =>
-                    handleVintageChange(
-                      index,
-                      "no_vintage",
-                      e.target.checked,
-                    )
+                    handleVintageChange(index, "no_vintage", e.target.checked)
                   }
                 />
                 <span>NV</span>

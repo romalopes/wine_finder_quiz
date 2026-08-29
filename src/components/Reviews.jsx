@@ -6,7 +6,7 @@ import { useSelectedCategory } from "../hooks/useSelectedCategory";
 import ReviewForm from "./ReviewForm";
 import WineQuickCreate from "./WineQuickCreate";
 import { useAuth } from "../contexts/AuthContext";
-import { isSuperUser, canManageWinesRole } from "../constants/roles";
+import { canManageWinesRole } from "../constants/roles";
 import DOMPurify from "dompurify";
 
 function excerpt(html, max = 50) {
@@ -38,7 +38,7 @@ function timeAgo(dateStr) {
 
 function Reviews() {
   const { user } = useAuth();
-  const canSeeAll = isSuperUser(user);
+  const canSeeAll = canManageWinesRole(user);
   // Super Users, Editors and Reviewers see the management filters and the
   // add button; Guests/Readers only see published reviews.
   const canManageContent = canManageWinesRole(user);

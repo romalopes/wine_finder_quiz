@@ -153,7 +153,6 @@ function WineQuickCreate({
           <option value="White">White</option>
           <option value="Rosé">Rosé</option>
           <option value="Orange">Orange</option>
-          <option value="Sparkling">Sparkling</option>
           <option value="Dessert">Dessert</option>
         </select>
       </div>

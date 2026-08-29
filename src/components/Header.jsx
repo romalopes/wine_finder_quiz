@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { NavLink, Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
-import { isSuperUser } from "../constants/roles";
+import { isSuperUser, canManageWinesRole } from "../constants/roles";
 import { categoriesApi } from "../services/api";
 
 function NavDropdown({ label, items }) {
@@ -45,7 +45,6 @@ function NavDropdown({ label, items }) {
   );
 }
 
-
 function getInitials(name) {
   if (!name) return "?";
   return name
@@ -61,6 +60,9 @@ function Header() {
   const navigate = useNavigate();
 
   const isAdmin = isSuperUser(user);
+  // Editors (and reviewers/super users) may manage categories, so show the
+  // Settings menu for them too; "Users & Roles" stays super-admin only.
+  const canManageSettings = isSuperUser(user) || canManageWinesRole(user);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [extrasOpen, setExtrasOpen] = useState(false);
   const [categories, setCategories] = useState([]);
@@ -78,7 +80,11 @@ function Header() {
       .sort((a, b) => (a[sortKey] ?? 9999) - (b[sortKey] ?? 9999))
       .map((c) => ({
         label: c.name,
-        to: "/" + flag.replace("for_", "") + "s?category=" + encodeURIComponent(c.name),
+        to:
+          "/" +
+          flag.replace("for_", "") +
+          "s?category=" +
+          encodeURIComponent(c.name),
       }));
   }
 
@@ -156,12 +162,14 @@ function Header() {
               <NavLink to="/quiz" onClick={() => setExtrasOpen(false)}>
                 Quiz
               </NavLink>
+              <NavLink to="/search" onClick={() => setExtrasOpen(false)}>
+                Search
+              </NavLink>
             </div>
           )}
         </div>
-        <NavLink to="/search">Search</NavLink>
         <NavLink to="/about">About</NavLink>
-        {isAdmin && (
+        {canManageSettings && (
           <div
             className="settings-menu"
             onMouseEnter={() => setSettingsOpen(true)}
@@ -178,11 +186,19 @@ function Header() {
             </button>
             {settingsOpen && (
               <div className="settings-menu__dropdown">
-                <NavLink to="/users" onClick={() => setSettingsOpen(false)}>
-                  Users &amp; Roles
-                </NavLink>
-                <NavLink to="/categories" onClick={() => setSettingsOpen(false)}>
+                {isAdmin && (
+                  <NavLink to="/users" onClick={() => setSettingsOpen(false)}>
+                    Users &amp; Roles
+                  </NavLink>
+                )}
+                <NavLink
+                  to="/categories"
+                  onClick={() => setSettingsOpen(false)}
+                >
                   Categories
+                </NavLink>
+                <NavLink to="/grapes" onClick={() => setSettingsOpen(false)}>
+                  Grapes
                 </NavLink>
               </div>
             )}

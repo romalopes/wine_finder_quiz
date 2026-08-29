@@ -345,6 +345,35 @@ export const categoriesApi = {
   },
 };
 
+export const grapesApi = {
+  list() {
+    return request("/grapes");
+  },
+  show(id) {
+    return request(`/grapes/${id}`);
+  },
+  create(grapeData) {
+    return request("/grapes", {
+      method: "POST",
+      auth: true,
+      body: { grape: grapeData },
+    });
+  },
+  update(id, grapeData) {
+    return request(`/grapes/${id}`, {
+      method: "PATCH",
+      auth: true,
+      body: { grape: grapeData },
+    });
+  },
+  remove(id) {
+    return request(`/grapes/${id}`, {
+      method: "DELETE",
+      auth: true,
+    });
+  },
+};
+
 export const statsApi = {
   get() {
     return request("/stats", { auth: false });
