@@ -8,6 +8,7 @@ import {
 } from "../services/api";
 import ImageManager from "./ImageManager";
 import ProducerSearch from "./ProducerSearch";
+import GrapeSearch from "./GrapeSearch";
 import {
   VOLUMES,
   DEFAULT_VOLUME,
@@ -35,7 +36,10 @@ function WineForm() {
     producer_id: "",
     producer_name: "",
     category_id: "",
+    sparkling: false,
   });
+
+  const [selectedGrapes, setSelectedGrapes] = useState([]);
 
   const [wineCategories, setWineCategories] = useState([]);
   const [vintages, setVintages] = useState([]);
@@ -93,7 +97,10 @@ function WineForm() {
             producer_id: wineData.producer?.id || "",
             producer_name: wineData.producer?.name || "",
             category_id: wineData.category_id ?? "",
+            sparkling: Boolean(wineData.sparkling),
           });
+
+          setSelectedGrapes(wineData.grapes || []);
 
           setVintages(
             (wineData.vintages || []).map((v) => ({
@@ -134,8 +141,9 @@ function WineForm() {
   }, [slug, isEditing]);
 
   function handleChange(e) {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    const target = e.target;
+    const value = target.type === "checkbox" ? target.checked : target.value;
+    setFormData((prev) => ({ ...prev, [target.name]: value }));
   }
 
   function handleVintageChange(index, field, value) {
@@ -207,6 +215,8 @@ function WineForm() {
         category_id: formData.category_id
           ? parseInt(formData.category_id, 10)
           : null,
+        sparkling: Boolean(formData.sparkling),
+        grape_ids: selectedGrapes.map((g) => g.id),
         vintages_attributes: vintages.map((v) => {
           const attr = {
             year: parseInt(v.year, 10),
@@ -271,6 +281,21 @@ function WineForm() {
               onChange={handleProducerChange}
             />
           </div>
+          <div className="auth-form__field">
+            <GrapeSearch
+              selected={selectedGrapes}
+              onChange={setSelectedGrapes}
+            />
+          </div>
+          <label className="auth-form__field auth-form__field--checkbox">
+            <input
+              type="checkbox"
+              name="sparkling"
+              checked={formData.sparkling}
+              onChange={handleChange}
+            />
+            <span>Sparkling ✨</span>
+          </label>
           <label className="auth-form__field">
             <span>Category</span>
             <select

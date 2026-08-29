@@ -349,6 +349,9 @@ export const grapesApi = {
   list() {
     return request("/grapes");
   },
+  search(query) {
+    return request(`/grapes/search?q=${encodeURIComponent(query)}`);
+  },
   show(id) {
     return request(`/grapes/${id}`);
   },

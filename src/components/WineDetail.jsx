@@ -239,6 +239,20 @@ function WineDetail() {
           <span className="wine-detail__spec-value">{wine.color || "—"}</span>
         </div>
         <div className="wine-detail__spec">
+          <span className="wine-detail__spec-label">Sparkling</span>
+          <span className="wine-detail__spec-value">
+            {wine.sparkling ? "Yes ✨" : "No"}
+          </span>
+        </div>
+        <div className="wine-detail__spec">
+          <span className="wine-detail__spec-label">Grapes</span>
+          <span className="wine-detail__spec-value">
+            {Array.isArray(wine.grapes) && wine.grapes.length > 0
+              ? wine.grapes.map((g) => g.name).join(", ")
+              : "—"}
+          </span>
+        </div>
+        <div className="wine-detail__spec">
           <span className="wine-detail__spec-label">Alcohol</span>
           <span className="wine-detail__spec-value">
             {wine.alcohol_percentage != null

@@ -152,6 +152,16 @@ function WineList() {
                             {wine.producer.name}
                           </p>
                         )}
+                        {Array.isArray(wine.grapes) && wine.grapes.length > 0 && (
+                          <p className="wine-management__grapes">
+                            <strong>Grapes:</strong>{" "}
+                            {wine.grapes.slice(0, 3).map((g) => g.name).join(", ")}
+                            {wine.grapes.length > 3 ? "…" : ""}
+                          </p>
+                        )}
+                        {wine.sparkling && (
+                          <p className="wine-management__sparkling">✨ Sparkling</p>
+                        )}
                         {wine.vintages && wine.vintages.length > 0 && (
                           <p className="wine-management__vintage-count">
                             {wine.vintages.length} vintage
