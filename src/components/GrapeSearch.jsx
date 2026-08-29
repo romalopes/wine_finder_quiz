@@ -81,6 +81,11 @@ function GrapeSearch({ selected, onChange }) {
             >
               <strong>{grape.name}</strong>
               {grape.color && <span> ({grape.color})</span>}
+              {Array.isArray(grape.synonyms) && grape.synonyms.length > 0 && (
+                <span className="grape-search__synonyms">
+                  {" "}({grape.synonyms.join(", ")})
+                </span>
+              )}
             </button>
           ))}
         </div>

@@ -2678,3 +2678,8 @@ textarea {
   color: #8a273c;
   margin: 0.15rem 0 0;
 }
+
+.grape-search__synonyms {
+  color: #777;
+  font-size: 0.85rem;
+}
