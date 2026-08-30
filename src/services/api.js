@@ -416,6 +416,9 @@ export const regionsApi = {
   list() {
     return request("/regions", { auth: false });
   },
+  tree() {
+    return request("/regions/tree", { auth: false });
+  },
   show(id) {
     return request(`/regions/${id}`);
   },

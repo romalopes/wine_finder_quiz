@@ -56,18 +56,28 @@ function RegionDetail() {
     );
   }
 
+  // Get the full path from country to region
+  const path = region.full_path || [
+    {
+      type: "country",
+      name: region.country?.name || "Unknown Country",
+      flag_emoji: region.country?.flag_emoji,
+    },
+    {
+      type: "region",
+      name: region.name,
+    },
+  ];
+
   return (
     <div className="grapes-page">
-      <Link to="/regions" className="back-link">
-        &larr; Back to regions
-      </Link>
-      <div className="grapes-page__header">
-        <h1 className="grapes-page__title">
+      <div className="region-detail__header">
+        <h1 className="region-detail__title">
           {region.country?.flag_emoji ? `${region.country.flag_emoji} ` : ""}
           {region.name}
         </h1>
         {canManage && (
-          <div className="section-header__actions">
+          <div className="region-detail__actions">
             <Link to="/regions" className="btn-primary">
               Manage Regions
             </Link>
@@ -75,19 +85,75 @@ function RegionDetail() {
         )}
       </div>
 
-      <div className="grape-detail">
+      {/* Region Path/Breadcrumb */}
+      <div className="region-detail__path">
+        {path.map((item, index) => (
+          <span key={index} className="region-detail__path-item">
+            {index > 0 && " → "}
+            {item.flag_emoji && <span className="region-detail__flag">{item.flag_emoji} </span>}
+            <Link
+              to={item.type === "country" ? `/countries/${region.country.id}` : `/regions/${item.id}`}
+              className="region-detail__path-link"
+            >
+              {item.name}
+            </Link>
+          </span>
+        ))}
+      </div>
+
+      <div className="region-detail__section">
+        <h2>Details</h2>
         <ul className="facts">
           <li>
             <strong>Country:</strong>{" "}
+            {region.country?.flag_emoji ? `${region.country.flag_emoji} ` : ""}
             {region.country?.name || "—"}
           </li>
           <li>
             <strong>Type:</strong> {typeLabel(region)}
           </li>
           <li>
-            <strong>Parent:</strong> {region.parent_id ? "Yes" : "—"}
+            <strong>Parent:</strong> {region.parent_name ? `Yes (${region.parent_name})` : "—"}
           </li>
         </ul>
+      </div>
+
+      <div className="region-detail__section">
+        <h2>Wines</h2>
+        {region.wines?.length > 0 ? (
+          <ul>
+            {region.wines.map((wine) => (
+              <li key={wine.id}>
+                <Link to={`/wines/${wine.slug}`}>{wine.name}</Link>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p>No wines are associated with this region yet.</p>
+        )}
+      </div>
+
+      <div className="page-actions">
+        <Link to="/regions" className="btn-secondary">
+          ← Back to Regions
+        </Link>
+        {canManage && (
+          <>
+            <Link to={`/regions/${region.id}/edit`} className="btn-secondary">
+              Edit
+            </Link>
+            <button
+              className="btn-action btn-action--delete"
+              onClick={() => {
+                if (window.confirm("Delete this region? This action cannot be undone.")) {
+                  // Delete logic would go here
+                }
+              }}
+            >
+              Delete
+            </button>
+          </>
+        )}
       </div>
     </div>
   );

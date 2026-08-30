@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, useMemo } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { regionsApi, countriesApi } from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
@@ -18,11 +18,69 @@ function typeLabel(region) {
   if (region.is_appellation) labels.push("Appellation");
   return labels.length > 0 ? labels.join(" / ") : "Region";
 }
+
+// Tree node component for displaying regions recursively
+function RegionTreeNode({ node, level, targetRegionId }) {
+  const hasChildren = node.children && node.children.length > 0;
+  const isCurrentRegion = node.id === targetRegionId;
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  const toggleExpand = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsExpanded(!isExpanded);
+  };
+
+  return (
+    <div className="region-tree-node">
+      <div
+        className="region-tree-node__content"
+        style={{ paddingLeft: `${level * 1.5}rem` }}
+      >
+        {hasChildren ? (
+          <button
+            type="button"
+            className="region-tree__toggle region-tree__toggle--btn"
+            onClick={toggleExpand}
+            aria-expanded={isExpanded}
+          >
+            {isExpanded ? "-" : "+"}
+          </button>
+        ) : (
+          <span className="region-tree__toggle region-tree__toggle--leaf">
+            {" "}
+          </span>
+        )}
+        <Link
+          to={`/regions/${node.id}`}
+          className={`region-tree-node__name ${isCurrentRegion ? "region-tree-node__name--active" : ""}`}
+        >
+          {node.name}
+          {hasChildren && (
+            <span className="region-tree-node__type"> ({typeLabel(node)})</span>
+          )}
+        </Link>
+      </div>
+      {hasChildren && isExpanded && node.children && (
+        <div className="region-tree-node__children">
+          {node.children.map((child) => (
+            <RegionTreeNode
+              key={child.id}
+              node={child}
+              level={level + 1}
+              targetRegionId={targetRegionId}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Regions() {
   const { user } = useAuth();
   const canManage = isSuperUser(user) || canManageGrapes(user);
-  const [sortBy, setSortBy] = useState("name");
-  const [regions, setRegions] = useState([]);
+  const [treeData, setTreeData] = useState([]);
   const [countries, setCountries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -32,52 +90,41 @@ function Regions() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
+  const [expandedCountries, setExpandedCountries] = useState(new Set());
+  const [targetRegionId, setTargetRegionId] = useState(null);
 
-  const sortedRegions = useMemo(() => {
-    const sorted = [...regions];
-    switch (sortBy) {
-      case "country":
-        sorted.sort(
-          (a, b) =>
-            (a.country?.name || "").localeCompare(b.country?.name || "") ||
-            (a.name || "").localeCompare(b.name || ""),
-        );
-        break;
-      case "type":
-        sorted.sort(
-          (a, b) =>
-            typeLabel(a).localeCompare(typeLabel(b)) ||
-            (a.name || "").localeCompare(b.name || ""),
-        );
-        break;
-      case "name":
-      default:
-        sorted.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
-        break;
-    }
-    return sorted;
-  }, [regions, sortBy]);
-
-  const loadRegions = useCallback(async () => {
+  const loadTreeData = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await regionsApi.list();
-      setRegions(Array.isArray(data) ? data : []);
+      const data = await regionsApi.tree();
+      setTreeData(Array.isArray(data) ? data : []);
+      if (Array.isArray(data)) {
+        const australiaIndex = data.findIndex(
+          (c) => c.name.toLowerCase() === "australia",
+        );
+        if (australiaIndex !== -1) {
+          setExpandedCountries(new Set([data[australiaIndex].id]));
+        }
+      }
       setError(null);
     } catch (err) {
-      setError(err.message || "Failed to load regions");
+      setError(err.message || "Failed to load regions tree");
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    loadRegions();
+    loadTreeData();
+    regionsApi
+      .list()
+      .then((data) => setCountries(Array.isArray(data) ? data : []))
+      .catch(() => {});
     countriesApi
       .list()
       .then((data) => setCountries(Array.isArray(data) ? data : []))
       .catch(() => {});
-  }, [loadRegions]);
+  }, [loadTreeData]);
 
   function updateField(field, value) {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -98,6 +145,18 @@ function Regions() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
+  function toggleCountry(countryId) {
+    setExpandedCountries((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(countryId)) {
+        newSet.delete(countryId);
+      } else {
+        newSet.add(countryId);
+      }
+      return newSet;
+    });
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     if (!form.name.trim() || !form.country_id) {
@@ -111,9 +170,8 @@ function Regions() {
         name: form.name.trim(),
         country_id: form.country_id ? parseInt(form.country_id, 10) : null,
         parent_id: form.parent_id ? parseInt(form.parent_id, 10) : null,
-        parent_name: form.parent_name || null,
-        is_state: Boolean(form.is_state),
-        is_appellation: Boolean(form.is_appellation),
+        is_state: form.is_state,
+        is_appellation: form.is_appellation,
       };
       if (mode === "edit" && editingId) {
         await regionsApi.update(editingId, payload);
@@ -123,7 +181,7 @@ function Regions() {
         setNotice(`Region "${payload.name}" created.`);
       }
       resetForm();
-      await loadRegions();
+      await loadTreeData();
     } catch (err) {
       setError(err.message || "Failed to save region");
     } finally {
@@ -134,221 +192,218 @@ function Regions() {
   function startEdit(region) {
     setMode("edit");
     setEditingId(region.id);
-    setShowForm(true);
     setForm({
-      name: region.name || "",
-      country_id: region.country_id != null ? String(region.country_id) : "",
-      parent_id: region.parent_id != null ? String(region.parent_id) : "",
-      parent_name: region.parent_name || "",
-      is_state: Boolean(region.is_state),
-      is_appellation: Boolean(region.is_appellation),
+      name: region.name,
+      country_id: region.country_id,
+      parent_id: region.parent_id,
+      is_state: region.is_state,
+      is_appellation: region.is_appellation,
     });
+    setShowForm(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   async function handleDelete(region) {
-    if (
-      !window.confirm(`Delete region "${region.name}"? This cannot be undone.`)
-    )
-      return;
-    setError(null);
-    setNotice(null);
-    try {
-      await regionsApi.remove(region.id);
-      setNotice(`Region "${region.name}" deleted.`);
-      if (editingId === region.id) resetForm();
-      await loadRegions();
-    } catch (err) {
-      setError(err.message || "Failed to delete region");
+    if (window.confirm(`Delete region "${region.name}"?`)) {
+      try {
+        await regionsApi.remove(region.id);
+        setNotice(`Region "${region.name}" deleted.`);
+        await loadTreeData();
+      } catch (err) {
+        setError(err.message || "Failed to delete region");
+      }
     }
   }
 
-  const parentOptions = regions.filter((r) => r.id !== editingId);
   return (
     <div className="grapes-page">
-      <h1 className="grapes-page__title">Regions</h1>
-
       {error && <div className="flash flash--alert">{error}</div>}
       {notice && <div className="flash flash--notice">{notice}</div>}
 
-      {canManage && showForm && (
-        <section className="grape-form-section">
-          <h2>{mode === "edit" ? "Edit Region" : "New Region"}</h2>
-          <form onSubmit={handleSubmit} className="grape-form">
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="region-name">Name *</label>
-                <input
-                  id="region-name"
-                  type="text"
-                  value={form.name}
-                  onChange={(e) => updateField("name", e.target.value)}
-                  placeholder="e.g. Napa Valley"
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="region-country">Country *</label>
-                <select
-                  id="region-country"
-                  value={form.country_id}
-                  onChange={(e) => updateField("country_id", e.target.value)}
-                  required
-                >
-                  <option value="">Select a country...</option>
-                  {countries.map((c) => (
-                    <option key={c.id} value={String(c.id)}>
-                      {c.flag_emoji ? `${c.flag_emoji} ` : ""}
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="region-parent">Parent Region</label>
-                <select
-                  id="region-parent"
-                  value={form.parent_id}
-                  onChange={(e) => updateField("parent_id", e.target.value)}
-                >
-                  <option value="">No parent (top-level)</option>
-                  {parentOptions.map((r) => (
-                    <option key={r.id} value={String(r.id)}>
-                      {r.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="form-group form-group--checkboxes">
-                <label className="checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={Boolean(form.is_state)}
-                    onChange={(e) => updateField("is_state", e.target.checked)}
-                  />
-                  Is State / Province
-                </label>
-                <label className="checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={Boolean(form.is_appellation)}
-                    onChange={(e) =>
-                      updateField("is_appellation", e.target.checked)
-                    }
-                  />
-                  Is Appellation
-                </label>
-              </div>
-            </div>
-            <div className="form-actions">
-              <button type="submit" className="btn-primary" disabled={saving}>
-                {saving ? "Saving…" : mode === "edit" ? "Update" : "Create"}
-              </button>
-              <button
-                type="button"
-                className="btn-secondary"
-                onClick={resetForm}
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        </section>
-      )}
       <section>
         <div className="section-header">
-          <h2 className="section-header__title">All Regions</h2>
+          <h2 className="section-header__title">Regions Tree</h2>
           <div className="section-header__actions">
-            <select
-              className="sort-select"
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              aria-label="Sort regions"
-            >
-              <option value="name">Name</option>
-              <option value="country">Country</option>
-              <option value="type">Type</option>
-            </select>
             {canManage && !showForm && (
               <button
                 type="button"
                 className="btn-primary"
                 onClick={openCreateForm}
               >
-                + Add New Region
+                + Add Region
               </button>
             )}
           </div>
         </div>
 
+      {showForm && (
+        <section>
+          <div className="grapes-page__form-container">
+            <form className="grape-form" onSubmit={handleSubmit}>
+              <h2>{mode === "edit" ? "Edit Region" : "New Region"}</h2>
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="region-name">Name *</label>
+                  <input
+                    type="text"
+                    id="region-name"
+                    value={form.name}
+                    onChange={(e) => updateField("name", e.target.value)}
+                    disabled={saving}
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="region-country">Country *</label>
+                  <select
+                    id="region-country"
+                    value={form.country_id}
+                    onChange={(e) => updateField("country_id", e.target.value)}
+                    disabled={saving || countries.length === 0}
+                  >
+                    <option value="">Select a country</option>
+                    {countries.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.flag_emoji} {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="region-parent">Parent Region</label>
+                  <select
+                    id="region-parent"
+                    value={form.parent_id || ""}
+                    onChange={(e) =>
+                      updateField("parent_id", e.target.value || null)
+                    }
+                    disabled={saving}
+                  >
+                    <option value="">No parent (top-level region)</option>
+                    {countries
+                      .map((c) =>
+                        c.regions
+                          ?.filter((r) => r.parent_id === null)
+                          .map((r) => (
+                            <option key={r.id + "-parent"} value={r.id}>
+                              {r.name} ({c.name})
+                            </option>
+                          )),
+                      )
+                      .flat(2)
+                      .filter(Boolean) || []}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <div className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      id="region-is-state"
+                      checked={form.is_state}
+                      onChange={(e) =>
+                        updateField("is_state", e.target.checked)
+                      }
+                    />
+                    <label htmlFor="region-is-state">is State?</label>
+                  </div>
+                </div>
+              </div>
+              <div className="form-group">
+                <div className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    id="region-is-appellation"
+                    checked={form.is_appellation}
+                    onChange={(e) =>
+                      updateField("is_appellation", e.target.checked)
+                    }
+                  />
+                  <label htmlFor="region-is-appellation">is Appellation?</label>
+                </div>
+              </div>
+              <div className="form-actions">
+                <button
+                  type="submit"
+                  className="btn-primary"
+                  disabled={saving}
+                >
+                  {mode === "edit" ? "Update" : "Create"}
+                </button>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={resetForm}
+                  disabled={saving}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </section>
+      )}
         {loading ? (
           <p className="grapes-page__loading">Loading regions…</p>
-        ) : sortedRegions.length === 0 ? (
-          <p className="grapes-page__empty">No regions found.</p>
+        ) : treeData.length === 0 ? (
+          <p className="grapes-page__empty">No countries or regions found.</p>
         ) : (
-          <table className="grapes-table regions-table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Country</th>
-                <th>Type</th>
-                <th>Parent</th>
-                {canManage && <th>Actions</th>}
-              </tr>
-            </thead>
-            <tbody>
-              {sortedRegions.map((region, index) => (
-                <tr
-                  key={region.id}
-                  className={
-                    index % 2 === 0 ? "grapes-row--even" : "grapes-row--odd"
-                  }
-                >
-                  <td>
-                    <Link
-                      to={`/regions/${region.id}`}
-                      className="grapes-table__link"
-                    >
-                      {region.name}
-                    </Link>
-                  </td>
-                  <td>
-                    {region.country?.flag_emoji
-                      ? `${region.country.flag_emoji} `
-                      : ""}
-                    {region.country?.name || "—"}
-                  </td>
-                  <td>{typeLabel(region)}</td>
-                  <td>{region.parent_name ? region.parent_name : "—"}</td>
-                  {canManage && (
-                    <td className="actions">
-                      <Link to={`/regions/${region.id}`} className="btn-action">
-                        Show
-                      </Link>
-                      <button
-                        type="button"
-                        className="btn-action"
-                        onClick={() => startEdit(region)}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        type="button"
-                        className="btn-action btn-action--delete"
-                        onClick={() => handleDelete(region)}
-                      >
-                        Delete
-                      </button>
-                    </td>
+          <div className="region-tree-container">
+            {treeData.map((country) => {
+              const countryLength = country.regions?.length ?? 0;
+
+              if (countryLength === 0) return null;
+
+              return (
+                <div key={country.id} className="region-tree-country">
+                  <div
+                    className="region-tree-country__header"
+                    onClick={() => toggleCountry(country.id)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        toggleCountry(country.id);
+                      }
+                    }}
+                  >
+                    <span className="region-tree-country__toggle">
+                      {expandedCountries.has(country.id) ? "-" : "+"}
+                    </span>
+
+                    <span className="region-tree-country__flag">
+                      {country.flag_emoji}
+                    </span>
+
+                    <span className="region-tree-country__name">
+                      {country.name}
+                    </span>
+
+                    <span className="region-tree-country__count">
+                      ({countryLength})
+                    </span>
+                  </div>
+
+                  {expandedCountries.has(country.id) && (
+                    <div className="region-tree-country__regions">
+                      {country.regions?.map((region) => (
+                        <RegionTreeNode
+                          key={region.id}
+                          node={region}
+                          level={1}
+                          targetRegionId={targetRegionId}
+                        />
+                      ))}
+                    </div>
                   )}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                </div>
+              );
+            })}
+          </div>
         )}
       </section>
+
     </div>
   );
 }
