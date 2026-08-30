@@ -74,45 +74,83 @@ function ProducerList() {
           </Link>
         </div>
       ) : (
-        <div className="wine-management__grid" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
-          {producers.map((producer) => (
-            <div
-              key={producer.slug}
-              className="wine-management__card"
-              onClick={() => navigate(`/producers/${producer.slug}`)}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  navigate(`/producers/${producer.slug}`);
+        <table className="grapes-table producers-table">
+          <thead>
+            <tr>
+              <th className="producers-table__image-col">Image</th>
+              <th>Name</th>
+              <th>Address</th>
+              <th>Email</th>
+              <th>Wines</th>
+              {canManageProducers && <th>Actions</th>}
+            </tr>
+          </thead>
+          <tbody>
+            {producers.map((producer, index) => (
+              <tr
+                key={producer.slug}
+                className={
+                  index % 2 === 0 ? "grapes-row--even" : "grapes-row--odd"
                 }
-              }}
-            >
-              {Array.isArray(producer.images) && producer.images.length > 0 && (
-                <img
-                  src={producer.images[0]}
-                  alt={producer.name}
-                  className="wine-management__thumb"
-                />
-              )}
-              <div className="wine-management__card-header">
-                <h3>{producer.name}</h3>
-              </div>
-              {producer.address && (
-                <p className="wine-management__region">{producer.address}</p>
-              )}
-              {producer.email && (
-                <p className="wine-management__producer">{producer.email}</p>
-              )}
-              {producer.wines && producer.wines.length > 0 && (
-                <p className="wine-management__vintage-count">
-                  {producer.wines.length} wine
-                  {producer.wines.length !== 1 ? "s" : ""}
-                </p>
-              )}
-            </div>
-          ))}
-        </div>
+                onClick={() => navigate(`/producers/${producer.slug}`)}
+                style={{ cursor: "pointer" }}
+              >
+                <td>
+                  {Array.isArray(producer.images) &&
+                  producer.images.length > 0 ? (
+                    <img
+                      src={producer.images[0]}
+                      alt={producer.name}
+                      className="producers-table__thumb"
+                    />
+                  ) : (
+                    <span
+                      className="producers-table__thumb producers-table__thumb--empty"
+                      aria-hidden="true"
+                    />
+                  )}
+                </td>
+                <td>
+                  <Link
+                    to={`/producers/${producer.slug}`}
+                    className="grapes-table__link"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {producer.name}
+                  </Link>
+                </td>
+                <td>{producer.address || "—"}</td>
+                <td>{producer.email || "—"}</td>
+                <td>
+                  {producer.wines && producer.wines.length > 0 ? (
+                    <Link
+                      to={`/wines?producer=${producer.slug}`}
+                      className="grapes-table__link"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {`${producer.wines.length} wine${
+                        producer.wines.length !== 1 ? "s" : ""
+                      }`}
+                    </Link>
+                  ) : (
+                    "—"
+                  )}
+                </td>
+                {canManageProducers && (
+                  <td className="actions">
+                    <Link
+                      to={`/producers/${producer.slug}/edit`}
+                      className="btn-action"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      Edit
+                    </Link>
+                  </td>
+                )}
+              </tr>
+            ))}
+          </tbody>
+        </table>
       )}
     </div>
   );

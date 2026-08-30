@@ -135,7 +135,9 @@ function Countries() {
 
   async function handleDelete(country) {
     if (
-      !window.confirm(`Delete country "${country.name}"? This cannot be undone.`)
+      !window.confirm(
+        `Delete country "${country.name}"? This cannot be undone.`,
+      )
     )
       return;
     setError(null);
@@ -267,7 +269,7 @@ function Countries() {
                 <th>Name</th>
                 <th>Code</th>
                 <th>Continent</th>
-                {canManage && <th>Actions</th>}
+                {/* {canManage && <th>Actions</th>} */}
               </tr>
             </thead>
             <tbody>
@@ -289,7 +291,7 @@ function Countries() {
                   </td>
                   <td>{country.code}</td>
                   <td>{country.continent || "—"}</td>
-                  {canManage && (
+                  {/* {canManage && (
                     <td className="actions">
                       <Link
                         to={`/countries/${country.id}`}
@@ -312,7 +314,7 @@ function Countries() {
                         Delete
                       </button>
                     </td>
-                  )}
+                  )} */}
                 </tr>
               ))}
             </tbody>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { winesApi } from "../services/api";
 import { useCategoryOrder, sortCategoryNames } from "../hooks/useCategoryOrder";
 import { useSelectedCategory } from "../hooks/useSelectedCategory";
@@ -15,6 +15,8 @@ function WineList() {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
   const categoryOrder = useCategoryOrder("sort_order_wine");
+  const [searchParams] = useSearchParams();
+  const selectedProducer = searchParams.get("producer");
   const selectedCategory = useSelectedCategory();
 
   useEffect(() => {
@@ -97,9 +99,17 @@ function WineList() {
       ) : (
         (() => {
           // When a category is selected via ?category=, show only that one.
-          const visible = selectedCategory
-            ? wines.filter((w) => (w.category || "Uncategorized") === selectedCategory)
-            : wines;
+          let visible = wines;
+          if (selectedCategory) {
+            visible = visible.filter(
+              (w) => (w.category || "Uncategorized") === selectedCategory,
+            );
+          }
+          if (selectedProducer) {
+            visible = visible.filter(
+              (w) => w.producer && w.producer.slug === selectedProducer,
+            );
+          }
 
           // Group wines by category
           const grouped = visible.reduce((acc, wine) => {

@@ -2683,3 +2683,23 @@ textarea {
   color: #777;
   font-size: 0.85rem;
 }
+
+/* Producers table (one producer per line, small thumbnail) */
+.producers-table__image-col {
+  width: 72px;
+}
+
+.producers-table__thumb {
+  display: block;
+  width: 44px;
+  height: 44px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid #dee2e6;
+  background: #fff;
+}
+
+.producers-table__thumb--empty {
+  background: #eef2f7;
+  border-style: dashed;
+}
