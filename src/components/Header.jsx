@@ -200,6 +200,12 @@ function Header() {
                 <NavLink to="/grapes" onClick={() => setSettingsOpen(false)}>
                   Grapes
                 </NavLink>
+                <NavLink
+                  to="/countries"
+                  onClick={() => setSettingsOpen(false)}
+                >
+                  Countries
+                </NavLink>
               </div>
             )}
           </div>

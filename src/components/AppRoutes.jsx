@@ -19,6 +19,8 @@ import UserRoles from "./UserRoles.jsx";
 import Categories from "./Categories.jsx";
 import Grapes from "./Grapes.jsx";
 import GrapeDetail from "./GrapeDetail.jsx";
+import Countries from "./Countries.jsx";
+import CountryDetail from "./CountryDetail.jsx";
 
 function AppRoutes({ user, setUser }) {
   return (
@@ -51,6 +53,8 @@ function AppRoutes({ user, setUser }) {
         <Route element={<Categories />} path="/categories" />
         <Route element={<Grapes />} path="/grapes" />
         <Route element={<GrapeDetail />} path="/grapes/:id" />
+        <Route element={<Countries />} path="/countries" />
+        <Route element={<CountryDetail />} path="/countries/:id" />
       </Routes>
     </>
   );

@@ -1,0 +1,326 @@
+import { useCallback, useEffect, useState, useMemo } from "react";
+import { Link } from "react-router-dom";
+import { countriesApi } from "../services/api";
+import { useAuth } from "../contexts/AuthContext";
+import { isSuperUser, canManageGrapes } from "../constants/roles";
+
+const emptyForm = {
+  name: "",
+  code: "",
+  continent: "",
+  flag_emoji: "",
+};
+
+const CONTINENT_OPTIONS = [
+  "Africa",
+  "Asia",
+  "Europe",
+  "North America",
+  "South America",
+  "Oceania",
+];
+
+function Countries() {
+  const { user } = useAuth();
+  const [sortBy, setSortBy] = useState("name");
+  const [countries, setCountries] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+  const [notice, setNotice] = useState(null);
+  const [mode, setMode] = useState("create");
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState(emptyForm);
+  const [editingId, setEditingId] = useState(null);
+
+  const canManage = isSuperUser(user) || canManageGrapes(user);
+
+  const sortedCountries = useMemo(() => {
+    const sorted = [...countries];
+    switch (sortBy) {
+      case "continent":
+        sorted.sort(
+          (a, b) =>
+            (a.continent || "").localeCompare(b.continent || "") ||
+            (a.name || "").localeCompare(b.name || ""),
+        );
+        break;
+      case "name":
+      default:
+        sorted.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+        break;
+    }
+    return sorted;
+  }, [countries, sortBy]);
+
+  const loadCountries = useCallback(async () => {
+    try {
+      setLoading(true);
+      const data = await countriesApi.list();
+      setCountries(Array.isArray(data) ? data : []);
+      setError(null);
+    } catch (err) {
+      setError(err.message || "Failed to load countries");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadCountries();
+  }, [loadCountries]);
+
+  function updateField(field, value) {
+    setForm((prev) => ({ ...prev, [field]: value }));
+  }
+
+  function resetForm() {
+    setMode("create");
+    setEditingId(null);
+    setShowForm(false);
+    setForm(emptyForm);
+  }
+
+  function openCreateForm() {
+    setMode("create");
+    setEditingId(null);
+    setForm(emptyForm);
+    setShowForm(true);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (!form.name.trim() || !form.code.trim()) {
+      setError("Name and ISO code are required.");
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    try {
+      const payload = {
+        name: form.name.trim(),
+        code: form.code.trim().toUpperCase(),
+        continent: form.continent || null,
+        flag_emoji: form.flag_emoji || null,
+      };
+      if (mode === "edit" && editingId) {
+        await countriesApi.update(editingId, payload);
+        setNotice(`Country "${payload.name}" updated.`);
+      } else {
+        await countriesApi.create(payload);
+        setNotice(`Country "${payload.name}" created.`);
+      }
+      resetForm();
+      await loadCountries();
+    } catch (err) {
+      setError(err.message || "Failed to save country");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function startEdit(country) {
+    setMode("edit");
+    setEditingId(country.id);
+    setShowForm(true);
+    setForm({
+      name: country.name || "",
+      code: country.code || "",
+      continent: country.continent || "",
+      flag_emoji: country.flag_emoji || "",
+    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  async function handleDelete(country) {
+    if (
+      !window.confirm(`Delete country "${country.name}"? This cannot be undone.`)
+    )
+      return;
+    setError(null);
+    setNotice(null);
+    try {
+      await countriesApi.remove(country.id);
+      setNotice(`Country "${country.name}" deleted.`);
+      if (editingId === country.id) resetForm();
+      await loadCountries();
+    } catch (err) {
+      setError(err.message || "Failed to delete country");
+    }
+  }
+
+  return (
+    <div className="grapes-page">
+      <h1 className="grapes-page__title">Countries</h1>
+
+      {error && <div className="flash flash--alert">{error}</div>}
+      {notice && <div className="flash flash--notice">{notice}</div>}
+
+      {canManage && showForm && (
+        <section className="grape-form-section">
+          <h2>{mode === "edit" ? "Edit Country" : "New Country"}</h2>
+          <form onSubmit={handleSubmit} className="grape-form">
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="country-name">Name *</label>
+                <input
+                  id="country-name"
+                  type="text"
+                  value={form.name}
+                  onChange={(e) => updateField("name", e.target.value)}
+                  placeholder="e.g. Portugal"
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="country-code">ISO code (2 letters) *</label>
+                <input
+                  id="country-code"
+                  type="text"
+                  maxLength={2}
+                  value={form.code}
+                  onChange={(e) => updateField("code", e.target.value)}
+                  placeholder="e.g. PT"
+                  required
+                  style={{ textTransform: "uppercase" }}
+                />
+              </div>
+            </div>
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="country-continent">Continent</label>
+                <select
+                  id="country-continent"
+                  value={form.continent}
+                  onChange={(e) => updateField("continent", e.target.value)}
+                >
+                  <option value="">Select continent...</option>
+                  {CONTINENT_OPTIONS.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group">
+                <label htmlFor="country-flag">Flag emoji</label>
+                <input
+                  id="country-flag"
+                  type="text"
+                  value={form.flag_emoji}
+                  onChange={(e) => updateField("flag_emoji", e.target.value)}
+                  placeholder="e.g. 🇵🇹"
+                />
+              </div>
+            </div>
+            <div className="form-actions">
+              <button type="submit" className="btn-primary" disabled={saving}>
+                {saving ? "Saving…" : mode === "edit" ? "Update" : "Create"}
+              </button>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={resetForm}
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </section>
+      )}
+
+      <section>
+        <div className="section-header">
+          <h2 className="section-header__title">All Countries</h2>
+          <div className="section-header__actions">
+            <select
+              className="sort-select"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              aria-label="Sort countries"
+            >
+              <option value="name">Name</option>
+              <option value="continent">Continent</option>
+            </select>
+            {canManage && !showForm && (
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={openCreateForm}
+              >
+                + Add New Country
+              </button>
+            )}
+          </div>
+        </div>
+
+        {loading ? (
+          <p className="grapes-page__loading">Loading countries…</p>
+        ) : sortedCountries.length === 0 ? (
+          <p className="grapes-page__empty">No countries found.</p>
+        ) : (
+          <table className="grapes-table">
+            <thead>
+              <tr>
+                <th>Flag</th>
+                <th>Name</th>
+                <th>Code</th>
+                <th>Continent</th>
+                {canManage && <th>Actions</th>}
+              </tr>
+            </thead>
+            <tbody>
+              {sortedCountries.map((country, index) => (
+                <tr
+                  key={country.id}
+                  className={
+                    index % 2 === 0 ? "grapes-row--even" : "grapes-row--odd"
+                  }
+                >
+                  <td>{country.flag_emoji || "—"}</td>
+                  <td>
+                    <Link
+                      to={`/countries/${country.id}`}
+                      className="grapes-table__link"
+                    >
+                      {country.name}
+                    </Link>
+                  </td>
+                  <td>{country.code}</td>
+                  <td>{country.continent || "—"}</td>
+                  {canManage && (
+                    <td className="actions">
+                      <Link
+                        to={`/countries/${country.id}`}
+                        className="btn-action"
+                      >
+                        Show
+                      </Link>
+                      <button
+                        type="button"
+                        className="btn-action"
+                        onClick={() => startEdit(country)}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        className="btn-action btn-action--delete"
+                        onClick={() => handleDelete(country)}
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </section>
+    </div>
+  );
+}
+
+export default Countries;

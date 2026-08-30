@@ -377,6 +377,35 @@ export const grapesApi = {
   },
 };
 
+export const countriesApi = {
+  list() {
+    return request("/countries");
+  },
+  show(id) {
+    return request(`/countries/${id}`);
+  },
+  create(countryData) {
+    return request("/countries", {
+      method: "POST",
+      auth: true,
+      body: { country: countryData },
+    });
+  },
+  update(id, countryData) {
+    return request(`/countries/${id}`, {
+      method: "PATCH",
+      auth: true,
+      body: { country: countryData },
+    });
+  },
+  remove(id) {
+    return request(`/countries/${id}`, {
+      method: "DELETE",
+      auth: true,
+    });
+  },
+};
+
 export const statsApi = {
   get() {
     return request("/stats", { auth: false });
