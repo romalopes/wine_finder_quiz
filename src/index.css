@@ -2889,6 +2889,15 @@ textarea {
   border-left: 2px solid #e9ecef;
 }
 
+.region-tree-node__wine-count {
+  color: #6b5855;
+  font-size: 0.8rem;
+  background: #e9ecef;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
 /* ===== Region Detail ===== */
 .region-detail__header {
   display: flex;

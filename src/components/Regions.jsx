@@ -23,6 +23,7 @@ function typeLabel(region) {
 function RegionTreeNode({ node, level, targetRegionId }) {
   const hasChildren = node.children && node.children.length > 0;
   const isCurrentRegion = node.id === targetRegionId;
+  const wineCount = node.wine_count || 0;
   const [isExpanded, setIsExpanded] = useState(false);
 
   const toggleExpand = (e) => {
@@ -60,6 +61,11 @@ function RegionTreeNode({ node, level, targetRegionId }) {
             <span className="region-tree-node__type"> ({typeLabel(node)})</span>
           )}
         </Link>
+        {wineCount > 0 && (
+          <span className="region-tree-node__wine-count">
+            {wineCount} wine{wineCount === 1 ? "" : "s"}
+          </span>
+        )}
       </div>
       {hasChildren && isExpanded && node.children && (
         <div className="region-tree-node__children">
@@ -350,9 +356,9 @@ function Regions() {
         ) : (
           <div className="region-tree-container">
             {treeData.map((country) => {
-              const countryLength = country.regions?.length ?? 0;
+              const countryWineCount = country.wine_count || 0;
 
-              if (countryLength === 0) return null;
+              if (!country.regions?.length) return null;
 
               return (
                 <div key={country.id} className="region-tree-country">
@@ -381,7 +387,7 @@ function Regions() {
                     </span>
 
                     <span className="region-tree-country__count">
-                      ({countryLength})
+                      {countryWineCount} wine{countryWineCount === 1 ? "" : "s"}
                     </span>
                   </div>
 
