@@ -111,6 +111,7 @@ function Regions() {
         name: form.name.trim(),
         country_id: form.country_id ? parseInt(form.country_id, 10) : null,
         parent_id: form.parent_id ? parseInt(form.parent_id, 10) : null,
+        parent_name: form.parent_name || null,
         is_state: Boolean(form.is_state),
         is_appellation: Boolean(form.is_appellation),
       };
@@ -138,6 +139,7 @@ function Regions() {
       name: region.name || "",
       country_id: region.country_id != null ? String(region.country_id) : "",
       parent_id: region.parent_id != null ? String(region.parent_id) : "",
+      parent_name: region.parent_name || "",
       is_state: Boolean(region.is_state),
       is_appellation: Boolean(region.is_appellation),
     });
@@ -145,7 +147,9 @@ function Regions() {
   }
 
   async function handleDelete(region) {
-    if (!window.confirm(`Delete region "${region.name}"? This cannot be undone.`))
+    if (
+      !window.confirm(`Delete region "${region.name}"? This cannot be undone.`)
+    )
       return;
     setError(null);
     setNotice(null);
@@ -160,7 +164,7 @@ function Regions() {
   }
 
   const parentOptions = regions.filter((r) => r.id !== editingId);
-return (
+  return (
     <div className="grapes-page">
       <h1 className="grapes-page__title">Regions</h1>
 
@@ -253,7 +257,7 @@ return (
           </form>
         </section>
       )}
-<section>
+      <section>
         <div className="section-header">
           <h2 className="section-header__title">All Regions</h2>
           <div className="section-header__actions">
@@ -317,13 +321,10 @@ return (
                     {region.country?.name || "—"}
                   </td>
                   <td>{typeLabel(region)}</td>
-                  <td>{region.parent_id ? "Yes" : "—"}</td>
+                  <td>{region.parent_name ? region.parent_name : "—"}</td>
                   {canManage && (
                     <td className="actions">
-                      <Link
-                        to={`/regions/${region.id}`}
-                        className="btn-action"
-                      >
+                      <Link to={`/regions/${region.id}`} className="btn-action">
                         Show
                       </Link>
                       <button
