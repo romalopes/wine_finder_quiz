@@ -314,7 +314,6 @@ function ArticleForm({ article, onSaved, onCancel }) {
             {wineResults.map((wine) => (
               <div key={wine.slug} className="wine-search-result">
                 <strong>{wine.name}</strong>
-                {wine.region ? <span className="review-card__comment"> — {wine.region}</span> : null}
                 <div className="wine-search-result__vintages">
                   {(wine.vintages || []).length === 0 && (
                     <span className="review-card__comment">No vintages</span>

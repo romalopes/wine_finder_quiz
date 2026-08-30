@@ -307,11 +307,6 @@ function Reviews() {
                                 </span>
                               )}
                             </div>
-                            {wine.region && (
-                              <span className="review-card__comment">
-                                {wine.region}
-                              </span>
-                            )}
                           </button>
                         ))}
                       </div>

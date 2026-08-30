@@ -206,6 +206,9 @@ function Header() {
                 >
                   Countries
                 </NavLink>
+                <NavLink to="/regions" onClick={() => setSettingsOpen(false)}>
+                  Regions
+                </NavLink>
               </div>
             )}
           </div>

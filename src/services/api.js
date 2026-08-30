@@ -412,4 +412,33 @@ export const statsApi = {
   },
 };
 
+export const regionsApi = {
+  list() {
+    return request("/regions", { auth: false });
+  },
+  show(id) {
+    return request(`/regions/${id}`);
+  },
+  create(regionData) {
+    return request("/regions", {
+      method: "POST",
+      auth: true,
+      body: { region: regionData },
+    });
+  },
+  update(id, regionData) {
+    return request(`/regions/${id}`, {
+      method: "PATCH",
+      auth: true,
+      body: { region: regionData },
+    });
+  },
+  remove(id) {
+    return request(`/regions/${id}`, {
+      method: "DELETE",
+      auth: true,
+    });
+  },
+};
+
 export { API_BASE_URL };

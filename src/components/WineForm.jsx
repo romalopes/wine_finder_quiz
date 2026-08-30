@@ -9,6 +9,7 @@ import {
 import ImageManager from "./ImageManager";
 import ProducerSearch from "./ProducerSearch";
 import GrapeSearch from "./GrapeSearch";
+import RegionSearch from "./RegionSearch";
 import {
   VOLUMES,
   DEFAULT_VOLUME,
@@ -27,7 +28,6 @@ function WineForm() {
   const [formData, setFormData] = useState({
     id: null,
     name: "",
-    region: "",
     color: DEFAULT_COLOR,
     closure: DEFAULT_CLOSURE,
     alcohol_percentage: String(DEFAULT_ALCOHOL_PERCENTAGE),
@@ -40,6 +40,7 @@ function WineForm() {
   });
 
   const [selectedGrapes, setSelectedGrapes] = useState([]);
+  const [selectedRegions, setSelectedRegions] = useState([]);
 
   const [wineCategories, setWineCategories] = useState([]);
   const [vintages, setVintages] = useState([]);
@@ -82,7 +83,6 @@ function WineForm() {
           setFormData({
             id: wineData.id || null,
             name: wineData.name || "",
-            region: wineData.region || "",
             color: wineData.color || DEFAULT_COLOR,
             closure: wineData.closure || DEFAULT_CLOSURE,
             alcohol_percentage:
@@ -101,6 +101,7 @@ function WineForm() {
           });
 
           setSelectedGrapes(wineData.grapes || []);
+          setSelectedRegions(wineData.regions || []);
 
           setVintages(
             (wineData.vintages || []).map((v) => ({
@@ -201,7 +202,6 @@ function WineForm() {
       const payload = {
         id: formData.id || null,
         name: formData.name,
-        region: formData.region,
         color: formData.color,
         closure: formData.closure || null,
         alcohol_percentage: formData.alcohol_percentage
@@ -217,6 +217,7 @@ function WineForm() {
           : null,
         sparkling: Boolean(formData.sparkling),
         grape_ids: selectedGrapes.map((g) => g.id),
+        region_ids: selectedRegions.map((r) => r.id),
         vintages_attributes: vintages.map((v) => {
           const attr = {
             year: parseInt(v.year, 10),
@@ -275,6 +276,17 @@ function WineForm() {
       {error && <p className="auth-form__error">{error}</p>}
       <form onSubmit={handleSubmit} className="wine-form">
         <div className="wine-form__fields">
+          <label className="auth-form__field">
+            <span>Name *</span>
+            <input
+              type="text"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              required
+              placeholder="e.g. Château Margaux"
+            />
+          </label>
           <div className="auth-form__field">
             <ProducerSearch
               value={formData.producer_name}
@@ -285,6 +297,12 @@ function WineForm() {
             <GrapeSearch
               selected={selectedGrapes}
               onChange={setSelectedGrapes}
+            />
+          </div>
+          <div className="auth-form__field">
+            <RegionSearch
+              selected={selectedRegions}
+              onChange={setSelectedRegions}
             />
           </div>
           <label className="auth-form__field auth-form__field--checkbox">
@@ -313,28 +331,6 @@ function WineForm() {
                   ),
               )}
             </select>
-          </label>
-          <label className="auth-form__field">
-            <span>Name *</span>
-            <input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              required
-              placeholder="e.g. Château Margaux"
-            />
-          </label>
-          <label className="auth-form__field">
-            <span>Region *</span>
-            <input
-              type="text"
-              name="region"
-              value={formData.region}
-              onChange={handleChange}
-              required
-              placeholder="e.g. Bordeaux, France"
-            />
           </label>
           <label className="auth-form__field">
             <span>Colour * </span>

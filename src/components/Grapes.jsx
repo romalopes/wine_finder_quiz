@@ -48,7 +48,9 @@ function Grapes() {
         sorted.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
         break;
       case "origin_country":
-        sorted.sort((a, b) => (a.origin_country || "").localeCompare(b.origin_country || ""));
+        sorted.sort((a, b) =>
+          (a.origin_country || "").localeCompare(b.origin_country || ""),
+        );
         break;
       case "relevance":
       default:
@@ -352,7 +354,7 @@ function Grapes() {
                 <th>Color</th>
                 <th>Origin</th>
                 <th>Synonyms</th>
-                {isWineManager && <th>Actions</th>}
+                {/* {isWineManager && <th>Actions</th>} */}
               </tr>
             </thead>
             <tbody>
@@ -379,7 +381,7 @@ function Grapes() {
                         (grape.synonyms.length > 3 ? "…" : "")
                       : "—"}
                   </td>
-                  {isWineManager && (
+                  {/* {isWineManager && (
                     <td className="actions">
                       <Link to={`/grapes/${grape.id}`} className="btn-action">
                         Show
@@ -399,7 +401,7 @@ function Grapes() {
                         Delete
                       </button>
                     </td>
-                  )}
+                  )} */}
                 </tr>
               ))}
             </tbody>

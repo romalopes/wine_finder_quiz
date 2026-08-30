@@ -2672,6 +2672,12 @@ textarea {
   margin: 0.15rem 0 0;
 }
 
+.wine-management__regions {
+  font-size: 0.85rem;
+  color: #6b4a3a;
+  margin: 0.15rem 0 0;
+}
+
 .wine-management__sparkling {
   font-size: 0.85rem;
   font-weight: 600;

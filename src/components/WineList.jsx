@@ -156,7 +156,6 @@ function WineList() {
                             {wine.color}
                           </span>
                         </div>
-                        <p className="wine-management__region">{wine.region}</p>
                         {wine.producer && (
                           <p className="wine-management__producer">
                             {wine.producer.name}
@@ -167,6 +166,16 @@ function WineList() {
                             <strong>Grapes:</strong>{" "}
                             {wine.grapes.slice(0, 3).map((g) => g.name).join(", ")}
                             {wine.grapes.length > 3 ? "…" : ""}
+                          </p>
+                        )}
+                        {Array.isArray(wine.regions) && wine.regions.length > 0 && (
+                          <p className="wine-management__regions">
+                            <strong>Regions:</strong>{" "}
+                            {wine.regions
+                              .slice(0, 3)
+                              .map((r) => (r.name ? r.name : r))
+                              .join(", ")}
+                            {wine.regions.length > 3 ? "…" : ""}
                           </p>
                         )}
                         {wine.sparkling && (

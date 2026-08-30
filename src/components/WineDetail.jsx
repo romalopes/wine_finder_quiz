@@ -185,7 +185,7 @@ function WineDetail() {
       </Link>
       <div className="wine-detail__header">
         <div>
-          <p className="wine-kicker">{wine.region}</p>
+          <p className="wine-kicker">{wine.producer?.name}</p>
           <h1>{wine.name}</h1>
         </div>
         <span
@@ -249,6 +249,14 @@ function WineDetail() {
           <span className="wine-detail__spec-value">
             {Array.isArray(wine.grapes) && wine.grapes.length > 0
               ? wine.grapes.map((g) => g.name).join(", ")
+              : "—"}
+          </span>
+        </div>
+        <div className="wine-detail__spec">
+          <span className="wine-detail__spec-label">Regions</span>
+          <span className="wine-detail__spec-value">
+            {Array.isArray(wine.regions) && wine.regions.length > 0
+              ? wine.regions.map((r) => r.name || r).join(", ")
               : "—"}
           </span>
         </div>

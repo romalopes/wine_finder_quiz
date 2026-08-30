@@ -163,9 +163,6 @@ function WineSearch() {
                         {getWineTypeLabel(wine)}
                       </span>
                     </div>
-                    <p className="wine-search__detail">
-                      <strong>Region:</strong> {wine.region}
-                    </p>
                     {wine.vintages && wine.vintages.length > 0 && (
                       <p className="wine-management__vintage-count">
                         {wine.vintages.length} vintage
