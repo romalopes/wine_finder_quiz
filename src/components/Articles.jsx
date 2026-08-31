@@ -115,182 +115,209 @@ function Articles() {
         (loading ? (
           <p className="wine-management__loading">Loading articles…</p>
         ) : (
-        <>
-          <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-          {(!canManageContent ? [] : [
-            { key: "all", label: "All Articles" },
-            ...(user ? [{ key: "mine", label: "My Articles" }] : []),
-          ]).map(({ key, label }) => (
-            <button
-              key={key}
-              type="button"
-              style={{
-                border: "1px solid #d7c8bb",
-                borderRadius: "999px",
-                padding: "8px 14px",
-                fontWeight: 800,
-                fontSize: "0.85rem",
-                cursor: "pointer",
-                background: scope === key ? "#27615e" : "#fff",
-                color: scope === key ? "#f7fff9" : "#4f4440",
-                borderColor: scope === key ? "#27615e" : "#d7c8bb",
-              }}
-              onClick={() => setScope(key)}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-
-        {canManageContent && (
           <>
-          {/* Status filter: All / Draft / Published */}
-          <div style={{ display: "flex", gap: 8, marginBottom: 24 }}>
-            {["all", "draft", "published"].map((filter) => (
-              <button
-                key={filter}
-                type="button"
-                style={{
-                  border: "1px solid #d7c8bb",
-                  borderRadius: "999px",
-                  padding: "6px 12px",
-                  fontWeight: 700,
-                  fontSize: "0.8rem",
-                  cursor: "pointer",
-                  background: statusFilter === filter ? "#8a273c" : "#fff",
-                  color: statusFilter === filter ? "#fff8f2" : "#4f4440",
-                  borderColor: statusFilter === filter ? "#8a273c" : "#d7c8bb",
-                }}
-                onClick={() => setStatusFilter(filter)}
-              >
-                {filter.charAt(0).toUpperCase() + filter.slice(1)}
-              </button>
-            ))}
-          </div>
-          </>
-        )}
+            <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+              {(!canManageContent
+                ? []
+                : [
+                    { key: "all", label: "All Articles" },
+                    ...(user ? [{ key: "mine", label: "My Articles" }] : []),
+                  ]
+              ).map(({ key, label }) => (
+                <button
+                  key={key}
+                  type="button"
+                  style={{
+                    border: "1px solid #d7c8bb",
+                    borderRadius: "999px",
+                    padding: "8px 14px",
+                    fontWeight: 800,
+                    fontSize: "0.85rem",
+                    cursor: "pointer",
+                    background: scope === key ? "#27615e" : "#fff",
+                    color: scope === key ? "#f7fff9" : "#4f4440",
+                    borderColor: scope === key ? "#27615e" : "#d7c8bb",
+                  }}
+                  onClick={() => setScope(key)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
 
-          {(() => {
-            // Guests/Readers only ever see published articles.
-            const effectiveScope = canManageContent ? scope : "all";
-            const effectiveStatus = canManageContent
-              ? statusFilter
-              : "published";
-            const source =
-              effectiveScope === "mine" ? myArticles : articles;
-            const filtered = (effectiveStatus === "all"
-              ? source
-              : source.filter((a) => a.status === effectiveStatus)
-            ).filter(
-              (a) =>
-                !selectedCategory ||
-                (a.category || "Uncategorized") === selectedCategory,
-            );
+            {canManageContent && (
+              <>
+                {/* Status filter: All / Draft / Published */}
+                <div style={{ display: "flex", gap: 8, marginBottom: 24 }}>
+                  {["all", "draft", "published"].map((filter) => (
+                    <button
+                      key={filter}
+                      type="button"
+                      style={{
+                        border: "1px solid #d7c8bb",
+                        borderRadius: "999px",
+                        padding: "6px 12px",
+                        fontWeight: 700,
+                        fontSize: "0.8rem",
+                        cursor: "pointer",
+                        background:
+                          statusFilter === filter ? "#8a273c" : "#fff",
+                        color: statusFilter === filter ? "#fff8f2" : "#4f4440",
+                        borderColor:
+                          statusFilter === filter ? "#8a273c" : "#d7c8bb",
+                      }}
+                      onClick={() => setStatusFilter(filter)}
+                    >
+                      {filter.charAt(0).toUpperCase() + filter.slice(1)}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
 
-            if (effectiveScope === "mine" && !user) {
-              return (
-                <p className="wine-management__empty-state">
-                  Sign in to see your articles.
-                </p>
+            {(() => {
+              // Guests/Readers only ever see published articles.
+              const effectiveScope = canManageContent ? scope : "all";
+              const effectiveStatus = canManageContent
+                ? statusFilter
+                : "published";
+              const source = effectiveScope === "mine" ? myArticles : articles;
+              const filtered = (
+                effectiveStatus === "all"
+                  ? source
+                  : source.filter((a) => a.status === effectiveStatus)
+              ).filter(
+                (a) =>
+                  !selectedCategory ||
+                  (a.category || "Uncategorised") === selectedCategory,
               );
-            }
-            if (filtered.length === 0) {
-              return (
-                <p className="wine-management__empty-state">
-                  {source.length === 0
-                    ? scope === "mine"
-                      ? "You haven't written any articles yet."
-                      : "No articles yet. Write the first one!"
-                    : `No ${statusFilter} articles.`}
-                </p>
+
+              if (effectiveScope === "mine" && !user) {
+                return (
+                  <p className="wine-management__empty-state">
+                    Sign in to see your articles.
+                  </p>
+                );
+              }
+              if (filtered.length === 0) {
+                return (
+                  <p className="wine-management__empty-state">
+                    {source.length === 0
+                      ? scope === "mine"
+                        ? "You haven't written any articles yet."
+                        : "No articles yet. Write the first one!"
+                      : `No ${statusFilter} articles.`}
+                  </p>
+                );
+              }
+              // Group by category
+              const grouped = filtered.reduce((acc, article) => {
+                const key = article.category || "Uncategorised";
+                if (!acc[key]) acc[key] = [];
+                acc[key].push(article);
+                return acc;
+              }, {});
+
+              // Sort categories: by admin-defined sort order, Uncategorised last
+              const sortedCategories = sortCategoryNames(
+                Object.keys(grouped),
+                categoryOrder,
               );
-            }
-            // Group by category
-            const grouped = filtered.reduce((acc, article) => {
-              const key = article.category || "Uncategorized";
-              if (!acc[key]) acc[key] = [];
-              acc[key].push(article);
-              return acc;
-            }, {});
 
-            // Sort categories: by admin-defined sort order, Uncategorized last
-            const sortedCategories = sortCategoryNames(Object.keys(grouped), categoryOrder);
+              return (
+                <div className="content-grid-groups">
+                  {sortedCategories.map((category) => (
+                    <section key={category} className="content-grid-group">
+                      <h2 className="content-grid-group__title">{category}</h2>
+                      <div className="content-grid">
+                        {grouped[category].map((article) => (
+                          <div
+                            key={article.id}
+                            className="wine-management__card"
+                            onClick={() => navigate(`/articles/${article.id}`)}
+                            role="button"
+                            tabIndex={0}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                navigate(`/articles/${article.id}`);
+                              }
+                            }}
+                          >
+                            {Array.isArray(article.images) &&
+                              article.images.length > 0 && (
+                                <img
+                                  src={article.images[0]}
+                                  alt={article.title}
+                                  className="wine-management__thumb"
+                                />
+                              )}
+                            <div className="wine-management__card-header">
+                              <h3>{article.title}</h3>
+                              {canManageContent && (
+                                <span
+                                  className={`wine-management__color-badge wine-management__color-badge--${article.status}`}
+                                >
+                                  {article.status}
+                                </span>
+                              )}
+                            </div>
+                            <p className="wine-management__region">{`by ${article.author_name}`}</p>
+                            {Array.isArray(article.tags) &&
+                              article.tags.length > 0 && (
+                                <p className="wine-management__vintage-count">
+                                  Tags: {article.tags.join(", ")}
+                                </p>
+                              )}
+                            {excerpt(article.body, 50) && (
+                              <p className="wine-management__region">
+                                {excerpt(article.body, 50)}
+                              </p>
+                            )}
 
-            return (
-              <div className="content-grid-groups">
-                {sortedCategories.map((category) => (
-                  <section key={category} className="content-grid-group">
-                    <h2 className="content-grid-group__title">{category}</h2>
-                    <div className="content-grid">
-                      {grouped[category].map((article) => (
-                        <div 
-                          key={article.id} 
-                          className="wine-management__card"
-                          onClick={() => navigate(`/articles/${article.id}`)}
-                          role="button"
-                          tabIndex={0}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" || e.key === " ") {
-                              navigate(`/articles/${article.id}`);
-                            }
-                          }}
-                        >
-                          {Array.isArray(article.images) && article.images.length > 0 && (
-                            <img
-                              src={article.images[0]}
-                              alt={article.title}
-                              className="wine-management__thumb"
-                            />
-                          )}
-                          <div className="wine-management__card-header">
-                            <h3>{article.title}</h3>
-                            {canManageContent && (
-                              <span className={`wine-management__color-badge wine-management__color-badge--${article.status}`}>
-                                {article.status}
-                              </span>
+                            {canManage(article) && (
+                              <div
+                                className="wine-management__card-actions"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <Link
+                                  to={`/articles/${article.id}/edit`}
+                                  className="wine-management__edit-btn"
+                                >
+                                  Edit
+                                </Link>
+                                <button
+                                  type="button"
+                                  className={
+                                    article.status === "draft"
+                                      ? "wine-management__edit-btn"
+                                      : "wine-management__delete-btn"
+                                  }
+                                  onClick={() => togglePublish(article)}
+                                >
+                                  {article.status === "draft"
+                                    ? "Publish"
+                                    : "Unpublish"}
+                                </button>
+                                <button
+                                  type="button"
+                                  className="wine-management__delete-btn"
+                                  onClick={() => handleDelete(article.id)}
+                                  title="Delete article"
+                                >
+                                  ×
+                                </button>
+                              </div>
                             )}
                           </div>
-                          <p className="wine-management__region">{`by ${article.author_name}`}</p>
-                          {Array.isArray(article.tags) && article.tags.length > 0 && (
-                            <p className="wine-management__vintage-count">Tags: {article.tags.join(", ")}</p>
-                          )}
-                          {excerpt(article.body, 50) && (
-                            <p className="wine-management__region">{excerpt(article.body, 50)}</p>
-                          )}
-
-                          {canManage(article) && (
-                            <div className="wine-management__card-actions" onClick={(e) => e.stopPropagation()}>
-                              <Link to={`/articles/${article.id}/edit`} className="wine-management__edit-btn">
-                                Edit
-                              </Link>
-                              <button
-                                type="button"
-                                className={article.status === "draft" ? "wine-management__edit-btn" : "wine-management__delete-btn"}
-                                onClick={() => togglePublish(article)}
-                              >
-                                {article.status === "draft" ? "Publish" : "Unpublish"}
-                              </button>
-                              <button
-                                type="button"
-                                className="wine-management__delete-btn"
-                                onClick={() => handleDelete(article.id)}
-                                title="Delete article"
-                              >
-                                ×
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </section>
-                ))}
-              </div>
-            );
-          })()}
-        </>
-        )
-      )}
+                        ))}
+                      </div>
+                    </section>
+                  ))}
+                </div>
+              );
+            })()}
+          </>
+        ))}
     </main>
   );
 }

@@ -551,23 +551,28 @@ function ReviewsList({
   const navigate = useNavigate();
   const categoryOrder = useCategoryOrder("sort_order_review");
   const selectedCategory = useSelectedCategory();
-  const filtered = (statusFilter === "all"
-    ? reviews
-    : reviews.filter((r) => r.status === statusFilter)
+  const filtered = (
+    statusFilter === "all"
+      ? reviews
+      : reviews.filter((r) => r.status === statusFilter)
   ).filter(
-    (r) => !selectedCategory || (r.category || "Uncategorized") === selectedCategory,
+    (r) =>
+      !selectedCategory || (r.category || "Uncategorised") === selectedCategory,
   );
 
   // Group by category
   const grouped = filtered.reduce((acc, review) => {
-    const key = review.category || "Uncategorized";
+    const key = review.category || "Uncategorised";
     if (!acc[key]) acc[key] = [];
     acc[key].push(review);
     return acc;
   }, {});
 
-  // Sort categories: by admin-defined sort order, Uncategorized last
-  const sortedCategories = sortCategoryNames(Object.keys(grouped), categoryOrder);
+  // Sort categories: by admin-defined sort order, Uncategorised last
+  const sortedCategories = sortCategoryNames(
+    Object.keys(grouped),
+    categoryOrder,
+  );
 
   if (scope === "mine" && !user) {
     return (

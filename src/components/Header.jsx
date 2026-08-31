@@ -66,26 +66,45 @@ function Header() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [extrasOpen, setExtrasOpen] = useState(false);
   const [categories, setCategories] = useState([]);
+  const [counts, setCounts] = useState({});
 
   useEffect(() => {
     categoriesApi
       .list()
       .then((cats) => setCategories(Array.isArray(cats) ? cats : []))
       .catch(() => {});
+    categoriesApi
+      .counts()
+      .then((data) => setCounts(data || {}))
+      .catch(() => {});
   }, []);
 
   function navCategories(flag, sortKey) {
-    return categories
+    const type = flag.replace("for_", "");
+    const countMap = counts[type] || {};
+    const uncategorisedCount = counts.uncategorised?.[type] || 0;
+    const categoryLinks = categories
       .filter((c) => c[flag])
       .sort((a, b) => (a[sortKey] ?? 9999) - (b[sortKey] ?? 9999))
+      .filter((c) => (countMap[c.id] || 0) > 0)
       .map((c) => ({
-        label: c.name,
+        label: `${c.name} (${countMap[c.id] || 0})`,
         to:
           "/" +
           flag.replace("for_", "") +
           "s?category=" +
           encodeURIComponent(c.name),
       }));
+
+    // Add Uncategorised as the last item if there are any
+    if (uncategorisedCount > 0) {
+      categoryLinks.push({
+        label: `Uncategorised (${uncategorisedCount})`,
+        to: `/${type}s?category=Uncategorised`,
+      });
+    }
+
+    return categoryLinks;
   }
 
   async function handleSignOut() {
@@ -118,25 +137,24 @@ function Header() {
         <NavLink end to="/">
           Dashboard
         </NavLink>
-        <NavLink to="/producers">Producers</NavLink>
         <NavDropdown
           label="Wines"
           items={[
-            { label: "All Wines", to: "/wines" },
+            { label: `All Wines (${counts.totals?.wine || 0})`, to: "/wines" },
             ...navCategories("for_wine", "sort_order_wine"),
           ]}
         />
         <NavDropdown
           label="Reviews"
           items={[
-            { label: "All Reviews", to: "/reviews" },
+            { label: `All Reviews (${counts.totals?.review || 0})`, to: "/reviews" },
             ...navCategories("for_review", "sort_order_review"),
           ]}
         />
         <NavDropdown
           label="Articles"
           items={[
-            { label: "All Articles", to: "/articles" },
+            { label: `All Articles (${counts.totals?.article || 0})`, to: "/articles" },
             ...navCategories("for_article", "sort_order_article"),
           ]}
         />
@@ -191,6 +209,9 @@ function Header() {
                     Users &amp; Roles
                   </NavLink>
                 )}
+                <NavLink to="/producers" onClick={() => setSettingsOpen(false)}>
+                  Producers
+                </NavLink>
                 <NavLink
                   to="/categories"
                   onClick={() => setSettingsOpen(false)}
@@ -200,10 +221,7 @@ function Header() {
                 <NavLink to="/grapes" onClick={() => setSettingsOpen(false)}>
                   Grapes
                 </NavLink>
-                <NavLink
-                  to="/countries"
-                  onClick={() => setSettingsOpen(false)}
-                >
+                <NavLink to="/countries" onClick={() => setSettingsOpen(false)}>
                   Countries
                 </NavLink>
                 <NavLink to="/regions" onClick={() => setSettingsOpen(false)}>

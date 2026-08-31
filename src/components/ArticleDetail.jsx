@@ -99,15 +99,16 @@ function ArticleDetail() {
       </div>
 
       <p className="review-card__comment">
-        {article.category && article.category_id ? (
+        {Array.isArray(article.categories) && article.categories.length > 0 ? (
           <>
-            <Link to={`/categories/${article.category_id}`}>
-              {article.category}
-            </Link>{" "}
+            {article.categories.map((cat, i) => (
+              <span key={cat.id}>
+                <Link to={`/categories/${cat.id}`}>{cat.name}</Link>
+                {i < article.categories.length - 1 ? ", " : ""}
+              </span>
+            ))}{" "}
             ·{" "}
           </>
-        ) : article.category ? (
-          <>{article.category} · </>
         ) : null}
         {`by ${article.author_name}`}
         {article.published_at

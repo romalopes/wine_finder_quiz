@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { categoriesApi } from "../services/api";
+import { useAuth } from "../contexts/AuthContext";
+import { canManageWinesRole } from "../constants/roles";
 
 const TYPE_TABS = [
   { key: "wine", label: "Wine categories", sortKey: "sort_order_wine", flag: "for_wine" },
@@ -16,6 +18,8 @@ const emptyForm = {
 };
 
 function Categories() {
+  const { user } = useAuth();
+  const canManage = canManageWinesRole(user);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -178,6 +182,7 @@ function Categories() {
 
       <section className="wine-panel" style={{ marginBottom: "1.5rem" }}>
         <h2>{mode === "edit" ? `Edit: ${form.name}` : "New category"}</h2>
+        {canManage ? (
         <form onSubmit={handleSubmit} className="category-form">
           <div className="category-form__row">
             <label htmlFor="category-name">Name</label>
@@ -213,6 +218,9 @@ function Categories() {
             )}
           </div>
         </form>
+        ) : (
+          <p className="wine-management__hint">Only Super User and Editor can manage categories.</p>
+        )}
       </section>
 
       <div className="category-tabs" role="tablist">
@@ -243,21 +251,25 @@ function Categories() {
             <li
               key={category.id}
               className={`category-list__item${dragOverId === category.id ? " category-list__item--over" : ""}${dragId === category.id ? " category-list__item--dragging" : ""}`}
-              draggable
-              onDragStart={() => handleDragStart(category)}
-              onDragOver={(e) => handleDragOver(e, category)}
-              onDragLeave={handleDragLeave}
-              onDrop={(e) => handleDrop(e, category)}
-              onDragEnd={() => {
+              draggable={canManage}
+              onDragStart={canManage ? () => handleDragStart(category) : undefined}
+              onDragOver={canManage ? (e) => handleDragOver(e, category) : undefined}
+              onDragLeave={canManage ? handleDragLeave : undefined}
+              onDrop={canManage ? (e) => handleDrop(e, category) : undefined}
+              onDragEnd={canManage ? () => {
                 setDragId(null);
                 setDragOverId(null);
-              }}
+              } : undefined}
             >
+              {canManage && (
               <span className="category-list__handle" aria-hidden="true">⠿</span>
+              )}
               <span className="category-list__order">{category[tab.sortKey] ?? "—"}</span>
               <span className="category-list__name">
                 <Link to={`/categories/${category.id}`}>{category.name}</Link>
               </span>
+              {canManage && (
+              <>
               <button
                 type="button"
                 className="card-action"
@@ -272,6 +284,8 @@ function Categories() {
               >
                 Delete
               </button>
+              </>
+              )}
             </li>
           ))}
         </ul>

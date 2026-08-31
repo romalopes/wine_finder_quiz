@@ -35,7 +35,7 @@ function WineForm() {
     prompt: "",
     producer_id: "",
     producer_name: "",
-    category_id: "",
+    category_ids: [],
     sparkling: false,
   });
 
@@ -96,7 +96,7 @@ function WineForm() {
             prompt: wineData.prompt || "",
             producer_id: wineData.producer?.id || "",
             producer_name: wineData.producer?.name || "",
-            category_id: wineData.category_id ?? "",
+            category_ids: (wineData.categories || []).map((c) => c.id),
             sparkling: Boolean(wineData.sparkling),
           });
 
@@ -212,9 +212,7 @@ function WineForm() {
         producer_id: formData.producer_id
           ? parseInt(formData.producer_id, 10)
           : null,
-        category_id: formData.category_id
-          ? parseInt(formData.category_id, 10)
-          : null,
+        category_ids: formData.category_ids || [],
         sparkling: Boolean(formData.sparkling),
         grape_ids: selectedGrapes.map((g) => g.id),
         region_ids: selectedRegions.map((r) => r.id),
@@ -314,24 +312,29 @@ function WineForm() {
             />
             <span>Sparkling ✨</span>
           </label>
-          <label className="auth-form__field">
-            <span>Category</span>
-            <select
-              name="category_id"
-              value={formData.category_id}
-              onChange={handleChange}
-            >
-              <option value="">Select a category (optional)</option>
-              {wineCategories.map(
-                (cat) =>
-                  cat && (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </option>
-                  ),
-              )}
-            </select>
-          </label>
+          <div className="auth-form__field">
+            <span>Categories</span>
+            <div className="category-checkboxes">
+              {wineCategories.map((cat) => (
+                <label key={cat.id} className="category-checkbox">
+                  <input
+                    type="checkbox"
+                    checked={formData.category_ids.includes(cat.id)}
+                    onChange={(e) => {
+                      const checked = e.target.checked;
+                      setFormData((prev) => ({
+                        ...prev,
+                        category_ids: checked
+                          ? [...prev.category_ids, cat.id]
+                          : prev.category_ids.filter((id) => id !== cat.id),
+                      }));
+                    }}
+                  />
+                  {cat.name}
+                </label>
+              ))}
+            </div>
+          </div>
           <label className="auth-form__field">
             <span>Colour * </span>
             <select

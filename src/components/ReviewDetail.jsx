@@ -149,12 +149,15 @@ function ReviewDetail() {
         <span className={`review-card__status`}> {review.status}</span>
       </p>
 
-      {review.category && review.category_id && (
+      {Array.isArray(review.categories) && review.categories.length > 0 && (
         <p className="review-card__comment">
-          Category:{" "}
-          <Link to={`/categories/${review.category_id}`}>
-            {review.category}
-          </Link>
+          Categories:{" "}
+          {review.categories.map((cat, i) => (
+            <span key={cat.id}>
+              <Link to={`/categories/${cat.id}`}>{cat.name}</Link>
+              {i < review.categories.length - 1 ? ", " : ""}
+            </span>
+          ))}
         </p>
       )}
 

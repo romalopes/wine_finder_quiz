@@ -10,7 +10,7 @@ function ArticleForm({ article, onSaved, onCancel }) {
     title: article?.title || "",
     abstract: article?.abstract || "",
     body: article?.body || "",
-    category_id: article?.category_id || "",
+    category_ids: (article?.categories || []).map((c) => c.id),
     tag_names: (article?.tags || []).join(", "),
     producer_ids: article?.producers?.map((p) => p.id) || [],
     status: article?.status || "draft",
@@ -197,7 +197,7 @@ function ArticleForm({ article, onSaved, onCancel }) {
       abstract: form.abstract,
       body: form.body,
       status: form.status,
-      category_id: form.category_id || null,
+      category_ids: form.category_ids || [],
       tag_names: form.tag_names,
       vintage_ids: selectedVintages.map((v) => v.id),
       review_ids: linkedReviewIds,
@@ -211,7 +211,7 @@ function ArticleForm({ article, onSaved, onCancel }) {
     formData.append("article[abstract]", form.abstract);
     formData.append("article[body]", form.body);
     formData.append("article[status]", form.status);
-    if (form.category_id) formData.append("article[category_id]", form.category_id);
+    (form.category_ids || []).forEach((id) => formData.append("article[category_ids][]", id));
     formData.append("article[tag_names]", form.tag_names);
     selectedVintages.forEach((v) => formData.append("article[vintage_ids][]", v.id));
     linkedReviewIds.forEach((id) => formData.append("article[review_ids][]", id));
@@ -276,15 +276,27 @@ function ArticleForm({ article, onSaved, onCancel }) {
       </div>
 
       <div className="review-form__field">
-        <label htmlFor="article-category">Category</label>
-        <select id="article-category" value={form.category_id} onChange={updateField("category_id")}>
-          <option value="">None</option>
+        <span>Categories</span>
+        <div className="category-checkboxes">
           {categories.map((category) => (
-            <option key={category.id} value={category.id}>
+            <label key={category.id} className="category-checkbox">
+              <input
+                type="checkbox"
+                checked={form.category_ids.includes(category.id)}
+                onChange={(e) => {
+                  const checked = e.target.checked;
+                  setForm((prev) => ({
+                    ...prev,
+                    category_ids: checked
+                      ? [...prev.category_ids, category.id]
+                      : prev.category_ids.filter((id) => id !== category.id),
+                  }));
+                }}
+              />
               {category.name}
-            </option>
+            </label>
           ))}
-        </select>
+        </div>
       </div>
 
       <div className="review-form__field">

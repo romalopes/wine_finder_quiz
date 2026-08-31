@@ -8,7 +8,7 @@ export const ROLES = {
 
 // Roles allowed to manage wines & producers (anywhere a Reviewer is
 // allowed, an Editor is allowed too).
-const WINE_MANAGER_ROLES = [ROLES.SUPER_USER, ROLES.REVIEWER, ROLES.EDITOR];
+const WINE_MANAGER_ROLES = [ROLES.SUPER_USER, ROLES.EDITOR];
 
 export function canManageWinesRole(user) {
   return user?.roles.some((role) => WINE_MANAGER_ROLES.includes(role)) ?? false;

@@ -23,7 +23,7 @@ function ReviewForm({
           drink_from: review.drink_from ?? "",
           drink_to: review.drink_to ?? "",
           drink_plus: Boolean(review.drink_plus),
-          category_id: review.category_id || "",
+          category_ids: (review.categories || []).map((c) => c.id),
         }
       : {
           title: "",
@@ -33,7 +33,7 @@ function ReviewForm({
           drink_from: "",
           drink_to: "",
           drink_plus: false,
-          category_id: "",
+          category_ids: [],
         },
   );
 
@@ -184,23 +184,27 @@ function ReviewForm({
         </label>
       </div>
       <div className="review-form__field">
-        <label htmlFor="review-category">Category</label>
-        <select
-          id="review-category"
-          name="review-category"
-          value={form.category_id}
-          onChange={updateField("category_id")}
-          required
-        >
-          <option value="" disabled>
-            Select a category
-          </option>
+        <span>Categories</span>
+        <div className="category-checkboxes">
           {categories.map((category) => (
-            <option key={category.id} value={category.id}>
+            <label key={category.id} className="category-checkbox">
+              <input
+                type="checkbox"
+                checked={form.category_ids.includes(category.id)}
+                onChange={(e) => {
+                  const checked = e.target.checked;
+                  setForm((prev) => ({
+                    ...prev,
+                    category_ids: checked
+                      ? [...prev.category_ids, category.id]
+                      : prev.category_ids.filter((id) => id !== category.id),
+                  }));
+                }}
+              />
               {category.name}
-            </option>
+            </label>
           ))}
-        </select>
+        </div>
       </div>
       <div className="review-form__field">
         <span className="image-manager__label">Comment</span>

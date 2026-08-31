@@ -218,11 +218,16 @@ function WineDetail() {
           )}
         </li>
         <li>
-          <strong>Category:</strong>{" "}
-          {wine.category && wine.category_id ? (
-            <Link to={`/categories/${wine.category_id}`}>{wine.category}</Link>
+          <strong>Categories:</strong>{" "}
+          {Array.isArray(wine.categories) && wine.categories.length > 0 ? (
+            wine.categories.map((cat, i) => (
+              <span key={cat.id}>
+                <Link to={`/categories/${cat.id}`}>{cat.name}</Link>
+                {i < wine.categories.length - 1 ? ", " : ""}
+              </span>
+            ))
           ) : (
-            wine.category || "—"
+            "—"
           )}
         </li>
         <li>

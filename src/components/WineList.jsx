@@ -89,7 +89,10 @@ function WineList() {
 
       {wines.length === 0 ? (
         <div className="wine-management__empty">
-          <p>No wines found{canManageWines ? ". Start by adding a new wine!" : "."}</p>
+          <p>
+            No wines found
+            {canManageWines ? ". Start by adding a new wine!" : "."}
+          </p>
           {canManageWines && (
             <Link to="/wines/new" className="auth-form__submit">
               + Add Your First Wine
@@ -102,7 +105,7 @@ function WineList() {
           let visible = wines;
           if (selectedCategory) {
             visible = visible.filter(
-              (w) => (w.category || "Uncategorized") === selectedCategory,
+              (w) => (w.category || "Uncategorised") === selectedCategory,
             );
           }
           if (selectedProducer) {
@@ -113,14 +116,17 @@ function WineList() {
 
           // Group wines by category
           const grouped = visible.reduce((acc, wine) => {
-            const key = wine.category || "Uncategorized";
+            const key = wine.category || "Uncategorised";
             if (!acc[key]) acc[key] = [];
             acc[key].push(wine);
             return acc;
           }, {});
 
-          // Sort categories: by admin-defined sort order, Uncategorized last
-          const sortedCategories = sortCategoryNames(Object.keys(grouped), categoryOrder);
+          // Sort categories: by admin-defined sort order, Uncategorised last
+          const sortedCategories = sortCategoryNames(
+            Object.keys(grouped),
+            categoryOrder,
+          );
 
           return (
             <div className="content-grid-groups">
@@ -141,13 +147,14 @@ function WineList() {
                           }
                         }}
                       >
-                        {Array.isArray(wine.images) && wine.images.length > 0 && (
-                          <img
-                            src={wine.images[0]}
-                            alt={wine.name}
-                            className="wine-management__thumb"
-                          />
-                        )}
+                        {Array.isArray(wine.images) &&
+                          wine.images.length > 0 && (
+                            <img
+                              src={wine.images[0]}
+                              alt={wine.name}
+                              className="wine-management__thumb"
+                            />
+                          )}
                         <div className="wine-management__card-header">
                           <h3>{wine.name}</h3>
                           <span
@@ -161,25 +168,32 @@ function WineList() {
                             {wine.producer.name}
                           </p>
                         )}
-                        {Array.isArray(wine.grapes) && wine.grapes.length > 0 && (
-                          <p className="wine-management__grapes">
-                            <strong>Grapes:</strong>{" "}
-                            {wine.grapes.slice(0, 3).map((g) => g.name).join(", ")}
-                            {wine.grapes.length > 3 ? "…" : ""}
-                          </p>
-                        )}
-                        {Array.isArray(wine.regions) && wine.regions.length > 0 && (
-                          <p className="wine-management__regions">
-                            <strong>Regions:</strong>{" "}
-                            {wine.regions
-                              .slice(0, 3)
-                              .map((r) => (r.name ? r.name : r))
-                              .join(", ")}
-                            {wine.regions.length > 3 ? "…" : ""}
-                          </p>
-                        )}
+                        {Array.isArray(wine.grapes) &&
+                          wine.grapes.length > 0 && (
+                            <p className="wine-management__grapes">
+                              <strong>Grapes:</strong>{" "}
+                              {wine.grapes
+                                .slice(0, 3)
+                                .map((g) => g.name)
+                                .join(", ")}
+                              {wine.grapes.length > 3 ? "…" : ""}
+                            </p>
+                          )}
+                        {Array.isArray(wine.regions) &&
+                          wine.regions.length > 0 && (
+                            <p className="wine-management__regions">
+                              <strong>Regions:</strong>{" "}
+                              {wine.regions
+                                .slice(0, 3)
+                                .map((r) => (r.name ? r.name : r))
+                                .join(", ")}
+                              {wine.regions.length > 3 ? "…" : ""}
+                            </p>
+                          )}
                         {wine.sparkling && (
-                          <p className="wine-management__sparkling">✨ Sparkling</p>
+                          <p className="wine-management__sparkling">
+                            ✨ Sparkling
+                          </p>
                         )}
                         {wine.vintages && wine.vintages.length > 0 && (
                           <p className="wine-management__vintage-count">

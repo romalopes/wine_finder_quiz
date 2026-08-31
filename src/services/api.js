@@ -319,6 +319,9 @@ export const categoriesApi = {
   show(id) {
     return request(`/categories/${id}`, { auth: true });
   },
+  counts() {
+    return request("/categories/counts");
+  },
   create(categoryData) {
     return request("/categories", {
       method: "POST",

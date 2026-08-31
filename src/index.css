@@ -2061,10 +2061,39 @@ textarea {
 
 .wine-detail__images img,
 .review-card__images img {
-  width: 10rem;
-  height: 7.5rem;
+  width: 8rem;
+  height: 6rem;
   object-fit: cover;
   border-radius: 0.5rem;
+}
+
+.category-checkboxes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.category-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+  padding: 0.25rem 0.5rem;
+  background: #faf1ee;
+  border: 1px solid #eaded7;
+  border-radius: 0.45rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.category-checkbox:hover {
+  border-color: #8a273c;
+}
+
+.category-checkbox input[type="checkbox"] {
+  margin: 0;
+  cursor: pointer;
 }
 
 .wine-management__thumb {

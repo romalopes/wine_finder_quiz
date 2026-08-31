@@ -33,12 +33,12 @@ export function useCategoryOrder(sortKey) {
 /**
  * Sorts grouped-category keys by their stored sort order.
  * Ordered categories come first (ascending), unordered ones follow
- * alphabetically, and "Uncategorized" is always last.
+ * alphabetically, and "Uncategorised" is always last.
  */
 export function sortCategoryNames(names, orderMap) {
   return [...names].sort((a, b) => {
-    if (a === "Uncategorized") return 1;
-    if (b === "Uncategorized") return -1;
+    if (a === "Uncategorised") return 1;
+    if (b === "Uncategorised") return -1;
     const oa = orderMap[a];
     const ob = orderMap[b];
     if (oa != null && ob != null) return oa - ob || a.localeCompare(b);
