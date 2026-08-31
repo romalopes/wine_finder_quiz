@@ -98,6 +98,11 @@ function Regions() {
   const [editingId, setEditingId] = useState(null);
   const [expandedCountries, setExpandedCountries] = useState(new Set());
   const [targetRegionId, setTargetRegionId] = useState(null);
+  const [showOnlyWithWines, setShowOnlyWithWines] = useState(false);
+
+  const displayTree = showOnlyWithWines
+    ? treeData.filter((c) => (c.wine_count || 0) > 0)
+    : treeData;
 
   const loadTreeData = useCallback(async () => {
     try {
@@ -349,13 +354,25 @@ function Regions() {
           </div>
         </section>
       )}
+
+        <div className="region-tree-filter">
+          <label className="region-tree-filter__label">
+            <input
+              type="checkbox"
+              checked={showOnlyWithWines}
+              onChange={(e) => setShowOnlyWithWines(e.target.checked)}
+            />
+            Only countries with wines
+          </label>
+        </div>
+
         {loading ? (
           <p className="grapes-page__loading">Loading regions…</p>
-        ) : treeData.length === 0 ? (
+        ) : displayTree.length === 0 ? (
           <p className="grapes-page__empty">No countries or regions found.</p>
         ) : (
           <div className="region-tree-container">
-            {treeData.map((country) => {
+            {displayTree.map((country) => {
               const countryWineCount = country.wine_count || 0;
 
               if (!country.regions?.length) return null;
