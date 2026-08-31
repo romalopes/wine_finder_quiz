@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { grapesApi } from "../services/api";
+import { grapesApi, winesApi } from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
-import { isSuperUser, canManageGrapes } from "../constants/roles";
+import { isSuperUser, canManageGrapes, canManageWinesRole } from "../constants/roles";
+import WineTable from "./WineTable";
 
 const emptyForm = {
   name: "",
@@ -39,6 +40,14 @@ function GrapeDetail() {
   const [newNote, setNewNote] = useState("");
 
   const isWineManager = isSuperUser(user) || canManageGrapes(user);
+  // Super Users, Reviewers and Editors may link wines to this grape.
+  const canLinkWines = canManageWinesRole(user);
+
+  // Inline wine search for linking wines to this grape.
+  const [wineQuery, setWineQuery] = useState("");
+  const [wineResults, setWineResults] = useState(null);
+  const [linking, setLinking] = useState(false);
+  const [linkError, setLinkError] = useState(null);
 
   const loadGrape = useCallback(async () => {
     try {
@@ -67,6 +76,43 @@ function GrapeDetail() {
   useEffect(() => {
     loadGrape();
   }, [loadGrape]);
+
+  // Debounced wine search for the linking UI.
+  useEffect(() => {
+    if (!canLinkWines) return undefined;
+    const query = wineQuery.trim();
+    if (query.length < 2) {
+      setWineResults(null);
+      return undefined;
+    }
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      try {
+        const results = await winesApi.search(query);
+        if (!cancelled) setWineResults(results.slice(0, 8));
+      } catch {
+        if (!cancelled) setWineResults([]);
+      }
+    }, 300);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [wineQuery, canLinkWines]);
+
+  async function handleLinkWine(wine) {
+    if (!window.confirm(`Add "${wine.name}" to "${grape.name}"?`)) return;
+    setLinking(true);
+    setLinkError(null);
+    try {
+      await grapesApi.linkWine(id, wine.slug);
+      await loadGrape();
+    } catch (err) {
+      setLinkError(err.message || "Failed to link wine");
+    } finally {
+      setLinking(false);
+    }
+  }
 
   function updateField(field, value) {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -284,6 +330,87 @@ function GrapeDetail() {
               <li><strong>Serving:</strong> {grape.serving}</li>
             )}
           </ul>
+
+          {isWineManager && (
+            <div className="grape-detail__wine-linker">
+              <h2>Link a Wine</h2>
+              <div className="review-form__field">
+                <label htmlFor="grape-wine-search">
+                  Search wines by name to add them to {grape.name}
+                </label>
+                <input
+                  id="grape-wine-search"
+                  type="text"
+                  value={wineQuery}
+                  onChange={(e) => setWineQuery(e.target.value)}
+                  placeholder="Search wines by name…"
+                />
+              </div>
+              {linkError && <p className="review-form__error">{linkError}</p>}
+              {wineResults != null &&
+                (wineResults.length === 0 ? (
+                  <p className="wine-management__empty-state">No matching wines.</p>
+                ) : (
+                  <ul
+                    className="wine-list"
+                    style={{ display: "grid", gap: 6, listStyle: "none", padding: 0 }}
+                  >
+                    {wineResults.map((wine) => {
+                      const linkedHere = wine.grapes?.some(
+                        (g) => String(g.id) === String(grape.id),
+                      );
+                      return (
+                        <li
+                          key={wine.slug}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 10,
+                            border: "1px solid #d8c8c0",
+                            borderRadius: 8,
+                            padding: "8px 12px",
+                            background: "#fff",
+                          }}
+                        >
+                          <strong>{wine.name}</strong>
+                          {linkedHere ? (
+                            <span style={{ color: "#2e7d43", fontWeight: 700 }}>
+                              Linked here ✓
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              className="review-form__status-btn"
+                              disabled={linking}
+                              onClick={() => handleLinkWine(wine)}
+                            >
+                              Link
+                            </button>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ))}
+            </div>
+          )}
+
+          <div className="grape-detail__wines">
+            <h2>Wines</h2>
+            {grape.wines?.length > 0 ? (
+              <WineTable
+                wines={grape.wines}
+                onDeleted={(deleted) =>
+                  setGrape((prev) => ({
+                    ...prev,
+                    wines: prev.wines.filter((w) => w.slug !== deleted.slug),
+                  }))
+                }
+              />
+            ) : (
+              <p className="empty">No wines are associated with this grape yet.</p>
+            )}
+          </div>
         </section>
       )}
     </div>

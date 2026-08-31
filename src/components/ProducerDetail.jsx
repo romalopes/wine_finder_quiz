@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { producersApi, winesApi } from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
 import { canManageWinesRole } from "../constants/roles";
+import WineTable from "./WineTable";
 
 function ProducerDetail() {
   const { slug } = useParams();
@@ -309,13 +310,15 @@ function ProducerDetail() {
       <div className="wine-detail__section">
         <h2>Wines</h2>
         {producer.wines && producer.wines.length > 0 ? (
-          <ul className="wine-list">
-            {producer.wines.map((wine) => (
-              <li key={wine.slug}>
-                <Link to={`/wines/${wine.slug}`}>{wine.name}</Link>
-              </li>
-            ))}
-          </ul>
+          <WineTable
+            wines={producer.wines}
+            onDeleted={(deleted) =>
+              setProducer((prev) => ({
+                ...prev,
+                wines: prev.wines.filter((w) => w.slug !== deleted.slug),
+              }))
+            }
+          />
         ) : (
           <p className="wine-management__empty-state">
             No wines are associated with this producer yet.

@@ -375,6 +375,13 @@ export const grapesApi = {
       auth: true,
     });
   },
+  linkWine(id, wineId) {
+    return request(`/grapes/${id}/link_wine`, {
+      method: "POST",
+      auth: true,
+      body: { wine_id: wineId },
+    });
+  },
 };
 
 export const countriesApi = {
@@ -434,6 +441,13 @@ export const regionsApi = {
       method: "PATCH",
       auth: true,
       body: { region: regionData },
+    });
+  },
+  linkWine(id, wineId) {
+    return request(`/regions/${id}/link_wine`, {
+      method: "POST",
+      auth: true,
+      body: { wine_id: wineId },
     });
   },
   remove(id) {

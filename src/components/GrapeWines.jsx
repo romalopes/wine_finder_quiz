@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
-import { producersApi, winesApi } from "../services/api";
+import { grapesApi, winesApi } from "../services/api";
 import WineTable from "./WineTable";
 
-function ProducerWines() {
-  const { slug } = useParams();
-  const [producer, setProducer] = useState(null);
+function GrapeWines() {
+  const { id } = useParams();
+  const [grape, setGrape] = useState(null);
   const [wines, setWines] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -13,20 +13,24 @@ function ProducerWines() {
   useEffect(() => {
     loadWines();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [slug]);
+  }, [id]);
 
   async function loadWines() {
     try {
       setLoading(true);
       setError(null);
-      const [producerData, winesData] = await Promise.all([
-        producersApi.show(slug),
+      const [grapeData, winesData] = await Promise.all([
+        grapesApi.show(id),
         winesApi.list(),
       ]);
-      setProducer(producerData);
+      setGrape(grapeData);
       const allWines = Array.isArray(winesData) ? winesData : [];
       setWines(
-        allWines.filter((wine) => wine.producer && wine.producer.slug === slug),
+        allWines.filter(
+          (wine) =>
+            Array.isArray(wine.grapes) &&
+            wine.grapes.some((g) => String(g.id) === String(id)),
+        ),
       );
     } catch (err) {
       setError(err.message || "Failed to load wines");
@@ -56,19 +60,19 @@ function ProducerWines() {
 
   return (
     <div className="wine-app">
-      <Link to="/producers" className="wine-detail__back">
-        &larr; Back to Producers
+      <Link to="/grapes" className="wine-detail__back">
+        &larr; Back to Grapes
       </Link>
       <div className="wine-management__header">
         <div>
           <p className="wine-kicker">Cellar</p>
-          <h1>Wines of {producer ? producer.name : "Producer"}</h1>
+          <h1>Wines of {grape ? grape.name : "Grape"}</h1>
         </div>
       </div>
 
       {wines.length === 0 ? (
         <div className="wine-management__empty">
-          <p>No wines found for this producer.</p>
+          <p>No wines found for this grape.</p>
         </div>
       ) : (
         <WineTable
@@ -82,4 +86,4 @@ function ProducerWines() {
   );
 }
 
-export default ProducerWines;
+export default GrapeWines;

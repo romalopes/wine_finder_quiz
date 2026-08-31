@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { regionsApi } from "../services/api";
+import { regionsApi, winesApi } from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
-import { isSuperUser, canManageGrapes } from "../constants/roles";
+import { isSuperUser, canManageGrapes, canManageWinesRole } from "../constants/roles";
+import WineTable from "./WineTable";
 
 function typeLabel(region) {
   const labels = [];
@@ -15,27 +16,80 @@ function RegionDetail() {
   const { id } = useParams();
   const { user } = useAuth();
   const canManage = isSuperUser(user) || canManageGrapes(user);
+  // Super Users, Reviewers and Editors may link wines to this region.
+  const canManageWines = canManageWinesRole(user);
   const [region, setRegion] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Inline wine search for linking wines to this region.
+  const [wineQuery, setWineQuery] = useState("");
+  const [wineResults, setWineResults] = useState(null);
+  const [linking, setLinking] = useState(false);
+  const [linkError, setLinkError] = useState(null);
+
+  const loadRegion = useCallback(async () => {
+    try {
+      setError(null);
+      const data = await regionsApi.show(id);
+      setRegion(data);
+    } catch (err) {
+      setError(err.message || "Failed to load region");
+      throw err;
+    }
+  }, [id]);
+
   useEffect(() => {
     let cancelled = false;
-    regionsApi
-      .show(id)
-      .then((data) => {
-        if (!cancelled) setRegion(data);
-      })
-      .catch((err) => {
-        if (!cancelled) setError(err.message || "Failed to load region");
-      })
+    setLoading(true);
+    loadRegion()
+      .catch(() => {})
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
     return () => {
       cancelled = true;
     };
-  }, [id]);
+  }, [loadRegion]);
+
+  // Debounced wine search for the linking UI.
+  useEffect(() => {
+    if (!canManageWines) return undefined;
+    const query = wineQuery.trim();
+    if (query.length < 2) {
+      setWineResults(null);
+      return undefined;
+    }
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      try {
+        const results = await winesApi.search(query);
+        if (!cancelled) setWineResults(results.slice(0, 8));
+      } catch {
+        if (!cancelled) setWineResults([]);
+      }
+    }, 300);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [wineQuery, canManageWines]);
+
+  async function handleLinkWine(wine) {
+    const current = wine.regions?.some((r) => String(r.id) === String(id));
+    if (current) return;
+    if (!window.confirm(`Add "${wine.name}" to "${region.name}"?`)) return;
+    setLinking(true);
+    setLinkError(null);
+    try {
+      await regionsApi.linkWine(id, wine.slug);
+      await loadRegion();
+    } catch (err) {
+      setLinkError(err.message || "Failed to link wine");
+    } finally {
+      setLinking(false);
+    }
+  }
 
   if (loading) {
     return (
@@ -118,16 +172,82 @@ function RegionDetail() {
         </ul>
       </div>
 
+      {canManageWines && (
+        <div className="region-detail__section">
+          <h2>Link a Wine</h2>
+          <div className="review-form__field">
+            <label htmlFor="region-wine-search">
+              Search wines by name to add them to {region.name}
+            </label>
+            <input
+              id="region-wine-search"
+              type="text"
+              value={wineQuery}
+              onChange={(e) => setWineQuery(e.target.value)}
+              placeholder="Search wines by name…"
+            />
+          </div>
+          {linkError && <p className="review-form__error">{linkError}</p>}
+          {wineResults != null &&
+            (wineResults.length === 0 ? (
+              <p className="wine-management__empty-state">No matching wines.</p>
+            ) : (
+              <ul
+                className="wine-list"
+                style={{ display: "grid", gap: 6, listStyle: "none", padding: 0 }}
+              >
+                {wineResults.map((wine) => {
+                  const linkedHere = wine.regions?.some(
+                    (r) => String(r.id) === String(region.id),
+                  );
+                  return (
+                    <li
+                      key={wine.slug}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 10,
+                        border: "1px solid #d8c8c0",
+                        borderRadius: 8,
+                        padding: "8px 12px",
+                        background: "#fff",
+                      }}
+                    >
+                      <strong>{wine.name}</strong>
+                      {linkedHere ? (
+                        <span style={{ color: "#2e7d43", fontWeight: 700 }}>
+                          Linked here ✓
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          className="review-form__status-btn"
+                          disabled={linking}
+                          onClick={() => handleLinkWine(wine)}
+                        >
+                          Link
+                        </button>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            ))}
+        </div>
+      )}
+
       <div className="region-detail__section">
         <h2>Wines</h2>
         {region.wines?.length > 0 ? (
-          <ul>
-            {region.wines.map((wine) => (
-              <li key={wine.id}>
-                <Link to={`/wines/${wine.slug}`}>{wine.name}</Link>
-              </li>
-            ))}
-          </ul>
+          <WineTable
+            wines={region.wines}
+            onDeleted={(deleted) =>
+              setRegion((prev) => ({
+                ...prev,
+                wines: prev.wines.filter((w) => w.slug !== deleted.slug),
+              }))
+            }
+          />
         ) : (
           <p>No wines are associated with this region yet.</p>
         )}
