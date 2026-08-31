@@ -124,7 +124,7 @@ function ProducerList() {
                 <td>
                   {producer.wines && producer.wines.length > 0 ? (
                     <Link
-                      to={`/wines?producer=${producer.slug}`}
+                      to={`/producers/${producer.slug}/wines`}
                       className="grapes-table__link"
                       onClick={(e) => e.stopPropagation()}
                     >

@@ -15,6 +15,7 @@ import WineSearch from "./WineSearch.jsx";
 import ProducerList from "./ProducerList.jsx";
 import ProducerDetail from "./ProducerDetail.jsx";
 import ProducerForm from "./ProducerForm.jsx";
+import ProducerWines from "./ProducerWines.jsx";
 import UserRoles from "./UserRoles.jsx";
 import Categories from "./Categories.jsx";
 import Grapes from "./Grapes.jsx";
@@ -48,6 +49,8 @@ function AppRoutes({ user, setUser }) {
         <Route element={<WineForm />} path="/wines/new" />
         <Route element={<WineForm />} path="/wines/:slug/edit" />
         <Route element={<ProducerList />} path="/producers" />
+        <Route element={<ProducerWines />} path="/producers/:slug/wines" />
+
         <Route element={<ProducerDetail />} path="/producers/:slug" />
         <Route element={<ProducerForm />} path="/producers/new" />
         <Route element={<ProducerForm />} path="/producers/:slug/edit" />
