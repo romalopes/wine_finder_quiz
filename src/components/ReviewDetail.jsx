@@ -149,6 +149,15 @@ function ReviewDetail() {
         <span className={`review-card__status`}> {review.status}</span>
       </p>
 
+      {review.category && review.category_id && (
+        <p className="review-card__comment">
+          Category:{" "}
+          <Link to={`/categories/${review.category_id}`}>
+            {review.category}
+          </Link>
+        </p>
+      )}
+
       {review.comment && (
         <div className="wine-detail__section">
           <RichComment html={review.comment} />

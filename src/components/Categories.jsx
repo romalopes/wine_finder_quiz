@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { categoriesApi } from "../services/api";
 
 const TYPE_TABS = [
@@ -254,7 +255,9 @@ function Categories() {
             >
               <span className="category-list__handle" aria-hidden="true">⠿</span>
               <span className="category-list__order">{category[tab.sortKey] ?? "—"}</span>
-              <span className="category-list__name">{category.name}</span>
+              <span className="category-list__name">
+                <Link to={`/categories/${category.id}`}>{category.name}</Link>
+              </span>
               <button
                 type="button"
                 className="card-action"

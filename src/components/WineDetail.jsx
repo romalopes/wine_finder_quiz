@@ -205,78 +205,69 @@ function WineDetail() {
         </div>
       )}
 
-      <div className="wine-detail__specs">
-        <div className="wine-detail__spec">
-          <span className="wine-detail__spec-label">Producer</span>
-          <span className="wine-detail__spec-value">
-            {wine.producer ? (
-              <Link to={`/producers/${wine.producer.slug}`}>
-                {wine.producer.name}
-              </Link>
-            ) : (
-              "—"
-            )}
-          </span>
-        </div>
-        <div className="wine-detail__spec">
-          <span className="wine-detail__spec-label">Category</span>
-          <span className="wine-detail__spec-value">
-            {wine.category ? (
-              <Link to={`/categories/${wine.category.slug}`}>
-                {wine.category.name}
-              </Link>
-            ) : (
-              "—"
-            )}
-          </span>
-        </div>
-        <div className="wine-detail__spec">
-          <span className="wine-detail__spec-label">Closure</span>
-          <span className="wine-detail__spec-value">{wine.closure || "—"}</span>
-        </div>
-        <div className="wine-detail__spec">
-          <span className="wine-detail__spec-label">Color</span>
-          <span className="wine-detail__spec-value">{wine.color || "—"}</span>
-        </div>
-        <div className="wine-detail__spec">
-          <span className="wine-detail__spec-label">Sparkling</span>
-          <span className="wine-detail__spec-value">
-            {wine.sparkling ? "Yes ✨" : "No"}
-          </span>
-        </div>
-        <div className="wine-detail__spec">
-          <span className="wine-detail__spec-label">Grapes</span>
-          <span className="wine-detail__spec-value">
-            {Array.isArray(wine.grapes) && wine.grapes.length > 0
-              ? wine.grapes.map((g) => g.name).join(", ")
-              : "—"}
-          </span>
-        </div>
-        <div className="wine-detail__spec">
-          <span className="wine-detail__spec-label">Regions</span>
-          <span className="wine-detail__spec-value">
-            {Array.isArray(wine.regions) && wine.regions.length > 0
-              ? wine.regions.map((r) => r.name || r).join(", ")
-              : "—"}
-          </span>
-        </div>
-        <div className="wine-detail__spec">
-          <span className="wine-detail__spec-label">Alcohol</span>
-          <span className="wine-detail__spec-value">
-            {wine.alcohol_percentage != null
-              ? `${wine.alcohol_percentage}%`
-              : "—"}
-          </span>
-        </div>
-        <div className="wine-detail__spec">
-          <span className="wine-detail__spec-label">Volume</span>
-          <span className="wine-detail__spec-value">
-            {wine.volume_ml != null
-              ? (volumeLabel(wine.volume_ml) ?? `${wine.volume_ml}ml`)
-              : "—"}
-          </span>
-        </div>
-      </div>
+      <section className="detail-card">
+        <ul className="facts" aria-label="Wine details">
+        <li>
+          <strong>Producer:</strong>{" "}
+          {wine.producer ? (
+            <Link to={`/producers/${wine.producer.slug}`}>
+              {wine.producer.name}
+            </Link>
+          ) : (
+            "—"
+          )}
+        </li>
+        <li>
+          <strong>Category:</strong>{" "}
+          {wine.category && wine.category_id ? (
+            <Link to={`/categories/${wine.category_id}`}>{wine.category}</Link>
+          ) : (
+            wine.category || "—"
+          )}
+        </li>
+        <li>
+          <strong>Color:</strong> {wine.color || "—"}
+        </li>
+        <li>
+          <strong>Sparkling:</strong> {wine.sparkling ? "Yes ✨" : "No"}
+        </li>
+        <li>
+          <strong>Closure:</strong> {wine.closure || "—"}
+        </li>
+        <li>
+          <strong>Alcohol:</strong>{" "}
+          {wine.alcohol_percentage != null ? `${wine.alcohol_percentage}%` : "—"}
+        </li>
+        <li>
+          <strong>Volume:</strong>{" "}
+          {wine.volume_ml != null
+            ? (volumeLabel(wine.volume_ml) ?? `${wine.volume_ml}ml`)
+            : "—"}
+        </li>
+        <li>
+          <strong>Grapes:</strong>{" "}
+          {Array.isArray(wine.grapes) && wine.grapes.length > 0
+            ? wine.grapes.map((grape, grapeIndex) => (
+                <span key={grape.id || grapeIndex}>
+                  {grapeIndex > 0 && ", "}
+                  <Link to={`/grapes/${grape.id}`}>{grape.name}</Link>
+                </span>
+              ))
+            : "—"}
+        </li>
+        <li>
+          <strong>Regions:</strong>{" "}
+          {Array.isArray(wine.regions) && wine.regions.length > 0
+            ? wine.regions.map((region, regionIndex) => (
+                <span key={region.id || regionIndex}>
+                  {regionIndex > 0 && ", "}
+                  <Link to={`/regions/${region.id}`}>{region.name}</Link>
+                </span>
+              ))
+            : "—"}
+        </li>
+        </ul>
+      </section>
 
       {canManageWines && (
         <div className="wine-detail__actions">
@@ -431,7 +422,13 @@ function WineDetail() {
                     className="review-toggle-btn"
                     onClick={() => handleToggleReviews(vintage.id)}
                   >
-                    {reviewsByVintage[vintage.id] ? "Hide reviews" : "Reviews"}
+                    {reviewsByVintage[vintage.id]
+                      ? "Hide reviews"
+                      : `Reviews${
+                          vintage.reviews_count != null
+                            ? ` (${vintage.reviews_count})`
+                            : ""
+                        }`}
                   </button>
                 </div>
                 {vintage.prompt && <p>{vintage.prompt}</p>}

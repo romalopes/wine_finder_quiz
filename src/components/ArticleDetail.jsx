@@ -99,15 +99,20 @@ function ArticleDetail() {
       </div>
 
       <p className="review-card__comment">
-        {[
-          article.category,
-          `by ${article.author_name}`,
-          article.published_at
-            ? new Date(article.published_at).toLocaleDateString()
-            : null,
-        ]
-          .filter(Boolean)
-          .join(" · ")}
+        {article.category && article.category_id ? (
+          <>
+            <Link to={`/categories/${article.category_id}`}>
+              {article.category}
+            </Link>{" "}
+            ·{" "}
+          </>
+        ) : article.category ? (
+          <>{article.category} · </>
+        ) : null}
+        {`by ${article.author_name}`}
+        {article.published_at
+          ? ` · ${new Date(article.published_at).toLocaleDateString()}`
+          : ""}
         {article.tags?.length > 0 ? ` — ${article.tags.join(", ")}` : ""}
       </p>
 

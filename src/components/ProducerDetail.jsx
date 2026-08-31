@@ -121,90 +121,76 @@ function ProducerDetail() {
         </div>
       )}
 
-      <div className="wine-detail__specs">
-        <div className="wine-detail__spec">
-          <span className="wine-detail__spec-label">Address</span>
-          <span className="wine-detail__spec-value">
-            {producer.address || "—"}
-          </span>
-        </div>
-        <div className="wine-detail__spec">
-          <span className="wine-detail__spec-label">Type</span>
-          <span className="wine-detail__spec-value">
-            {producer.producer_type
-              ? producer.producer_type.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
-              : "—"}
-          </span>
-        </div>
-        <div className="wine-detail__spec">
-          <span className="wine-detail__spec-label">Email</span>
-          <span className="wine-detail__spec-value">
-            {producer.email || "—"}
-          </span>
-        </div>
-        <div className="wine-detail__spec">
-          <span className="wine-detail__spec-label">Website</span>
-          <span className="wine-detail__spec-value">
-            {producer.website ? (
-              <a
-                href={producer.website}
-                target="_blank"
-                rel="noreferrer"
-              >
-                {producer.website}
-              </a>
-            ) : (
-              "—"
-            )}
-          </span>
-        </div>
-        <div className="wine-detail__spec">
-          <span className="wine-detail__spec-label">Instagram</span>
-          <span className="wine-detail__spec-value">
-            {producer.instagram ? (
-              <a
-                href={
-                  producer.instagram.startsWith("http")
-                    ? producer.instagram
-                    : `https://instagram.com/${producer.instagram.replace("@", "")}`
-                }
-                target="_blank"
-                rel="noreferrer"
-              >
-                {producer.instagram}
-              </a>
-            ) : (
-              "—"
-            )}
-          </span>
-        </div>
-        <div className="wine-detail__spec">
-          <span className="wine-detail__spec-label">Facebook</span>
-          <span className="wine-detail__spec-value">
-            {producer.facebook ? (
-              <a
-                href={
-                  producer.facebook.startsWith("http")
-                    ? producer.facebook
-                    : `https://facebook.com/${producer.facebook}`
-                }
-                target="_blank"
-                rel="noreferrer"
-              >
-                {producer.facebook}
-              </a>
-            ) : (
-              "—"
-            )}
-          </span>
-        </div>
-        <div className="wine-detail__spec">
-          <span className="wine-detail__spec-label">Description</span>
-          <span className="wine-detail__spec-value">
-            {producer.description || "—"}
-          </span>
-        </div>
-      </div>
+      <section className="detail-card">
+        <ul className="facts" aria-label="Producer details">
+        <li>
+          <strong>Address:</strong> {producer.address || "—"}
+        </li>
+        <li>
+          <strong>Type:</strong>{" "}
+          {producer.producer_type
+            ? producer.producer_type.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
+            : "—"}
+        </li>
+        <li>
+          <strong>Email:</strong>{" "}
+          {producer.email ? (
+            <a href={`mailto:${producer.email}`}>{producer.email}</a>
+          ) : (
+            "—"
+          )}
+        </li>
+        <li>
+          <strong>Website:</strong>{" "}
+          {producer.website ? (
+            <a href={producer.website} target="_blank" rel="noreferrer">
+              {producer.website}
+            </a>
+          ) : (
+            "—"
+          )}
+        </li>
+        <li>
+          <strong>Instagram:</strong>{" "}
+          {producer.instagram ? (
+            <a
+              href={
+                producer.instagram.startsWith("http")
+                  ? producer.instagram
+                  : `https://instagram.com/${producer.instagram.replace("@", "")}`
+              }
+              target="_blank"
+              rel="noreferrer"
+            >
+              {producer.instagram}
+            </a>
+          ) : (
+            "—"
+          )}
+        </li>
+        <li>
+          <strong>Facebook:</strong>{" "}
+          {producer.facebook ? (
+            <a
+              href={
+                producer.facebook.startsWith("http")
+                  ? producer.facebook
+                  : `https://facebook.com/${producer.facebook}`
+              }
+              target="_blank"
+              rel="noreferrer"
+            >
+              {producer.facebook}
+            </a>
+          ) : (
+            "—"
+          )}
+        </li>
+        <li>
+          <strong>Description:</strong> {producer.description || "—"}
+        </li>
+        </ul>
+      </section>
 
       {canManageProducers && (
         <div className="wine-detail__actions">

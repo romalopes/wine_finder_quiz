@@ -316,6 +316,9 @@ export const categoriesApi = {
     const query = params.toString();
     return request(`/categories${query ? `?${query}` : ""}`);
   },
+  show(id) {
+    return request(`/categories/${id}`, { auth: true });
+  },
   create(categoryData) {
     return request("/categories", {
       method: "POST",
