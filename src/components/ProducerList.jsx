@@ -79,6 +79,9 @@ function ProducerList() {
             <tr>
               <th className="producers-table__image-col">Image</th>
               <th>Name</th>
+              <th>Country</th>
+              <th>Type</th>
+              <th>Status</th>
               <th>Address</th>
               <th>Email</th>
               <th>Wines</th>
@@ -96,8 +99,14 @@ function ProducerList() {
                 style={{ cursor: "pointer" }}
               >
                 <td>
-                  {Array.isArray(producer.images) &&
-                  producer.images.length > 0 ? (
+                  {producer.logo_url ? (
+                    <img
+                      src={producer.logo_url}
+                      alt={producer.name}
+                      className="producers-table__thumb"
+                    />
+                  ) : Array.isArray(producer.images) &&
+                    producer.images.length > 0 ? (
                     <img
                       src={producer.images[0]}
                       alt={producer.name}
@@ -118,6 +127,21 @@ function ProducerList() {
                   >
                     {producer.name}
                   </Link>
+                </td>
+                <td>
+                  {producer.country
+                    ? `${producer.country.flag_emoji || ""} ${producer.country.name}`.trim()
+                    : "—"}
+                </td>
+                <td>
+                  {producer.producer_type
+                    ? producer.producer_type
+                        .replace(/_/g, " ")
+                        .replace(/\b\w/g, (c) => c.toUpperCase())
+                    : "—"}
+                </td>
+                <td>
+                  {producer.active === false ? "Inactive" : "Active"}
                 </td>
                 <td>{producer.address || "—"}</td>
                 <td>{producer.email || "—"}</td>

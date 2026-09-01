@@ -184,6 +184,21 @@ export const producersApi = {
       auth: true,
     });
   },
+  uploadLogo(id, file) {
+    const formData = new FormData();
+    formData.append("logo", file);
+    return request(`/producers/${id}/logo`, {
+      method: "POST",
+      auth: true,
+      body: formData,
+    });
+  },
+  removeLogo(id) {
+    return request(`/producers/${id}/logo`, {
+      method: "DELETE",
+      auth: true,
+    });
+  },
 };
 
 export const wineProfilesApi = {

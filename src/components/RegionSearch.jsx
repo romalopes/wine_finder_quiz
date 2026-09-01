@@ -4,7 +4,8 @@ import { regionsApi } from "../services/api";
 // Region picker used in the wine form. Searches regions by name and/or country.
 // Loads the full list once, then filters client-side; allows adding multiple
 // regions to a wine, shown as removable tags.
-function RegionSearch({ selected, onChange }) {
+// When `countryId` is provided, only regions of that country are selectable.
+function RegionSearch({ selected, onChange, countryId }) {
   const [query, setQuery] = useState("");
   const [allRegions, setAllRegions] = useState([]);
   const [searching, setSearching] = useState(false);
@@ -32,8 +33,10 @@ function RegionSearch({ selected, onChange }) {
   const filtered = trimmed.length >= 2
     ? allRegions.filter(
         (r) =>
-          (r.name || "").toLowerCase().includes(trimmed) ||
-          (r.country?.name || "").toLowerCase().includes(trimmed),
+          (countryId == null ||
+            (r.country && String(r.country.id) === String(countryId))) &&
+          ((r.name || "").toLowerCase().includes(trimmed) ||
+            (r.country?.name || "").toLowerCase().includes(trimmed)),
       )
     : [];
 

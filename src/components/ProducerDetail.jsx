@@ -113,6 +113,16 @@ function ProducerDetail() {
         </div>
       </div>
 
+      {producer.logo_url && (
+        <div style={{ margin: "0 0 1rem" }}>
+          <img
+            src={producer.logo_url}
+            alt={`${producer.name} logo`}
+            style={{ maxWidth: 180 }}
+          />
+        </div>
+      )}
+
       {Array.isArray(producer.images) && producer.images.length > 0 && (
         <div className="wine-detail__images">
           {producer.images.map((src, i) => (
@@ -124,7 +134,31 @@ function ProducerDetail() {
       <section className="detail-card">
         <ul className="facts" aria-label="Producer details">
         <li>
+          <strong>Status:</strong> {producer.active === false ? "Inactive" : "Active"}
+        </li>
+        <li>
+          <strong>Country:</strong>{" "}
+          {producer.country
+            ? `${producer.country.flag_emoji || ""} ${producer.country.name}`.trim()
+            : "—"}
+        </li>
+        <li>
+          <strong>Legal name:</strong> {producer.legal_name || "—"}
+        </li>
+        <li>
           <strong>Address:</strong> {producer.address || "—"}
+        </li>
+        <li>
+          <strong>Location:</strong>{" "}
+          {[producer.city, producer.state, producer.postal_code]
+            .filter(Boolean)
+            .join(", ") || "—"}
+        </li>
+        <li>
+          <strong>Phone:</strong> {producer.phone || "—"}
+        </li>
+        <li>
+          <strong>Founded:</strong> {producer.founded_year || "—"}
         </li>
         <li>
           <strong>Type:</strong>{" "}
@@ -290,6 +324,30 @@ function ProducerDetail() {
                 })}
               </ul>
             ))}
+        </div>
+      )}
+
+      {Array.isArray(producer.regions) && producer.regions.length > 0 && (
+        <div className="wine-detail__section">
+          <h2>Regions</h2>
+          <p>
+            {producer.regions
+              .map((r) =>
+                r.country_name ? `${r.name} (${r.country_name})` : r.name,
+              )
+              .join(", ")}
+          </p>
+        </div>
+      )}
+
+      {Array.isArray(producer.grapes) && producer.grapes.length > 0 && (
+        <div className="wine-detail__section">
+          <h2>Grapes</h2>
+          <p>
+            {producer.grapes
+              .map((g) => (g.color ? `${g.name} (${g.color})` : g.name))
+              .join(", ")}
+          </p>
         </div>
       )}
 

@@ -1,13 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { countriesApi } from "../services/api";
-import { useAuth } from "../contexts/AuthContext";
-import { isSuperUser, canManageGrapes } from "../constants/roles";
 
 function CountryDetail() {
   const { id } = useParams();
-  const { user } = useAuth();
-  const canManage = isSuperUser(user) || canManageGrapes(user);
   const [country, setCountry] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -58,13 +54,6 @@ function CountryDetail() {
         <h1 className="grapes-page__title">
           {country.flag_emoji} {country.name}
         </h1>
-        {canManage && (
-          <div className="section-header__actions">
-            <Link to={`/countries/${country.id}`} className="btn-primary">
-              Show
-            </Link>
-          </div>
-        )}
       </div>
 
       <div className="grape-detail">
@@ -74,6 +63,10 @@ function CountryDetail() {
           </li>
           <li>
             <strong>Continent:</strong> {country.continent || "—"}
+          </li>
+          <li>
+            <strong>Wine country:</strong>{" "}
+            {country.is_wine_country ? "Yes" : "No"}
           </li>
         </ul>
       </div>

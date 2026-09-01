@@ -1,26 +1,60 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { producersApi, imagesApi } from "../services/api";
+import { producersApi, imagesApi, countriesApi } from "../services/api";
+import GrapeSearch from "./GrapeSearch";
+import RegionSearch from "./RegionSearch";
 
 function ProducerForm() {
   const { slug } = useParams();
   const navigate = useNavigate();
   const isEditing = Boolean(slug);
   const [images, setImages] = useState(null);
+  const [logoFile, setLogoFile] = useState(null);
+  const [logoRemoved, setLogoRemoved] = useState(false);
+  const [countries, setCountries] = useState([]);
+  const [selectedRegions, setSelectedRegions] = useState([]);
+  const [selectedGrapes, setSelectedGrapes] = useState([]);
 
   const [formData, setFormData] = useState({
     name: "",
+    legal_name: "",
     address: "",
     email: "",
-    producer_type: "",
+    producer_type: "winery",
     website: "",
     instagram: "",
     facebook: "",
     description: "",
+    phone: "",
+    city: "",
+    state: "",
+    postal_code: "",
+    founded_year: "",
+    active: true,
+    country_id: "",
   });
+  const [existingLogoUrl, setExistingLogoUrl] = useState(null);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    countriesApi
+      .list()
+      .then((data) => {
+        const list = (Array.isArray(data) ? data : []).filter(
+          (c) => c.is_wine_country,
+        );
+        setCountries(list);
+        // Default the selection to Australia when nothing is selected yet.
+        setFormData((prev) => {
+          if (prev.country_id) return prev;
+          const australia = list.find((c) => c.code === "AU");
+          return australia ? { ...prev, country_id: String(australia.id) } : prev;
+        });
+      })
+      .catch(() => setCountries([]));
+  }, []);
 
   useEffect(() => {
     async function initFormData() {
@@ -30,14 +64,38 @@ function ProducerForm() {
           const data = await producersApi.show(slug);
           setFormData({
             name: data.name || "",
+            legal_name: data.legal_name || "",
             address: data.address || "",
             email: data.email || "",
-            producer_type: data.producer_type || "",
+            producer_type: data.producer_type || "winery",
             website: data.website || "",
             instagram: data.instagram || "",
             facebook: data.facebook || "",
             description: data.description || "",
+            phone: data.phone || "",
+            city: data.city || "",
+            state: data.state || "",
+            postal_code: data.postal_code || "",
+            founded_year:
+              data.founded_year != null ? String(data.founded_year) : "",
+            active: data.active !== false,
+            country_id: data.country?.id ? String(data.country.id) : "",
           });
+          setExistingLogoUrl(data.logo_url || null);
+          setSelectedRegions(
+            (data.regions || []).map((r) => ({
+              id: r.id,
+              name: r.name,
+              country: { id: data.country?.id, name: data.country?.name },
+            })),
+          );
+          setSelectedGrapes(
+            (data.grapes || []).map((g) => ({
+              id: g.id,
+              name: g.name,
+              color: g.color,
+            })),
+          );
         } catch (err) {
           setError(err.message || "Failed to load producer");
         } finally {
@@ -49,8 +107,22 @@ function ProducerForm() {
   }, [slug, isEditing]);
 
   function handleChange(e) {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    const { name, type, value, checked } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+  }
+
+  // Changing the country invalidates regions outside it — drop them.
+  function handleCountryChange(e) {
+    const countryId = e.target.value;
+    setFormData((prev) => ({ ...prev, country_id: countryId }));
+    setSelectedRegions((prev) =>
+      prev.filter(
+        (r) => r.country && String(r.country.id) === String(countryId),
+      ),
+    );
   }
 
   async function handleSubmit(e) {
@@ -61,6 +133,7 @@ function ProducerForm() {
 
       const payload = {
         name: formData.name,
+        legal_name: formData.legal_name || null,
         address: formData.address || null,
         email: formData.email || null,
         producer_type: formData.producer_type || null,
@@ -68,21 +141,38 @@ function ProducerForm() {
         instagram: formData.instagram || null,
         facebook: formData.facebook || null,
         description: formData.description || null,
+        phone: formData.phone || null,
+        city: formData.city || null,
+        state: formData.state || null,
+        postal_code: formData.postal_code || null,
+        founded_year: formData.founded_year || null,
+        active: formData.active,
+        country_id: formData.country_id || null,
+        region_ids: selectedRegions.map((r) => r.id),
+        grape_ids: selectedGrapes.map((g) => g.id),
       };
 
+      let result;
       if (isEditing) {
-        await producersApi.update(slug, payload);
+        result = await producersApi.update(slug, payload);
         if (images && images.length > 0) {
           await imagesApi.upload("producer", slug, images);
         }
-        navigate(`/producers/${slug}`, { replace: true });
       } else {
-        const result = await producersApi.create(payload);
+        result = await producersApi.create(payload);
         if (images && images.length > 0) {
           await imagesApi.upload("producer", result.slug, images);
         }
-        navigate(`/producers/${result.slug}`, { replace: true });
       }
+
+      const producerId = result.slug || slug;
+      if (logoFile) {
+        await producersApi.uploadLogo(producerId, logoFile);
+      } else if (logoRemoved) {
+        await producersApi.removeLogo(producerId);
+      }
+
+      navigate(`/producers/${producerId}`, { replace: true });
     } catch (err) {
       const messages =
         err.data?.errors?.join?.(", ") || err.data?.error || err.message;
@@ -126,6 +216,16 @@ function ProducerForm() {
             />
           </label>
           <label className="auth-form__field">
+            <span>Legal name</span>
+            <input
+              type="text"
+              name="legal_name"
+              value={formData.legal_name}
+              onChange={handleChange}
+              placeholder="Legal corporate name (if different)"
+            />
+          </label>
+          <label className="auth-form__field">
             <span>Address</span>
             <input
               type="text"
@@ -133,6 +233,71 @@ function ProducerForm() {
               value={formData.address}
               onChange={handleChange}
               placeholder="e.g. 123 Vine St, Bordeaux"
+            />
+          </label>
+          <label className="auth-form__field">
+            <span>City</span>
+            <input
+              type="text"
+              name="city"
+              value={formData.city}
+              onChange={handleChange}
+            />
+          </label>
+          <label className="auth-form__field">
+            <span>State</span>
+            <input
+              type="text"
+              name="state"
+              value={formData.state}
+              onChange={handleChange}
+            />
+          </label>
+          <label className="auth-form__field">
+            <span>Postal code</span>
+            <input
+              type="text"
+              name="postal_code"
+              value={formData.postal_code}
+              onChange={handleChange}
+            />
+          </label>
+          <label className="auth-form__field">
+            <span>Country</span>
+            <select
+              name="country_id"
+              value={formData.country_id}
+              onChange={handleCountryChange}
+              required
+            >
+              {countries.map((country) => (
+                <option key={country.id} value={country.id}>
+                  {country.flag_emoji ? `${country.flag_emoji} ` : ""}
+                  {country.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="auth-form__field">
+            <span>Phone</span>
+            <input
+              type="text"
+              name="phone"
+              value={formData.phone}
+              onChange={handleChange}
+              placeholder="e.g. +61 2 9999 9999"
+            />
+          </label>
+          <label className="auth-form__field">
+            <span>Founded year</span>
+            <input
+              type="number"
+              name="founded_year"
+              min={1}
+              max={new Date().getFullYear()}
+              value={formData.founded_year}
+              onChange={handleChange}
+              placeholder="e.g. 1858"
             />
           </label>
           <label className="auth-form__field">
@@ -191,6 +356,23 @@ function ProducerForm() {
               placeholder="Page name or full URL"
             />
           </label>
+          <label
+            className="auth-form__field"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              flexDirection: "row",
+            }}
+          >
+            <input
+              type="checkbox"
+              name="active"
+              checked={formData.active}
+              onChange={handleChange}
+            />
+            <span>Active</span>
+          </label>
           <label className="auth-form__field" style={{ gridColumn: "1 / -1" }}>
             <span>Description</span>
             <textarea
@@ -201,6 +383,59 @@ function ProducerForm() {
               placeholder="About this producer…"
             />
           </label>
+        </div>
+
+        <div className="auth-form__field" style={{ gridColumn: "1 / -1" }}>
+          <span>Logo</span>
+          {existingLogoUrl && !logoRemoved && !logoFile && (
+            <div style={{ marginBottom: 8 }}>
+              <img
+                src={existingLogoUrl}
+                alt="Producer logo"
+                style={{ maxWidth: 120, display: "block" }}
+              />
+              <button
+                type="button"
+                className="wine-form__remove-vintage"
+                onClick={() => setLogoRemoved(true)}
+              >
+                Remove logo
+              </button>
+            </div>
+          )}
+          {logoRemoved && (
+            <p style={{ margin: "4px 0" }}>
+              <em>Logo will be removed when you save.</em>{" "}
+              <button
+                type="button"
+                className="wine-form__remove-vintage"
+                onClick={() => setLogoRemoved(false)}
+              >
+                Undo
+              </button>
+            </p>
+          )}
+          <input
+            type="file"
+            accept="image/png,image/jpeg,image/gif,image/webp,image/svg+xml"
+            onChange={(e) => setLogoFile(e.target.files?.[0] || null)}
+          />
+          <small>PNG, JPEG, GIF, WEBP or SVG — max 10 MB.</small>
+        </div>
+
+        <div className="auth-form__field" style={{ gridColumn: "1 / -1" }}>
+          <RegionSearch
+            selected={selectedRegions}
+            onChange={setSelectedRegions}
+            countryId={formData.country_id || null}
+          />
+        </div>
+
+        <div className="auth-form__field" style={{ gridColumn: "1 / -1" }}>
+          <GrapeSearch
+            selected={selectedGrapes}
+            onChange={setSelectedGrapes}
+          />
         </div>
 
         <label className="auth-form__field">

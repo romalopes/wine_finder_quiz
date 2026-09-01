@@ -9,6 +9,7 @@ const emptyForm = {
   code: "",
   continent: "",
   flag_emoji: "",
+  is_wine_country: false,
 };
 
 const CONTINENT_OPTIONS = [
@@ -32,11 +33,15 @@ function Countries() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
+  const [onlyWineCountries, setOnlyWineCountries] = useState(false);
 
   const canManage = isSuperUser(user) || canManageGrapes(user);
 
   const sortedCountries = useMemo(() => {
-    const sorted = [...countries];
+    const source = onlyWineCountries
+      ? countries.filter((c) => c.is_wine_country)
+      : countries;
+    const sorted = [...source];
     switch (sortBy) {
       case "continent":
         sorted.sort(
@@ -51,7 +56,7 @@ function Countries() {
         break;
     }
     return sorted;
-  }, [countries, sortBy]);
+  }, [countries, sortBy, onlyWineCountries]);
 
   const loadCountries = useCallback(async () => {
     try {
@@ -103,6 +108,7 @@ function Countries() {
         code: form.code.trim().toUpperCase(),
         continent: form.continent || null,
         flag_emoji: form.flag_emoji || null,
+        is_wine_country: Boolean(form.is_wine_country),
       };
       if (mode === "edit" && editingId) {
         await countriesApi.update(editingId, payload);
@@ -129,6 +135,7 @@ function Countries() {
       code: country.code || "",
       continent: country.continent || "",
       flag_emoji: country.flag_emoji || "",
+      is_wine_country: Boolean(country.is_wine_country),
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -216,6 +223,27 @@ function Countries() {
                 />
               </div>
             </div>
+            <div className="form-group">
+              <label
+                htmlFor="country-is-wine-country"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  cursor: "pointer",
+                }}
+              >
+                <input
+                  id="country-is-wine-country"
+                  type="checkbox"
+                  checked={Boolean(form.is_wine_country)}
+                  onChange={(e) =>
+                    updateField("is_wine_country", e.target.checked)
+                  }
+                />
+                Wine country (shows in wine-country filtered lists)
+              </label>
+            </div>
             <div className="form-actions">
               <button type="submit" className="btn-primary" disabled={saving}>
                 {saving ? "Saving…" : mode === "edit" ? "Update" : "Create"}
@@ -236,6 +264,14 @@ function Countries() {
         <div className="section-header">
           <h2 className="section-header__title">All Countries</h2>
           <div className="section-header__actions">
+            <label className="region-tree-filter">
+              <input
+                type="checkbox"
+                checked={onlyWineCountries}
+                onChange={(e) => setOnlyWineCountries(e.target.checked)}
+              />
+              Only show wine countries
+            </label>
             <select
               className="sort-select"
               value={sortBy}
@@ -269,7 +305,7 @@ function Countries() {
                 <th>Name</th>
                 <th>Code</th>
                 <th>Continent</th>
-                {/* {canManage && <th>Actions</th>} */}
+                {canManage && <th>Actions</th>}
               </tr>
             </thead>
             <tbody>
@@ -291,7 +327,7 @@ function Countries() {
                   </td>
                   <td>{country.code}</td>
                   <td>{country.continent || "—"}</td>
-                  {/* {canManage && (
+                  {canManage && (
                     <td className="actions">
                       <Link
                         to={`/countries/${country.id}`}
@@ -306,15 +342,15 @@ function Countries() {
                       >
                         Edit
                       </button>
-                      <button
+                      {/* <button
                         type="button"
                         className="btn-action btn-action--delete"
                         onClick={() => handleDelete(country)}
                       >
                         Delete
-                      </button>
+                      </button> */}
                     </td>
-                  )} */}
+                  )}
                 </tr>
               ))}
             </tbody>

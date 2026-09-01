@@ -98,7 +98,7 @@ function Regions() {
   const [editingId, setEditingId] = useState(null);
   const [expandedCountries, setExpandedCountries] = useState(new Set());
   const [targetRegionId, setTargetRegionId] = useState(null);
-  const [showOnlyWithWines, setShowOnlyWithWines] = useState(false);
+  const [showOnlyWithWines, setShowOnlyWithWines] = useState(true);
 
   const displayTree = showOnlyWithWines
     ? treeData.filter((c) => (c.wine_count || 0) > 0)
