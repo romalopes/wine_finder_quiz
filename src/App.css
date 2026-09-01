@@ -600,3 +600,20 @@
 .region-detail__section ul li:last-child {
   border-bottom: none;
 }
+
+.site-footer {
+  margin-top: 3rem;
+  padding: 1.5rem max(1.5rem, calc((100vw - 72rem) / 2));
+  background: #4a1020;
+  color: #fff8f0;
+  text-align: center;
+}
+.site-footer p {
+  margin: 0;
+}
+.site-footer__version {
+  margin-top: 0.35rem !important;
+  color: #ead7d1;
+  font: 0.85rem system-ui, sans-serif;
+  letter-spacing: 0.03em;
+}
