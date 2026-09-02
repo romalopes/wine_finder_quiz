@@ -209,6 +209,11 @@ function Header() {
                     Users &amp; Roles
                   </NavLink>
                 )}
+                {isAdmin && (
+                  <NavLink to="/admin/api-health" onClick={() => setSettingsOpen(false)}>
+                    API Health
+                  </NavLink>
+                )}
                 <NavLink to="/producers" onClick={() => setSettingsOpen(false)}>
                   Producers
                 </NavLink>
