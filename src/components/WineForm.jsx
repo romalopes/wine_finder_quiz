@@ -193,14 +193,12 @@ function WineForm() {
 
       const wineTasteParametersAttributes = tasteScores.map((ts) => ({
         id: ts.id || null,
-        wine_id: formData.id,
         taste_parameter_id: ts.taste_parameter_id,
         taste_parameter_slug: ts.taste_parameter_slug,
         score: ts.score,
       }));
 
       const payload = {
-        id: formData.id || null,
         name: formData.name,
         color: formData.color,
         closure: formData.closure || null,
