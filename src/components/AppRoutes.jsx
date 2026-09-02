@@ -27,6 +27,8 @@ import CountryDetail from "./CountryDetail.jsx";
 import Regions from "./Regions.jsx";
 import RegionDetail from "./RegionDetail.jsx";
 import ApiHealth from "./ApiHealth/ApiHealth.jsx";
+import Subscribe from "./Subscribe.jsx";
+import SubscriptionAdmin from "./SubscriptionAdmin.jsx";
 
 function AppRoutes({ user, setUser }) {
   return (
@@ -68,6 +70,8 @@ function AppRoutes({ user, setUser }) {
         <Route element={<Regions />} path="/regions" />
         <Route element={<RegionDetail />} path="/regions/:id" />
         <Route element={<ApiHealth />} path="/admin/api-health" />
+        <Route element={<Subscribe />} path="/subscribe" />
+        <Route element={<SubscriptionAdmin />} path="/subscriptions" />
       </Routes>
     </>
   );

@@ -235,6 +235,42 @@ export const usersApi = {
       body: { role_ids: roleIds },
     });
   },
+  assignSubscription(userId, subscriptionId) {
+    return request(`/users/${userId}/assign_subscription`, {
+      method: "PATCH",
+      auth: true,
+      body: { subscription_id: subscriptionId },
+    });
+  },
+};
+
+export const subscriptionsApi = {
+  list({ auth = false } = {}) {
+    return request("/subscriptions", { auth });
+  },
+  show(id) {
+    return request(`/subscriptions/${id}`);
+  },
+  create(data) {
+    return request("/subscriptions", {
+      method: "POST",
+      auth: true,
+      body: { subscription: data },
+    });
+  },
+  update(id, data) {
+    return request(`/subscriptions/${id}`, {
+      method: "PATCH",
+      auth: true,
+      body: { subscription: data },
+    });
+  },
+  destroy(id) {
+    return request(`/subscriptions/${id}`, {
+      method: "DELETE",
+      auth: true,
+    });
+  },
 };
 
 export const tasteParametersApi = {

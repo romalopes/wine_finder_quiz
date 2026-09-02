@@ -187,6 +187,7 @@ function Header() {
           )}
         </div>
         <NavLink to="/about">About</NavLink>
+        <NavLink to="/subscribe">Subscribe</NavLink>
         {canManageSettings && (
           <div
             className="settings-menu"
@@ -212,6 +213,11 @@ function Header() {
                 {isAdmin && (
                   <NavLink to="/admin/api-health" onClick={() => setSettingsOpen(false)}>
                     API Health
+                  </NavLink>
+                )}
+                {isAdmin && (
+                  <NavLink to="/subscriptions" onClick={() => setSettingsOpen(false)}>
+                    Subscriptions
                   </NavLink>
                 )}
                 <NavLink to="/producers" onClick={() => setSettingsOpen(false)}>

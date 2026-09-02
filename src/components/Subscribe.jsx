@@ -1,0 +1,172 @@
+import { useEffect, useState } from "react";
+import { subscriptionsApi } from "../services/api";
+
+function formatPrice(cents) {
+  if (cents == null) return null;
+  if (cents === 0) return "$0";
+  return `$${(cents / 100).toFixed(0)}`;
+}
+
+function Subscribe() {
+  const [plans, setPlans] = useState([]);
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    subscriptionsApi
+      .list()
+      .then((data) => {
+        if (!cancelled) setPlans(Array.isArray(data) ? data : []);
+      })
+      .catch((err) => {
+        if (!cancelled) setError(err.message || "Failed to load plans");
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // FREE always first (position 0), then the paid tiers.
+  const free =
+    plans.find((p) => p.yearly_price_cents === 0) ||
+    plans.find((p) => p.name === "FREE");
+  const paid = plans.filter((p) => p !== free);
+
+  return (
+    <main className="wine-app">
+      <div className="wine-management__header">
+        <h1>Membership</h1>
+        <p className="review-card__comment">
+          Choose the plan that fits how you explore and share wine words.
+        </p>
+      </div>
+
+      {loading && <p className="wine-management__loading">Loading plans…</p>}
+      {error && <p className="review-form__error">{error}</p>}
+
+      {!loading && !error && (
+        <>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
+              gap: 24,
+              marginBottom: 32,
+            }}
+          >
+            {free && (
+              <article
+                className="review-card"
+                style={{ maxWidth: 340, border: "1px dashed #ccc" }}
+              >
+                <h2 className="review-card__title">{free.name}</h2>
+                {free.description && (
+                  <p className="review-card__comment">{free.description}</p>
+                )}
+                <p style={{ fontSize: 32, fontWeight: 700, margin: "8px 0" }}>
+                  $0
+                </p>
+                <ul style={{ paddingLeft: 20, margin: "16px 0" }}>
+                  {(free.features || []).map((f, i) => (
+                    <li
+                      key={f.id ?? i}
+                      style={{ marginBottom: 6, fontSize: 14 }}
+                    >
+                      ✓ {f.name}
+                    </li>
+                  ))}
+                </ul>
+                <button
+                  type="button"
+                  className="auth-form__submit"
+                  disabled
+                  title="Coming soon"
+                >
+                  Start free
+                </button>
+              </article>
+            )}
+            {paid
+              .slice()
+              .sort((a, b) => a.yearly_price_cents - b.yearly_price_cents)
+              .map((plan) => {
+                const yearly = formatPrice(plan.yearly_price_cents);
+                const monthly = formatPrice(plan.monthly_price_cents);
+                return (
+                  <article key={plan.id} className="review-card">
+                    <div style={{ position: "relative" }}>
+                      {plan.popular && (
+                        <span
+                          className="review-card__badge"
+                          style={{
+                            background: "#7f4f24",
+                            color: "#fff",
+                            borderRadius: 999,
+                            padding: "2px 10px",
+                            fontSize: 12,
+                            fontWeight: 600,
+                            letterSpacing: 1,
+                            textTransform: "uppercase",
+                          }}
+                        >
+                          Most popular
+                        </span>
+                      )}
+                      <h2 className="review-card__title">{plan.name}</h2>
+                    </div>
+
+                    {plan.description && (
+                      <p className="review-card__comment">{plan.description}</p>
+                    )}
+
+                    <p
+                      style={{ fontSize: 32, fontWeight: 700, margin: "8px 0" }}
+                    >
+                      {yearly ?? "—"}
+                      <span
+                        style={{ fontSize: 14, fontWeight: 400, color: "#666" }}
+                      >
+                        {" "}
+                        / year
+                      </span>
+                    </p>
+                    {monthly && (
+                      <p className="review-card__comment">
+                        or {monthly} billed monthly
+                      </p>
+                    )}
+
+                    <ul style={{ paddingLeft: 20, margin: "16px 0" }}>
+                      {(plan.features || []).map((f, i) => (
+                        <li
+                          key={f.id ?? i}
+                          style={{ marginBottom: 6, fontSize: 14 }}
+                        >
+                          ✓ {f.name}
+                        </li>
+                      ))}
+                    </ul>
+
+                    <button
+                      type="button"
+                      className="auth-form__submit"
+                      disabled
+                      title="Online payments are coming soon"
+                    >
+                      Payment coming soon
+                    </button>
+                  </article>
+                );
+              })}
+          </div>
+        </>
+      )}
+    </main>
+  );
+}
+
+export default Subscribe;

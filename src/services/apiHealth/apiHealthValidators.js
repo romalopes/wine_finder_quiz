@@ -16,4 +16,13 @@ export const isAuthMePayload = (data) =>
 export const isProducerPayload = (data) =>
   Boolean(data?.id) && Boolean(data?.slug) && Boolean(data?.name);
 
+export const isSubscriptionListPayload = (data) =>
+  Array.isArray(data) &&
+  data.every(
+    (s) =>
+      Boolean(s?.id) &&
+      Boolean(s?.name) &&
+      Array.isArray(s?.features),
+  );
+
 export const hasStatusOk = (data) => data?.status === "ok";

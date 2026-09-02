@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { usersApi } from "../services/api";
+import { usersApi, subscriptionsApi } from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
 import { isSuperUser } from "../constants/roles";
 
@@ -9,18 +9,24 @@ function UserRoles() {
   const isAdmin = isSuperUser(user);
 
   const [allRoles, setAllRoles] = useState([]);
+  const [subscriptions, setSubscriptions] = useState([]);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState(null); // null = not searched
   const [searching, setSearching] = useState(false);
   const [error, setError] = useState(null);
   const [selected, setSelected] = useState({}); // userId -> Set(roleId)
   const [saving, setSaving] = useState(null);
+  const [savingSub, setSavingSub] = useState(null);
   const timer = useRef(null);
 
   useEffect(() => {
     usersApi
       .roles()
       .then((data) => setAllRoles(Array.isArray(data) ? data : []))
+      .catch(() => ({}));
+    subscriptionsApi
+      .list({ auth: true })
+      .then((data) => setSubscriptions(Array.isArray(data) ? data : []))
       .catch(() => ({}));
   }, []);
 
@@ -86,6 +92,26 @@ function UserRoles() {
     }
   }
 
+  async function changeSubscription(u, subscriptionId) {
+    if (!window.confirm("Change this user's subscription? This swaps their base role (Guest/Reader).")) return;
+    setSavingSub(u.id);
+    setError(null);
+    try {
+      const updated = await usersApi.assignSubscription(u.id, subscriptionId);
+      setResults((prev) =>
+        (prev || []).map((x) =>
+          x.id === u.id
+            ? { ...x, roles: updated.roles, role_ids: updated.role_ids, subscription: updated.subscription }
+            : x,
+        ),
+      );
+    } catch (err) {
+      setError(err.message || "Failed to change subscription");
+    } finally {
+      setSavingSub(null);
+    }
+  }
+
   if (!isAdmin) {
     return (
       <main className="wine-app">
@@ -140,6 +166,25 @@ function UserRoles() {
                 {role.name}
               </label>
             ))}
+            <div style={{ marginTop: 10 }}>
+              <label className="review-form__label" style={{ display: "block" }}>
+                Subscription
+              </label>
+              <select
+                value={u.subscription?.id ?? ""}
+                disabled={savingSub === u.id}
+                onChange={(e) => changeSubscription(u, Number(e.target.value))}
+              >
+                <option value="" disabled>
+                  {savingSub === u.id ? "Assigning…" : "Select subscription"}
+                </option>
+                {subscriptions.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+            </div>
             <button
               type="button"
               className="auth-form__submit"

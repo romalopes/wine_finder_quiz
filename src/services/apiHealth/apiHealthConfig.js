@@ -4,6 +4,7 @@ import {
   isHealthyDetailedPayload,
   isAuthMePayload,
   isProducerPayload,
+  isSubscriptionListPayload,
   hasStatusOk,
 } from "./apiHealthValidators.js";
 
@@ -14,6 +15,7 @@ export const API_CATEGORIES = {
   REFERENCE: "Reference Data",
   PRODUCERS: "Producers",
   WINES: "Wines",
+  SUBSCRIPTIONS: "Subscriptions",
   WRITE_SANDBOX: "Write Operations (Manual)",
 };
 
@@ -129,6 +131,29 @@ export const API_CHECKS = [
     requiresAuth: false,
     latencyThresholds: { excellent: 300, good: 700, slow: 1500 },
     validate: isValidArray,
+  },
+  {
+    id: "subscriptions-list",
+    category: API_CATEGORIES.SUBSCRIPTIONS,
+    name: "List Subscriptions (Public Plans)",
+    method: "GET",
+    url: "/subscriptions",
+    expectedStatus: 200,
+    requiresAuth: false,
+    validate: isSubscriptionListPayload,
+  },
+  {
+    id: "subscriptions-features",
+    category: API_CATEGORIES.SUBSCRIPTIONS,
+    name: "Subscription Plans Expose Features",
+    method: "GET",
+    url: "/subscriptions",
+    expectedStatus: 200,
+    requiresAuth: false,
+    validate: (data) =>
+      Array.isArray(data) && data.some((s) => (s.features || []).length > 0),
+    describeFailure: () =>
+      "No subscription plan returned a non-empty feature list",
   },
   // --- Write sandbox (manual trigger only, excluded from "Run All") ---
   {
