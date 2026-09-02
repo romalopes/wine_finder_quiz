@@ -5,6 +5,7 @@ import {
   isAuthMePayload,
   isProducerPayload,
   isSubscriptionListPayload,
+  areSubscriptionFeaturesValid,
   hasStatusOk,
 } from "./apiHealthValidators.js";
 
@@ -24,6 +25,28 @@ export const DEFAULT_THRESHOLDS = {
   good: 500,
   slow: 1000,
 };
+
+// Factory for the repetitive public list-style checks. Fills in the common
+// defaults (GET, expect 200, no auth, plain array validation) and lets each
+// check override anything else (e.g. latency thresholds or a custom validator).
+const listCheck = ({
+  id,
+  category,
+  name,
+  url,
+  validate = isValidArray,
+  ...overrides
+}) => ({
+  id,
+  category,
+  name,
+  method: "GET",
+  url,
+  expectedStatus: 200,
+  requiresAuth: false,
+  validate,
+  ...overrides,
+});
 
 export const API_CHECKS = [
   {
@@ -80,81 +103,61 @@ export const API_CHECKS = [
     requiresAuth: false, // Intentionally exclude the auth header.
     validate: () => true,
   },
-  {
+  listCheck({
     id: "ref-countries",
     category: API_CATEGORIES.REFERENCE,
     name: "Countries List",
-    method: "GET",
     url: "/countries",
-    expectedStatus: 200,
-    requiresAuth: false,
-    validate: isValidArray,
-  },
-  {
+  }),
+  listCheck({
     id: "ref-regions",
     category: API_CATEGORIES.REFERENCE,
     name: "Regions List",
-    method: "GET",
     url: "/regions",
-    expectedStatus: 200,
-    requiresAuth: false,
-    validate: isValidArray,
-  },
-  {
+  }),
+  listCheck({
     id: "ref-grapes",
     category: API_CATEGORIES.REFERENCE,
     name: "Grapes List",
-    method: "GET",
     url: "/grapes",
-    expectedStatus: 200,
-    requiresAuth: false,
-    validate: isValidArray,
-  },
-  {
+  }),
+  listCheck({
     id: "producers-list",
     category: API_CATEGORIES.PRODUCERS,
     name: "List Producers",
-    method: "GET",
     url: "/producers",
-    expectedStatus: 200,
-    requiresAuth: false,
     latencyThresholds: { excellent: 300, good: 700, slow: 1500 },
-    validate: isValidArray,
-  },
-  {
+  }),
+  listCheck({
     id: "wines-list",
     category: API_CATEGORIES.WINES,
     name: "List Wines",
-    method: "GET",
     url: "/wines",
-    expectedStatus: 200,
-    requiresAuth: false,
     latencyThresholds: { excellent: 300, good: 700, slow: 1500 },
-    validate: isValidArray,
-  },
-  {
+  }),
+  // Free and paid plans are just rows of the same public list, so a single
+  // check validates both the payload shape and that features are exposed.
+  listCheck({
     id: "subscriptions-list",
     category: API_CATEGORIES.SUBSCRIPTIONS,
     name: "List Subscriptions (Public Plans)",
-    method: "GET",
     url: "/subscriptions",
-    expectedStatus: 200,
-    requiresAuth: false,
-    validate: isSubscriptionListPayload,
-  },
-  {
-    id: "subscriptions-features",
-    category: API_CATEGORIES.SUBSCRIPTIONS,
-    name: "Subscription Plans Expose Features",
-    method: "GET",
-    url: "/subscriptions",
-    expectedStatus: 200,
-    requiresAuth: false,
     validate: (data) =>
-      Array.isArray(data) && data.some((s) => (s.features || []).length > 0),
+      isSubscriptionListPayload(data) &&
+      data.some((s) => (s.features || []).length > 0),
     describeFailure: () =>
       "No subscription plan returned a non-empty feature list",
-  },
+  }),
+  listCheck({
+    id: "subscriptions-features",
+    category: API_CATEGORIES.SUBSCRIPTIONS,
+    name: "Subscription Feature Catalogue Integrity",
+    method: "GET",
+    url: "/subscriptions",
+    validate: areSubscriptionFeaturesValid,
+    describeFailure: () =>
+      "Subscription features failed validation: every feature needs a numeric id and a non-empty name, plans must not duplicate features, free plans must have no features and paid plans must have at least one",
+  }),
   // --- Write sandbox (manual trigger only, excluded from "Run All") ---
   {
     id: "write-producer-create-delete",
