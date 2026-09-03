@@ -1,8 +1,4 @@
-import {
-  FRONT_END_VERSION,
-  BACK_END_VERSION,
-  FRONT_END_VERSION,
-} from "../constants/versions";
+import { FRONT_END_VERSION, BACK_END_VERSION } from "../constants/versions";
 
 function Footer() {
   return (

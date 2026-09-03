@@ -2118,6 +2118,15 @@ textarea {
   border-bottom: 2px solid #e4d9cd;
 }
 
+.group-show-all {
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: #7f4f24;
+  margin-left: 0.75rem;
+  text-decoration: underline;
+  white-space: nowrap;
+}
+
 .content-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);

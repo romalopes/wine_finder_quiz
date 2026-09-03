@@ -226,11 +226,27 @@ function Articles() {
 
               return (
                 <div className="content-grid-groups">
+                  {selectedCategory && (
+                    <Link className="group-show-all" to="/articles">
+                      ← Show all categories
+                    </Link>
+                  )}
                   {sortedCategories.map((category) => (
                     <section key={category} className="content-grid-group">
-                      <h2 className="content-grid-group__title">{category}</h2>
+                      <h2 className="content-grid-group__title">
+                        {category}
+                        <Link
+                          className="group-show-all"
+                          to={`/articles?category=${encodeURIComponent(category)}`}
+                        >
+                          Show all ({grouped[category].length})
+                        </Link>
+                      </h2>
                       <div className="content-grid">
-                        {grouped[category].map((article) => (
+                        {(selectedCategory
+                          ? grouped[category]
+                          : grouped[category].slice(0, 12)
+                        ).map((article) => (
                           <div
                             key={article.id}
                             className="wine-management__card"

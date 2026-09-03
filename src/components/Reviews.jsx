@@ -594,11 +594,27 @@ function ReviewsList({
   }
   return (
     <div className="content-grid-groups">
+      {selectedCategory && (
+        <Link className="group-show-all" to="/reviews">
+          ← Show all categories
+        </Link>
+      )}
       {sortedCategories.map((category) => (
         <section key={category} className="content-grid-group">
-          <h2 className="content-grid-group__title">{category}</h2>
+          <h2 className="content-grid-group__title">
+            {category}
+            <Link
+              className="group-show-all"
+              to={`/reviews?category=${encodeURIComponent(category)}`}
+            >
+              Show all ({grouped[category].length})
+            </Link>
+          </h2>
           <div className="content-grid">
-            {grouped[category].map((review) => (
+            {(selectedCategory
+              ? grouped[category]
+              : grouped[category].slice(0, 12)
+            ).map((review) => (
               <div
                 key={review.id}
                 className="wine-management__card"

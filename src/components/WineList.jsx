@@ -76,6 +76,11 @@ function WineList() {
         <div>
           <p className="wine-kicker">Cellar</p>
           <h1>Wine List</h1>
+          {selectedCategory && (
+            <Link className="group-show-all" to="/wines">
+              ← Show all categories
+            </Link>
+          )}
         </div>
         {canManageWines && (
           <Link
@@ -132,9 +137,20 @@ function WineList() {
             <div className="content-grid-groups">
               {sortedCategories.map((category) => (
                 <section key={category} className="content-grid-group">
-                  <h2 className="content-grid-group__title">{category}</h2>
+                  <h2 className="content-grid-group__title">
+                    {category}
+                    <Link
+                      className="group-show-all"
+                      to={`/wines?category=${encodeURIComponent(category)}`}
+                    >
+                      Show all ({grouped[category].length})
+                    </Link>
+                  </h2>
                   <div className="content-grid">
-                    {grouped[category].map((wine) => (
+                    {(selectedCategory
+                      ? grouped[category]
+                      : grouped[category].slice(0, 12)
+                    ).map((wine) => (
                       <div
                         key={wine.slug}
                         className="wine-management__card"

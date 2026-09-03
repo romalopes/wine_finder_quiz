@@ -33,7 +33,7 @@ function Countries() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
-  const [onlyWineCountries, setOnlyWineCountries] = useState(false);
+  const [onlyWineCountries, setOnlyWineCountries] = useState(true);
 
   const canManage = isSuperUser(user) || canManageGrapes(user);
 
@@ -305,6 +305,8 @@ function Countries() {
                 <th>Name</th>
                 <th>Code</th>
                 <th>Continent</th>
+                <th>Producers</th>
+                <th>Wines</th>
                 {canManage && <th>Actions</th>}
               </tr>
             </thead>
@@ -327,6 +329,8 @@ function Countries() {
                   </td>
                   <td>{country.code}</td>
                   <td>{country.continent || "—"}</td>
+                  <td>{country.producers_count ?? 0}</td>
+                  <td>{country.wines_count ?? 0}</td>
                   {canManage && (
                     <td className="actions">
                       <Link
