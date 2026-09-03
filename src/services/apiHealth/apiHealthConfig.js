@@ -1,4 +1,4 @@
-import { VERSION_BACK_END } from "../../constants/versions.js";
+import { BACK_END_VERSION } from "../../constants/versions.js";
 import {
   isValidArray,
   isHealthyDetailedPayload,
@@ -78,10 +78,10 @@ export const API_CHECKS = [
     expectedStatus: 200,
     requiresAuth: true,
     // Compare the version reported by the Rails API (VERSION file) against
-    // the VERSION_BACK_END constant expected by the frontend.
-    validate: (data) => data?.version === VERSION_BACK_END,
+    // the BACK_END_VERSION constant expected by the frontend.
+    validate: (data) => data?.version === BACK_END_VERSION,
     describeFailure: (data) =>
-      `Backend version "${data?.version ?? "unknown"}" does not match frontend VERSION_BACK_END "${VERSION_BACK_END}"`,
+      `Backend version "${data?.version ?? "unknown"}" does not match frontend BACK_END_VERSION "${BACK_END_VERSION}"`,
   },
   {
     id: "auth-me-valid",

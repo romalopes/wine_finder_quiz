@@ -1,10 +1,17 @@
 import { useMemo, useState } from "react";
 import styles from "./ApiHealth.module.css";
-import { API_CHECKS, API_CATEGORIES, isWriteCheck } from "../../services/apiHealth/apiHealthConfig.js";
-import { runCheck, runWriteFlow } from "../../services/apiHealth/healthRunner.js";
+import {
+  API_CHECKS,
+  API_CATEGORIES,
+  isWriteCheck,
+} from "../../services/apiHealth/apiHealthConfig.js";
+import {
+  runCheck,
+  runWriteFlow,
+} from "../../services/apiHealth/healthRunner.js";
 import { useAuth } from "../../contexts/AuthContext.jsx";
 import { isSuperUser } from "../../constants/roles.js";
-import { VERSION_BACK_END } from "../../constants/versions.js";
+import { BACK_END_VERSION } from "../../constants/versions.js";
 import ResponseInspector from "./components/ResponseInspector.jsx";
 import WriteSandbox from "./components/WriteSandbox.jsx";
 
@@ -22,7 +29,8 @@ function latencyClass(rating) {
 }
 
 function StatusBadge({ passed }) {
-  const cls = passed == null ? styles.neutral : passed ? styles.pass : styles.fail;
+  const cls =
+    passed == null ? styles.neutral : passed ? styles.pass : styles.fail;
   const label = passed == null ? "—" : passed ? "PASS" : "FAIL";
   return <span className={`${styles.badge} ${cls}`}>{label}</span>;
 }
@@ -42,10 +50,7 @@ export default function ApiHealth() {
     () => API_CHECKS.filter((c) => !isWriteCheck(c)),
     [],
   );
-  const writeChecks = useMemo(
-    () => API_CHECKS.filter(isWriteCheck),
-    [],
-  );
+  const writeChecks = useMemo(() => API_CHECKS.filter(isWriteCheck), []);
   const grouped = useMemo(() => {
     const map = {};
     regularChecks.forEach((check) => {
@@ -81,19 +86,29 @@ export default function ApiHealth() {
   async function runAll() {
     setRunningAll(true);
     try {
-      const outs = await Promise.all(regularChecks.map((c) => runCheck(c, { getAuthToken })));
+      const outs = await Promise.all(
+        regularChecks.map((c) => runCheck(c, { getAuthToken })),
+      );
       setResults((prev) => {
         const next = { ...prev };
-        outs.forEach((r) => { next[r.id] = r; });
+        outs.forEach((r) => {
+          next[r.id] = r;
+        });
         return next;
       });
       const passed = outs.filter((r) => r.passed).length;
       const avgLatency = Math.round(
-        outs.reduce((sum, r) => sum + (r.latencyMs || 0), 0) / Math.max(outs.length, 1),
+        outs.reduce((sum, r) => sum + (r.latencyMs || 0), 0) /
+          Math.max(outs.length, 1),
       );
       setHistory((prev) =>
         [
-          { at: new Date().toLocaleTimeString(), passed, failed: outs.length - passed, avgLatency },
+          {
+            at: new Date().toLocaleTimeString(),
+            passed,
+            failed: outs.length - passed,
+            avgLatency,
+          },
           ...prev,
         ].slice(0, 5),
       );
@@ -123,20 +138,25 @@ export default function ApiHealth() {
   const totalPassed = allResults.filter((r) => r.passed).length;
   const totalFailed = allResults.filter((r) => !r.passed).length;
   const avgLatency = allResults.length
-    ? Math.round(allResults.reduce((s, r) => s + (r.latencyMs || 0), 0) / allResults.length)
+    ? Math.round(
+        allResults.reduce((s, r) => s + (r.latencyMs || 0), 0) /
+          allResults.length,
+      )
     : 0;
 
   const detailed = results["system-detailed"];
   const backendVersion = detailed?.payload?.version;
-  const versionMatched = backendVersion ? backendVersion === VERSION_BACK_END : null;
-return (
+  const versionMatched = backendVersion
+    ? backendVersion === BACK_END_VERSION
+    : null;
+  return (
     <main className={styles.container}>
       <div className={styles.header}>
         <div>
           <h1 className={styles.headerTitle}>API Health &amp; Diagnostics</h1>
           <p className={styles.headerMeta}>
             {API_CHECKS.length} checks configured · backend{" "}
-            <code>{VERSION_BACK_END}</code> · {new Date().toLocaleString()}
+            <code>{BACK_END_VERSION}</code> · {new Date().toLocaleString()}
           </p>
         </div>
         <div className={styles.toolbar}>
@@ -157,7 +177,7 @@ return (
         >
           {versionMatched
             ? `✓ Version match: backend ${backendVersion}`
-            : `⚠ Version mismatch: backend reports ${backendVersion} but frontend expects ${VERSION_BACK_END}`}
+            : `⚠ Version mismatch: backend reports ${backendVersion} but frontend expects ${BACK_END_VERSION}`}
         </div>
       )}
 
@@ -165,11 +185,21 @@ return (
         <div className={styles.summaryBar}>
           <span className={styles.summaryStat}>
             <span className={styles.summaryLabel}>Passed</span>
-            <span className={`${styles.summaryValue}`} style={{ color: "#137333" }}>{totalPassed}</span>
+            <span
+              className={`${styles.summaryValue}`}
+              style={{ color: "#137333" }}
+            >
+              {totalPassed}
+            </span>
           </span>
           <span className={styles.summaryStat}>
             <span className={styles.summaryLabel}>Failed</span>
-            <span className={`${styles.summaryValue}`} style={{ color: "#c5221f" }}>{totalFailed}</span>
+            <span
+              className={`${styles.summaryValue}`}
+              style={{ color: "#c5221f" }}
+            >
+              {totalFailed}
+            </span>
           </span>
           <span className={styles.summaryStat}>
             <span className={styles.summaryLabel}>Avg Latency</span>
@@ -199,7 +229,9 @@ return (
                   return (
                     <div key={check.id}>
                       <div className={styles.row}>
-                        <span className={`${styles.methodPill} ${methodClass[check.method]}`}>
+                        <span
+                          className={`${styles.methodPill} ${methodClass[check.method]}`}
+                        >
                           {check.method}
                         </span>
                         <div className={styles.rowMeta}>
@@ -209,10 +241,14 @@ return (
                         <StatusBadge passed={result?.passed} />
                         {result && (
                           <span className={styles.latency}>
-                            <span className={`${styles.badge} ${latencyClass(result.latencyRating)}`}>
+                            <span
+                              className={`${styles.badge} ${latencyClass(result.latencyRating)}`}
+                            >
                               {result.latencyMs}ms
                             </span>
-                            <span style={{ marginLeft: "0.4rem" }}>{result.status}</span>
+                            <span style={{ marginLeft: "0.4rem" }}>
+                              {result.status}
+                            </span>
                           </span>
                         )}
                         <button
@@ -231,7 +267,9 @@ return (
                           {isExpanded ? "Hide Details" : "Show Details"}
                         </button>
                       </div>
-                      {isExpanded && <ResponseInspector check={check} result={result} />}
+                      {isExpanded && (
+                        <ResponseInspector check={check} result={result} />
+                      )}
                     </div>
                   );
                 })}
@@ -257,8 +295,12 @@ return (
           {history.map((h, i) => (
             <div key={i} className={styles.historyRow}>
               <span>{h.at}</span>
-              <span className={`${styles.badge} ${styles.pass}`}>{h.passed} passed</span>
-              <span className={`${styles.badge} ${styles.fail}`}>{h.failed} failed</span>
+              <span className={`${styles.badge} ${styles.pass}`}>
+                {h.passed} passed
+              </span>
+              <span className={`${styles.badge} ${styles.fail}`}>
+                {h.failed} failed
+              </span>
               <span>avg {h.avgLatency}ms</span>
             </div>
           ))}
