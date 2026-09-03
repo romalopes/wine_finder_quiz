@@ -329,8 +329,32 @@ function Countries() {
                   </td>
                   <td>{country.code}</td>
                   <td>{country.continent || "—"}</td>
-                  <td>{country.producers_count ?? 0}</td>
-                  <td>{country.wines_count ?? 0}</td>
+                  <td>
+                    {country.producers_count > 0 ? (
+                      <Link
+                        to={`/countries/${country.id}#producers`}
+                        className="grapes-table__link"
+                      >
+                        {country.producers_count} producer
+                        {country.producers_count !== 1 ? "s" : ""}
+                      </Link>
+                    ) : (
+                      "—"
+                    )}
+                  </td>
+                  <td>
+                    {country.wines_count > 0 ? (
+                      <Link
+                        to={`/countries/${country.id}#wines`}
+                        className="grapes-table__link"
+                      >
+                        {country.wines_count} wine
+                        {country.wines_count !== 1 ? "s" : ""}
+                      </Link>
+                    ) : (
+                      "—"
+                    )}
+                  </td>
                   {canManage && (
                     <td className="actions">
                       <Link

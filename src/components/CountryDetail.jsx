@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { countriesApi } from "../services/api";
+import WineTable from "./WineTable";
 
 function CountryDetail() {
   const { id } = useParams();
@@ -25,6 +26,20 @@ function CountryDetail() {
       cancelled = true;
     };
   }, [id]);
+
+  // If we navigated here from a country-list count link ("#producers" /
+  // "#wines"), scroll to the relevant section once the country has loaded.
+  useEffect(() => {
+    if (!country) return;
+    const hash = window.location.hash;
+    if (!hash) return;
+    const el = document.getElementById(hash.slice(1));
+    if (el) {
+      setTimeout(() => {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 120);
+    }
+  }, [country]);
 
   if (loading) {
     return (
@@ -70,6 +85,78 @@ function CountryDetail() {
           </li>
         </ul>
       </div>
+
+      <section id="producers" className="country-detail__section">
+        <h2>Producers</h2>
+        {country.producers?.length ? (
+          <table className="grapes-table producers-table">
+            <thead>
+              <tr>
+                <th className="producers-table__image-col" />
+                <th>Name</th>
+                <th>Type</th>
+                <th>Wines</th>
+              </tr>
+            </thead>
+            <tbody>
+              {country.producers.map((producer, index) => (
+                <tr
+                  key={producer.slug || producer.id}
+                  className={
+                    index % 2 === 0 ? "grapes-row--even" : "grapes-row--odd"
+                  }
+                >
+                  <td>
+                    {producer.logo_url ? (
+                      <img
+                        src={producer.logo_url}
+                        alt={producer.name}
+                        className="producers-table__thumb"
+                      />
+                    ) : (
+                      <span
+                        className="producers-table__thumb producers-table__thumb--empty"
+                        aria-hidden="true"
+                      />
+                    )}
+                  </td>
+                  <td>
+                    <Link
+                      to={`/producers/${producer.slug}`}
+                      className="grapes-table__link"
+                    >
+                      {producer.name}
+                    </Link>
+                  </td>
+                  <td>
+                    {producer.producer_type
+                      ? producer.producer_type
+                          .replace(/_/g, " ")
+                          .replace(/\b\w/g, (c) => c.toUpperCase())
+                      : "—"}
+                  </td>
+                  <td>{producer.wines_count ?? "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <p>No producers for this country yet.</p>
+        )}
+      </section>
+
+      <section id="wines" className="country-detail__section">
+        <h2>Wines</h2>
+        <WineTable
+          wines={country.wines}
+          onDeleted={(deleted) =>
+            setCountry((prev) => ({
+              ...prev,
+              wines: prev.wines.filter((w) => w.slug !== deleted.slug),
+            }))
+          }
+        />
+      </section>
     </div>
   );
 }
