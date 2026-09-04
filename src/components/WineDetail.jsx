@@ -222,7 +222,7 @@ function WineDetail() {
           {Array.isArray(wine.categories) && wine.categories.length > 0 ? (
             wine.categories.map((cat, i) => (
               <span key={cat.id}>
-                <Link to={`/categories/${cat.id}`}>{cat.name}</Link>
+                <Link to={`/categories/${cat.slug}`}>{cat.name}</Link>
                 {i < wine.categories.length - 1 ? ", " : ""}
               </span>
             ))
@@ -255,7 +255,7 @@ function WineDetail() {
             ? wine.grapes.map((grape, grapeIndex) => (
                 <span key={grape.id || grapeIndex}>
                   {grapeIndex > 0 && ", "}
-                  <Link to={`/grapes/${grape.id}`}>{grape.name}</Link>
+                  <Link to={`/grapes/${grape.slug}`}>{grape.name}</Link>
                 </span>
               ))
             : "—"}
@@ -266,7 +266,7 @@ function WineDetail() {
             ? wine.regions.map((region, regionIndex) => (
                 <span key={region.id || regionIndex}>
                   {regionIndex > 0 && ", "}
-                  <Link to={`/regions/${region.id}`}>{region.name}</Link>
+                  <Link to={`/regions/${region.slug}`}>{region.name}</Link>
                 </span>
               ))
             : "—"}

@@ -25,7 +25,7 @@ const COLOR_OPTIONS = [
 ];
 
 function GrapeDetail() {
-  const { id } = useParams();
+  const { slug } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
   const [grape, setGrape] = useState(null);
@@ -52,7 +52,7 @@ function GrapeDetail() {
   const loadGrape = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await grapesApi.show(id);
+      const data = await grapesApi.show(slug);
       setGrape(data);
       setForm({
         name: data.name || "",
@@ -71,7 +71,7 @@ function GrapeDetail() {
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [slug]);
 
   useEffect(() => {
     loadGrape();
@@ -105,7 +105,7 @@ function GrapeDetail() {
     setLinking(true);
     setLinkError(null);
     try {
-      await grapesApi.linkWine(id, wine.slug);
+      await grapesApi.linkWine(slug, wine.slug);
       await loadGrape();
     } catch (err) {
       setLinkError(err.message || "Failed to link wine");
@@ -143,7 +143,7 @@ function GrapeDetail() {
         name: form.name.trim(),
         relevance: form.relevance === "" ? null : parseInt(form.relevance, 10),
       };
-      await grapesApi.update(id, payload);
+      await grapesApi.update(slug, payload);
       setNotice(`Grape "${payload.name}" updated.`);
       setIsEditing(false);
       await loadGrape();
@@ -159,7 +159,7 @@ function GrapeDetail() {
     setError(null);
     setNotice(null);
     try {
-      await grapesApi.remove(id);
+      await grapesApi.remove(slug);
       navigate("/grapes", { state: { notice: `Grape "${grape.name}" deleted.` } });
     } catch (err) {
       setError(err.message || "Failed to delete grape");

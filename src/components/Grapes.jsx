@@ -369,7 +369,7 @@ function Grapes() {
                 >
                   <td>
                     <Link
-                      to={`/grapes/${grape.id}`}
+                      to={`/grapes/${grape.slug}`}
                       className="grapes-table__link"
                     >
                       {grape.name}
@@ -386,7 +386,7 @@ function Grapes() {
                   <td>
                     {grape.wines_count > 0 ? (
                       <Link
-                        to={`/grapes/${grape.id}/wines`}
+                        to={`/grapes/${grape.slug}/wines`}
                         className="grapes-table__link"
                       >
                         {`${grape.wines_count} wine${
@@ -400,7 +400,7 @@ function Grapes() {
                   <td>
                     {grape.producers_count > 0 ? (
                       <Link
-                        to={`/grapes/${grape.id}/producers`}
+                        to={`/grapes/${grape.slug}/producers`}
                         className="grapes-table__link"
                       >
                         {`${grape.producers_count} producer${
@@ -413,7 +413,7 @@ function Grapes() {
                   </td>
                   {/* {isWineManager && (
                     <td className="actions">
-                      <Link to={`/grapes/${grape.id}`} className="btn-action">
+                      <Link to={`/grapes/${grape.slug}`} className="btn-action">
                         Show
                       </Link>
                       <button

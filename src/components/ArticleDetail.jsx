@@ -15,7 +15,7 @@ function RichBody({ html }) {
 }
 
 function ArticleDetail() {
-  const { id } = useParams();
+  const { slug } = useParams();
   const { user } = useAuth();
   const [article, setArticle] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -26,14 +26,14 @@ function ArticleDetail() {
     try {
       setLoading(true);
       setError(null);
-      const data = await articlesApi.show(id);
+      const data = await articlesApi.show(slug);
       setArticle(data);
     } catch (err) {
       setError(err.message || "Failed to load article");
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [slug]);
 
   useEffect(() => {
     loadArticle();
@@ -103,7 +103,7 @@ function ArticleDetail() {
           <>
             {article.categories.map((cat, i) => (
               <span key={cat.id}>
-                <Link to={`/categories/${cat.id}`}>{cat.name}</Link>
+                <Link to={`/categories/${cat.slug}`}>{cat.name}</Link>
                 {i < article.categories.length - 1 ? ", " : ""}
               </span>
             ))}{" "}

@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import usePagedList from "../hooks/usePagedList";
 import { grapesApi, producersApi } from "../services/api";
@@ -6,11 +7,20 @@ import Pagination from "./Pagination";
 
 // Paginated list of producers for a given grape — mirrors GrapeWines.
 function GrapeProducers() {
-  const { id } = useParams();
+  const { slug } = useParams();
+  const [grape, setGrape] = useState(null);
+
+  useEffect(() => {
+    grapesApi
+      .show(slug)
+      .then(setGrape)
+      .catch(() => setGrape(null));
+  }, [slug]);
 
   const producers = usePagedList({
-    fetcher: (page) => producersApi.list({ grape_id: id, page }),
-    deps: [id],
+    fetcher: (page) => producersApi.list({ grape_id: grape?.id, page }),
+    deps: [grape?.id],
+    enabled: Boolean(grape?.id),
     paramKey: "producer_page",
   });
 
@@ -29,7 +39,7 @@ function GrapeProducers() {
         <>
           <ProducerTable
             producers={producers.items}
-            linkContext={{ type: "grape", id }}
+            linkContext={{ type: "grape", id: grape?.id }}
             onProducerLinked={() => producers.reload()}
           />
           <Pagination

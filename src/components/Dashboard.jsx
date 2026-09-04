@@ -56,7 +56,7 @@ function Dashboard() {
           <h2 style={{ marginTop: "2rem", marginBottom: "1rem" }}>Latest Articles</h2>
           <div className="content-grid" style={{ marginBottom: "2rem" }}>
             {recentArticles.map((article) => (
-              <Link key={article.id} to={`/articles/${article.id}`} className="wine-management__card" style={{ padding: 0, overflow: "hidden", display: "flex", flexDirection: "column", textDecoration: "none", color: "inherit" }}>
+              <Link key={article.id} to={`/articles/${article.slug}`} className="wine-management__card" style={{ padding: 0, overflow: "hidden", display: "flex", flexDirection: "column", textDecoration: "none", color: "inherit" }}>
                 {Array.isArray(article.images) && article.images.length > 0 && (
                   <img src={article.images[0]} alt={article.title} style={{ width: "100%", height: "8rem", objectFit: "cover" }} />
                 )}
@@ -79,7 +79,7 @@ function Dashboard() {
           <h2 style={{ marginTop: "2rem", marginBottom: "1rem" }}>Latest Reviews</h2>
           <div className="content-grid">
             {recentReviews.map((review) => (
-              <Link key={review.id} to={`/reviews/${review.id}`} className="wine-management__card" style={{ padding: 0, overflow: "hidden", display: "flex", flexDirection: "column", textDecoration: "none", color: "inherit" }}>
+              <Link key={review.id} to={`/reviews/${review.slug}`} className="wine-management__card" style={{ padding: 0, overflow: "hidden", display: "flex", flexDirection: "column", textDecoration: "none", color: "inherit" }}>
                 <div style={{ height: "0.5rem", background: "#d47386" }} />
                 <div style={{ padding: "1.1rem" }}>
                   <h3 style={{ fontSize: "1.1rem", marginBottom: "0.3rem" }}>{review.title || "Untitled review"}</h3>

@@ -9,7 +9,7 @@ import Pagination from "./Pagination";
 import usePagedList from "../hooks/usePagedList";
 
 function CountryDetail() {
-  const { id } = useParams();
+  const { slug } = useParams();
   const { user } = useAuth();
   const canManageProducers = canManageWinesRole(user);
   const [country, setCountry] = useState(null);
@@ -19,18 +19,20 @@ function CountryDetail() {
   // Paginated per-country lists (independent URL params so paging one
   // section does not disturb the other).
   const producers = usePagedList({
-    fetcher: (params) => producersApi.list({ ...params, country_id: id }),
+    fetcher: (params) => producersApi.list({ ...params, country_id: country?.id }),
+    enabled: Boolean(country?.id),
     paramKey: "producer_page",
   });
   const wines = usePagedList({
-    fetcher: (params) => winesApi.list({ ...params, country_id: id }),
+    fetcher: (params) => winesApi.list({ ...params, country_id: country?.id }),
+    enabled: Boolean(country?.id),
     paramKey: "page",
   });
 
   useEffect(() => {
     let cancelled = false;
     countriesApi
-      .show(id)
+      .show(slug)
       .then((data) => {
         if (!cancelled) setCountry(data);
       })
@@ -43,7 +45,7 @@ function CountryDetail() {
     return () => {
       cancelled = true;
     };
-  }, [id]);
+  }, [slug]);
 
   // If we navigated here from a country-list count link ("#producers" /
   // "#wines"), scroll to the relevant section once the country has loaded.
@@ -115,7 +117,7 @@ function CountryDetail() {
             <ProducerTable
               producers={producers.items}
               canManage={canManageProducers}
-              linkContext={{ type: "country", id, name: country.name }}
+              linkContext={{ type: "country", id: country.id, name: country.name }}
               onProducerLinked={() => producers.reload()}
             />
             <Pagination
@@ -140,7 +142,7 @@ function CountryDetail() {
           <>
             <WineTable
               wines={wines.items}
-              linkContext={{ type: "country", id, name: country.name }}
+              linkContext={{ type: "country", id: country.id, name: country.name }}
               onWineLinked={() => wines.reload()}
               onDeleted={() => wines.reload()}
             />

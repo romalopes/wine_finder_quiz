@@ -381,7 +381,7 @@ function ProducerDetail() {
                   .map((c) => (
                     <Link
                       key={c.id}
-                      to={`/categories/${c.id}`}
+                      to={`/categories/${c.slug}`}
                       style={{ marginRight: 8 }}
                     >
                       {c.name}

@@ -321,7 +321,7 @@ function Countries() {
                   <td>{country.flag_emoji || "—"}</td>
                   <td>
                     <Link
-                      to={`/countries/${country.id}`}
+                      to={`/countries/${country.slug}`}
                       className="grapes-table__link"
                     >
                       {country.name}
@@ -332,7 +332,7 @@ function Countries() {
                   <td>
                     {country.producers_count > 0 ? (
                       <Link
-                        to={`/countries/${country.id}#producers`}
+                        to={`/countries/${country.slug}#producers`}
                         className="grapes-table__link"
                       >
                         {country.producers_count} producer
@@ -345,7 +345,7 @@ function Countries() {
                   <td>
                     {country.wines_count > 0 ? (
                       <Link
-                        to={`/countries/${country.id}#wines`}
+                        to={`/countries/${country.slug}#wines`}
                         className="grapes-table__link"
                       >
                         {country.wines_count} wine
@@ -358,7 +358,7 @@ function Countries() {
                   {canManage && (
                     <td className="actions">
                       <Link
-                        to={`/countries/${country.id}`}
+                        to={`/countries/${country.slug}`}
                         className="btn-action"
                       >
                         Show

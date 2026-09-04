@@ -53,7 +53,7 @@ function RegionTreeNode({ node, level, targetRegionId }) {
           </span>
         )}
         <Link
-          to={`/regions/${node.id}`}
+          to={`/regions/${node.slug}`}
           className={`region-tree-node__name ${isCurrentRegion ? "region-tree-node__name--active" : ""}`}
         >
           {node.name}

@@ -6,7 +6,7 @@ import Pagination from "./Pagination";
 import usePagedList from "../hooks/usePagedList";
 
 function CategoryDetail() {
-  const { id } = useParams();
+  const { slug } = useParams();
   const navigate = useNavigate();
   const [category, setCategory] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -14,24 +14,28 @@ function CategoryDetail() {
 
   // Three independent paginated lists — paging one does not disturb the others.
   const wines = usePagedList({
-    fetcher: (params) => winesApi.list({ ...params, category_id: id }),
+    fetcher: (params) => winesApi.list({ ...params, category_id: category?.id }),
+    enabled: Boolean(category?.id),
   });
   const reviews = usePagedList({
-    fetcher: (params) => reviewsApi.all({ ...params, category_id: id }),
+    fetcher: (params) => reviewsApi.all({ ...params, category_id: category?.id }),
+    enabled: Boolean(category?.id),
   });
   const articles = usePagedList({
-    fetcher: (params) => articlesApi.list({ ...params, category_id: id }),
+    fetcher: (params) => articlesApi.list({ ...params, category_id: category?.id }),
+    enabled: Boolean(category?.id),
   });
 
   useEffect(() => {
     setLoading(true);
     setError(null);
+    setCategory(null);
     categoriesApi
-      .show(id)
+      .show(slug)
       .then(setCategory)
       .catch((err) => setError(err.message || "Failed to load category"))
       .finally(() => setLoading(false));
-  }, [id]);
+  }, [slug]);
 
   if (loading) {
     return (
@@ -116,7 +120,7 @@ function CategoryDetail() {
                     className={
                       index % 2 === 0 ? "grapes-row--even" : "grapes-row--odd"
                     }
-                    onClick={() => navigate(`/reviews/${review.id}`)}
+                    onClick={() => navigate(`/reviews/${review.slug}`)}
                     style={{ cursor: "pointer" }}
                   >
                     <td>
@@ -181,12 +185,12 @@ function CategoryDetail() {
                     className={
                       index % 2 === 0 ? "grapes-row--even" : "grapes-row--odd"
                     }
-                    onClick={() => navigate(`/articles/${article.id}`)}
+                    onClick={() => navigate(`/articles/${article.slug}`)}
                     style={{ cursor: "pointer" }}
                   >
                     <td>
                       <Link
-                        to={`/articles/${article.id}`}
+                        to={`/articles/${article.slug}`}
                         className="grapes-table__link"
                         onClick={(e) => e.stopPropagation()}
                       >

@@ -16,7 +16,7 @@ function typeLabel(region) {
 }
 
 function RegionDetail() {
-  const { id } = useParams();
+  const { slug } = useParams();
   const { user } = useAuth();
   const canManage = isSuperUser(user) || canManageGrapes(user);
   // Super Users, Reviewers and Editors may link wines to this region.
@@ -28,11 +28,13 @@ function RegionDetail() {
   // Paginated per-region lists (independent URL params so paging one
   // section does not disturb the other).
   const producers = usePagedList({
-    fetcher: (params) => producersApi.list({ ...params, region_id: id }),
+    fetcher: (params) => producersApi.list({ ...params, region_id: region?.id }),
+    enabled: Boolean(region?.id),
     paramKey: "producer_page",
   });
   const wines = usePagedList({
-    fetcher: (params) => winesApi.list({ ...params, region_id: id }),
+    fetcher: (params) => winesApi.list({ ...params, region_id: region?.id }),
+    enabled: Boolean(region?.id),
     paramKey: "page",
   });
 
@@ -45,13 +47,13 @@ function RegionDetail() {
   const loadRegion = useCallback(async () => {
     try {
       setError(null);
-      const data = await regionsApi.show(id);
+      const data = await regionsApi.show(slug);
       setRegion(data);
     } catch (err) {
       setError(err.message || "Failed to load region");
       throw err;
     }
-  }, [id]);
+  }, [slug]);
 
   useEffect(() => {
     let cancelled = false;
@@ -90,13 +92,13 @@ function RegionDetail() {
   }, [wineQuery, canManageWines]);
 
   async function handleLinkWine(wine) {
-    const current = wine.regions?.some((r) => String(r.id) === String(id));
+    const current = wine.regions?.some((r) => String(r.id) === String(region?.id));
     if (current) return;
     if (!window.confirm(`Add "${wine.name}" to "${region.name}"?`)) return;
     setLinking(true);
     setLinkError(null);
     try {
-      await regionsApi.linkWine(id, wine.slug);
+      await regionsApi.linkWine(region.slug, wine.slug);
       await loadRegion();
       wines.reload();
     } catch (err) {
@@ -161,7 +163,7 @@ function RegionDetail() {
             {index > 0 && " → "}
             {item.flag_emoji && <span className="region-detail__flag">{item.flag_emoji} </span>}
             <Link
-              to={item.type === "country" ? `/countries/${region.country.id}` : `/regions/${item.id}`}
+              to={item.type === "country" ? `/countries/${region.country.slug}` : `/regions/${item.slug}`}
               className="region-detail__path-link"
             >
               {item.name}
@@ -262,7 +264,7 @@ function RegionDetail() {
             <ProducerTable
               producers={producers.items}
               canManage={canManageWines}
-              linkContext={{ type: "region", id, name: region.name }}
+              linkContext={{ type: "region", id: region?.id, name: region?.name }}
               onProducerLinked={() => producers.reload()}
             />
             <Pagination
@@ -288,7 +290,7 @@ function RegionDetail() {
             <WineTable
               wines={wines.items}
               onDeleted={() => wines.reload()}
-              linkContext={{ type: "region", id, name: region.name }}
+              linkContext={{ type: "region", id: region?.id, name: region?.name }}
               onWineLinked={() => wines.reload()}
             />
             <Pagination
@@ -309,7 +311,7 @@ function RegionDetail() {
         </Link>
         {canManage && (
           <>
-            <Link to={`/regions/${region.id}/edit`} className="btn-secondary">
+            <Link to={`/regions/${region.slug}/edit`} className="btn-secondary">
               Edit
             </Link>
             <button

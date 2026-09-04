@@ -109,7 +109,7 @@ function WineTable({ wines, linkContext, onWineLinked, onDeleted }) {
                     <span key={region.id || regionIndex}>
                       {regionIndex > 0 && ", "}
                       <Link
-                        to={`/regions/${region.id}`}
+                        to={`/regions/${region.slug}`}
                         className="grapes-table__link"
                         onClick={(e) => e.stopPropagation()}
                       >
@@ -125,7 +125,7 @@ function WineTable({ wines, linkContext, onWineLinked, onDeleted }) {
                     <span key={grape.id || grapeIndex}>
                       {grapeIndex > 0 && ", "}
                       <Link
-                        to={`/grapes/${grape.id}`}
+                        to={`/grapes/${grape.slug}`}
                         className="grapes-table__link"
                         onClick={(e) => e.stopPropagation()}
                       >

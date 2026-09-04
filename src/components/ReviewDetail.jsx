@@ -15,7 +15,7 @@ function RichComment({ html }) {
 }
 
 function ReviewDetail() {
-  const { id } = useParams();
+  const { slug } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
   const [review, setReview] = useState(null);
@@ -31,14 +31,14 @@ function ReviewDetail() {
     try {
       setLoading(true);
       setError(null);
-      const data = await reviewsApi.show(id);
+      const data = await reviewsApi.show(slug);
       setReview(data);
     } catch (err) {
       setError(err.message || "Failed to load review");
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [slug]);
 
   useEffect(() => {
     loadReview();
@@ -154,7 +154,7 @@ function ReviewDetail() {
           Categories:{" "}
           {review.categories.map((cat, i) => (
             <span key={cat.id}>
-              <Link to={`/categories/${cat.id}`}>{cat.name}</Link>
+              <Link to={`/categories/${cat.slug}`}>{cat.name}</Link>
               {i < review.categories.length - 1 ? ", " : ""}
             </span>
           ))}

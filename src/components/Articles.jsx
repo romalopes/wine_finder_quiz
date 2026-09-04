@@ -279,13 +279,13 @@ function Articles() {
                       <div
                         key={article.id}
                         className="wine-management__card"
-                        onClick={() => navigate(`/articles/${article.id}`)}
+                        onClick={() => navigate(`/articles/${article.slug}`)}
                         role="button"
                         tabIndex={0}
                         onKeyDown={(e) => {
                           if (e.key === "Enter" || e.key === " ") {
                             e.preventDefault();
-                            navigate(`/articles/${article.id}`);
+                            navigate(`/articles/${article.slug}`);
                           }
                         }}
                       >
@@ -326,7 +326,7 @@ function Articles() {
                             onClick={(e) => e.stopPropagation()}
                           >
                             <Link
-                              to={`/articles/${article.id}/edit`}
+                              to={`/articles/${article.slug}/edit`}
                               className="wine-management__edit-btn"
                             >
                               Edit
@@ -395,13 +395,13 @@ function Articles() {
                           <div
                             key={article.id}
                             className="wine-management__card"
-                            onClick={() => navigate(`/articles/${article.id}`)}
+                            onClick={() => navigate(`/articles/${article.slug}`)}
                             role="button"
                             tabIndex={0}
                             onKeyDown={(e) => {
                               if (e.key === "Enter" || e.key === " ") {
                                 e.preventDefault();
-                                navigate(`/articles/${article.id}`);
+                                navigate(`/articles/${article.slug}`);
                               }
                             }}
                           >
@@ -442,7 +442,7 @@ function Articles() {
                                 onClick={(e) => e.stopPropagation()}
                               >
                                 <Link
-                                  to={`/articles/${article.id}/edit`}
+                                  to={`/articles/${article.slug}/edit`}
                                   className="wine-management__edit-btn"
                                 >
                                   Edit

@@ -6,19 +6,20 @@ import Pagination from "./Pagination";
 import usePagedList from "../hooks/usePagedList";
 
 function GrapeWines() {
-  const { id } = useParams();
+  const { slug } = useParams();
   const [grape, setGrape] = useState(null);
 
   const list = usePagedList({
-    fetcher: (params) => winesApi.list({ ...params, grape_id: id }),
+    fetcher: (params) => winesApi.list({ ...params, grape_id: grape?.id }),
+    enabled: Boolean(grape?.id),
   });
 
   useEffect(() => {
     grapesApi
-      .show(id)
+      .show(slug)
       .then(setGrape)
       .catch(() => setGrape(null));
-  }, [id]);
+  }, [slug]);
 
   return (
     <div className="wine-app">
@@ -46,7 +47,7 @@ function GrapeWines() {
           <WineTable
             wines={list.items}
             onDeleted={() => list.reload()}
-            linkContext={{ type: "grape", id: id, name: grape.name }}
+            linkContext={{ type: "grape", id: grape?.id, name: grape?.name }}
             onWineLinked={() => list.reload()}
           />
           <Pagination

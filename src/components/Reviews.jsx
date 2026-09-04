@@ -680,13 +680,13 @@ function ReviewsList({
           <div
             key={review.id}
             className="wine-management__card"
-            onClick={() => navigate(`/reviews/${review.id}`)}
+            onClick={() => navigate(`/reviews/${review.slug}`)}
             role="button"
             tabIndex={0}
             onKeyDown={(e) => {
               if (e.key === "Enter" || e.key === " ") {
                 e.preventDefault();
-                navigate(`/reviews/${review.id}`);
+                navigate(`/reviews/${review.slug}`);
               }
             }}
           >
@@ -817,13 +817,13 @@ function ReviewsList({
               <div
                 key={review.id}
                 className="wine-management__card"
-                onClick={() => navigate(`/reviews/${review.id}`)}
+                onClick={() => navigate(`/reviews/${review.slug}`)}
                 role="button"
                 tabIndex={0}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
-                    navigate(`/reviews/${review.id}`);
+                    navigate(`/reviews/${review.slug}`);
                   }
                 }}
               >

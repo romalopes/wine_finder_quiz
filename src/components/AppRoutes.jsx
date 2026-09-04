@@ -45,10 +45,10 @@ function AppRoutes({ user, setUser }) {
         />
         <Route element={<Navigate replace to="/reviews" />} path="/my-reviews" />
         <Route element={<Reviews />} path="/reviews" />
-        <Route element={<ReviewDetail />} path="/reviews/:id" />
+        <Route element={<ReviewDetail />} path="/reviews/:slug" />
         <Route element={<Articles />} path="/articles" />
-        <Route element={<ArticleDetail />} path="/articles/:id" />
-        <Route element={<ArticleDetail />} path="/articles/:id/edit" />
+        <Route element={<ArticleDetail />} path="/articles/:slug" />
+        <Route element={<ArticleDetail />} path="/articles/:slug/edit" />
         <Route element={<WineSearch />} path="/search" />
         <Route element={<WineList />} path="/wines" />
         <Route element={<WineDetail />} path="/wines/:slug" />
@@ -62,15 +62,15 @@ function AppRoutes({ user, setUser }) {
         <Route element={<ProducerForm />} path="/producers/:slug/edit" />
         <Route element={<UserRoles />} path="/users" />
         <Route element={<Categories />} path="/categories" />
-        <Route element={<CategoryDetail />} path="/categories/:id" />
+        <Route element={<CategoryDetail />} path="/categories/:slug" />
         <Route element={<Grapes />} path="/grapes" />
-        <Route element={<GrapeDetail />} path="/grapes/:id" />
-        <Route element={<GrapeWines />} path="/grapes/:id/wines" />
-        <Route element={<GrapeProducers />} path="/grapes/:id/producers" />
+        <Route element={<GrapeDetail />} path="/grapes/:slug" />
+        <Route element={<GrapeWines />} path="/grapes/:slug/wines" />
+        <Route element={<GrapeProducers />} path="/grapes/:slug/producers" />
         <Route element={<Countries />} path="/countries" />
-        <Route element={<CountryDetail />} path="/countries/:id" />
+        <Route element={<CountryDetail />} path="/countries/:slug" />
         <Route element={<Regions />} path="/regions" />
-        <Route element={<RegionDetail />} path="/regions/:id" />
+        <Route element={<RegionDetail />} path="/regions/:slug" />
         <Route element={<ApiHealth />} path="/admin/api-health" />
         <Route element={<Subscribe />} path="/subscribe" />
         <Route element={<SubscriptionAdmin />} path="/subscriptions" />

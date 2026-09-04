@@ -266,7 +266,7 @@ function Categories() {
               )}
               <span className="category-list__order">{category[tab.sortKey] ?? "—"}</span>
               <span className="category-list__name">
-                <Link to={`/categories/${category.id}`}>{category.name}</Link>
+                <Link to={`/categories/${category.slug}`}>{category.name}</Link>
               </span>
               {canManage && (
               <>
