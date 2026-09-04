@@ -355,6 +355,7 @@ function Grapes() {
                 <th>Origin</th>
                 <th>Synonyms</th>
                 <th>Wines</th>
+                <th>Producers</th>
                 {/* {isWineManager && <th>Actions</th>} */}
               </tr>
             </thead>
@@ -390,6 +391,20 @@ function Grapes() {
                       >
                         {`${grape.wines_count} wine${
                           grape.wines_count !== 1 ? "s" : ""
+                        }`}
+                      </Link>
+                    ) : (
+                      "—"
+                    )}
+                  </td>
+                  <td>
+                    {grape.producers_count > 0 ? (
+                      <Link
+                        to={`/grapes/${grape.id}/producers`}
+                        className="grapes-table__link"
+                      >
+                        {`${grape.producers_count} producer${
+                          grape.producers_count !== 1 ? "s" : ""
                         }`}
                       </Link>
                     ) : (

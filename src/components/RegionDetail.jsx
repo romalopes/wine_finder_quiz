@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { regionsApi, winesApi } from "../services/api";
+import { regionsApi, winesApi, producersApi } from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
 import { isSuperUser, canManageGrapes, canManageWinesRole } from "../constants/roles";
 import WineTable from "./WineTable";
+import ProducerTable from "./ProducerTable";
+import Pagination from "./Pagination";
+import usePagedList from "../hooks/usePagedList";
 
 function typeLabel(region) {
   const labels = [];
@@ -21,6 +24,17 @@ function RegionDetail() {
   const [region, setRegion] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Paginated per-region lists (independent URL params so paging one
+  // section does not disturb the other).
+  const producers = usePagedList({
+    fetcher: (params) => producersApi.list({ ...params, region_id: id }),
+    paramKey: "producer_page",
+  });
+  const wines = usePagedList({
+    fetcher: (params) => winesApi.list({ ...params, region_id: id }),
+    paramKey: "page",
+  });
 
   // Inline wine search for linking wines to this region.
   const [wineQuery, setWineQuery] = useState("");
@@ -84,6 +98,7 @@ function RegionDetail() {
     try {
       await regionsApi.linkWine(id, wine.slug);
       await loadRegion();
+      wines.reload();
     } catch (err) {
       setLinkError(err.message || "Failed to link wine");
     } finally {
@@ -236,18 +251,53 @@ function RegionDetail() {
         </div>
       )}
 
-      <div className="region-detail__section">
-        <h2>Wines</h2>
-        {region.wines?.length > 0 ? (
-          <WineTable
-            wines={region.wines}
-            onDeleted={(deleted) =>
-              setRegion((prev) => ({
-                ...prev,
-                wines: prev.wines.filter((w) => w.slug !== deleted.slug),
-              }))
-            }
-          />
+      <div className="region-detail__section" id="producers">
+        <h2>
+          Producers{!producers.loading && ` (${producers.totalCount})`}
+        </h2>
+        {producers.loading ? (
+          <p className="grapes-page__loading">Loading producers…</p>
+        ) : producers.items.length > 0 ? (
+          <>
+            <ProducerTable
+              producers={producers.items}
+              canManage={canManageWines}
+              linkContext={{ type: "region", id, name: region.name }}
+              onProducerLinked={() => producers.reload()}
+            />
+            <Pagination
+              page={producers.page}
+              totalPages={producers.totalPages}
+              totalCount={producers.totalCount}
+              onPageChange={producers.setPage}
+            />
+          </>
+        ) : (
+          <p>No producers are associated with this region yet.</p>
+        )}
+      </div>
+
+      <div className="region-detail__section" id="wines">
+        <h2>
+          Wines{!wines.loading && ` (${wines.totalCount})`}
+        </h2>
+        {wines.loading ? (
+          <p className="grapes-page__loading">Loading wines…</p>
+        ) : wines.items.length > 0 ? (
+          <>
+            <WineTable
+              wines={wines.items}
+              onDeleted={() => wines.reload()}
+              linkContext={{ type: "region", id, name: region.name }}
+              onWineLinked={() => wines.reload()}
+            />
+            <Pagination
+              page={wines.page}
+              totalPages={wines.totalPages}
+              totalCount={wines.totalCount}
+              onPageChange={wines.setPage}
+            />
+          </>
         ) : (
           <p>No wines are associated with this region yet.</p>
         )}

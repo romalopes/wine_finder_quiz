@@ -1,13 +1,31 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { countriesApi } from "../services/api";
+import { countriesApi, producersApi, winesApi } from "../services/api";
+import { useAuth } from "../contexts/AuthContext";
+import { canManageWinesRole } from "../constants/roles";
 import WineTable from "./WineTable";
+import ProducerTable from "./ProducerTable";
+import Pagination from "./Pagination";
+import usePagedList from "../hooks/usePagedList";
 
 function CountryDetail() {
   const { id } = useParams();
+  const { user } = useAuth();
+  const canManageProducers = canManageWinesRole(user);
   const [country, setCountry] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Paginated per-country lists (independent URL params so paging one
+  // section does not disturb the other).
+  const producers = usePagedList({
+    fetcher: (params) => producersApi.list({ ...params, country_id: id }),
+    paramKey: "producer_page",
+  });
+  const wines = usePagedList({
+    fetcher: (params) => winesApi.list({ ...params, country_id: id }),
+    paramKey: "page",
+  });
 
   useEffect(() => {
     let cancelled = false;
@@ -87,75 +105,55 @@ function CountryDetail() {
       </div>
 
       <section id="producers" className="country-detail__section">
-        <h2>Producers</h2>
-        {country.producers?.length ? (
-          <table className="grapes-table producers-table">
-            <thead>
-              <tr>
-                <th className="producers-table__image-col" />
-                <th>Name</th>
-                <th>Type</th>
-                <th>Wines</th>
-              </tr>
-            </thead>
-            <tbody>
-              {country.producers.map((producer, index) => (
-                <tr
-                  key={producer.slug || producer.id}
-                  className={
-                    index % 2 === 0 ? "grapes-row--even" : "grapes-row--odd"
-                  }
-                >
-                  <td>
-                    {producer.logo_url ? (
-                      <img
-                        src={producer.logo_url}
-                        alt={producer.name}
-                        className="producers-table__thumb"
-                      />
-                    ) : (
-                      <span
-                        className="producers-table__thumb producers-table__thumb--empty"
-                        aria-hidden="true"
-                      />
-                    )}
-                  </td>
-                  <td>
-                    <Link
-                      to={`/producers/${producer.slug}`}
-                      className="grapes-table__link"
-                    >
-                      {producer.name}
-                    </Link>
-                  </td>
-                  <td>
-                    {producer.producer_type
-                      ? producer.producer_type
-                          .replace(/_/g, " ")
-                          .replace(/\b\w/g, (c) => c.toUpperCase())
-                      : "—"}
-                  </td>
-                  <td>{producer.wines_count ?? "—"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <h2>
+          Producers{!producers.loading && ` (${producers.totalCount})`}
+        </h2>
+        {producers.loading ? (
+          <p className="wine-management__loading">Loading producers…</p>
+        ) : producers.items.length > 0 ? (
+          <>
+            <ProducerTable
+              producers={producers.items}
+              canManage={canManageProducers}
+              linkContext={{ type: "country", id, name: country.name }}
+              onProducerLinked={() => producers.reload()}
+            />
+            <Pagination
+              page={producers.page}
+              totalPages={producers.totalPages}
+              totalCount={producers.totalCount}
+              onPageChange={producers.setPage}
+            />
+          </>
         ) : (
           <p>No producers for this country yet.</p>
         )}
       </section>
 
       <section id="wines" className="country-detail__section">
-        <h2>Wines</h2>
-        <WineTable
-          wines={country.wines}
-          onDeleted={(deleted) =>
-            setCountry((prev) => ({
-              ...prev,
-              wines: prev.wines.filter((w) => w.slug !== deleted.slug),
-            }))
-          }
-        />
+        <h2>
+          Wines{!wines.loading && ` (${wines.totalCount})`}
+        </h2>
+        {wines.loading ? (
+          <p className="wine-management__loading">Loading wines…</p>
+        ) : wines.items.length > 0 ? (
+          <>
+            <WineTable
+              wines={wines.items}
+              linkContext={{ type: "country", id, name: country.name }}
+              onWineLinked={() => wines.reload()}
+              onDeleted={() => wines.reload()}
+            />
+            <Pagination
+              page={wines.page}
+              totalPages={wines.totalPages}
+              totalCount={wines.totalCount}
+              onPageChange={wines.setPage}
+            />
+          </>
+        ) : (
+          <p>No wines for this country yet.</p>
+        )}
       </section>
     </div>
   );

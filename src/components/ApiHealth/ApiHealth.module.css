@@ -183,7 +183,23 @@
 
 .inspector { padding: 0.8rem 0.9rem 0.9rem; background: #1e1e1e; color: #d4d4d4; }
 .inspectorSection { margin-bottom: 0.7rem; }
+.inspectorHeader { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.25rem; }
 .inspectorLabel { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: #9cdcfe; margin-bottom: 0.25rem; }
+.inspectorHeader .inspectorLabel { margin-bottom: 0; }
+.copyBtn {
+  background: #2a2d2e;
+  color: #9cdcfe;
+  border: 1px solid #3c3c3c;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  padding: 0.15rem 0.5rem;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.copyBtn:hover { background: #35393b; color: #cfe8ff; }
+.copyBtnCopied,
+.copyBtnCopied:hover { color: #6ecf8e; border-color: #2e7d43; }
 .inspectorCode {
   background: #0d0d0d;
   border-radius: 6px;

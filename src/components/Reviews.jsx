@@ -7,6 +7,8 @@ import ReviewForm from "./ReviewForm";
 import WineQuickCreate from "./WineQuickCreate";
 import { useAuth } from "../contexts/AuthContext";
 import { canManageWinesRole } from "../constants/roles";
+import usePagedList from "../hooks/usePagedList";
+import Pagination from "./Pagination";
 import DOMPurify from "dompurify";
 
 function excerpt(html, max = 50) {
@@ -42,9 +44,10 @@ function Reviews() {
   // Super Users, Editors and Reviewers see the management filters and the
   // add button; Guests/Readers only see published reviews.
   const canManageContent = canManageWinesRole(user);
-  const [reviews, setReviews] = useState([]);
   const [myReviews, setMyReviews] = useState([]);
-  const [loading, setLoading] = useState(true);
+  // Paginated main feed (20 per page, page kept in the URL ?page=N).
+  const feed = usePagedList({ fetcher: (params) => reviewsApi.all(params) });
+  const loading = feed.loading;
   const [showForm, setShowForm] = useState(false);
   const [scope, setScope] = useState("all"); // "all" | "mine"
   const [statusFilter, setStatusFilter] = useState("all");
@@ -67,16 +70,8 @@ function Reviews() {
 
   const searchTimerRef = useRef(null);
 
-  async function loadReviews() {
-    try {
-      const data = await reviewsApi.all();
-      setReviews(data);
-    } catch {
-      setReviews([]);
-    } finally {
-      setLoading(false);
-    }
-  }
+  // Reload the paginated feed (used after create/delete/status changes).
+  const loadReviews = feed.reload;
 
   async function loadMyReviews() {
     try {
@@ -515,7 +510,7 @@ function Reviews() {
             )}
 
             <ReviewsList
-              reviews={scope === "mine" ? myReviews : reviews}
+              reviews={scope === "mine" ? myReviews : feed.items}
               scope={scope}
               user={user}
               statusFilter={canManageContent ? statusFilter : "published"}
@@ -530,6 +525,15 @@ function Reviews() {
                 loadMyReviews();
               }}
             />
+
+            {scope === "all" && (
+              <Pagination
+                page={feed.page}
+                totalPages={feed.totalPages}
+                totalCount={feed.totalCount}
+                onPageChange={feed.setPage}
+              />
+            )}
           </>
         ))}
     </main>

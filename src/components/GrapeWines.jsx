@@ -1,62 +1,24 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { grapesApi, winesApi } from "../services/api";
 import WineTable from "./WineTable";
+import Pagination from "./Pagination";
+import usePagedList from "../hooks/usePagedList";
 
 function GrapeWines() {
   const { id } = useParams();
   const [grape, setGrape] = useState(null);
-  const [wines, setWines] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+
+  const list = usePagedList({
+    fetcher: (params) => winesApi.list({ ...params, grape_id: id }),
+  });
 
   useEffect(() => {
-    loadWines();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    grapesApi
+      .show(id)
+      .then(setGrape)
+      .catch(() => setGrape(null));
   }, [id]);
-
-  async function loadWines() {
-    try {
-      setLoading(true);
-      setError(null);
-      const [grapeData, winesData] = await Promise.all([
-        grapesApi.show(id),
-        winesApi.list(),
-      ]);
-      setGrape(grapeData);
-      const allWines = Array.isArray(winesData) ? winesData : [];
-      setWines(
-        allWines.filter(
-          (wine) =>
-            Array.isArray(wine.grapes) &&
-            wine.grapes.some((g) => String(g.id) === String(id)),
-        ),
-      );
-    } catch (err) {
-      setError(err.message || "Failed to load wines");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  if (loading) {
-    return (
-      <div className="wine-app">
-        <p className="wine-management__loading">Loading wines…</p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="wine-app">
-        <p className="wine-management__error">{error}</p>
-        <button className="auth-form__submit" onClick={loadWines}>
-          Retry
-        </button>
-      </div>
-    );
-  }
 
   return (
     <div className="wine-app">
@@ -70,17 +32,30 @@ function GrapeWines() {
         </div>
       </div>
 
-      {wines.length === 0 ? (
+      {list.error && (
+        <p className="wine-management__error">{list.error}</p>
+      )}
+      {list.loading ? (
+        <p className="wine-management__loading">Loading wines…</p>
+      ) : list.items.length === 0 ? (
         <div className="wine-management__empty">
           <p>No wines found for this grape.</p>
         </div>
       ) : (
-        <WineTable
-          wines={wines}
-          onDeleted={(deleted) =>
-            setWines((prev) => prev.filter((w) => w.slug !== deleted.slug))
-          }
-        />
+        <>
+          <WineTable
+            wines={list.items}
+            onDeleted={() => list.reload()}
+            linkContext={{ type: "grape", id: id, name: grape.name }}
+            onWineLinked={() => list.reload()}
+          />
+          <Pagination
+            page={list.page}
+            totalPages={list.totalPages}
+            totalCount={list.totalCount}
+            onPageChange={list.setPage}
+          />
+        </>
       )}
     </div>
   );

@@ -22,6 +22,7 @@ import CategoryDetail from "./CategoryDetail.jsx";
 import Grapes from "./Grapes.jsx";
 import GrapeDetail from "./GrapeDetail.jsx";
 import GrapeWines from "./GrapeWines.jsx";
+import GrapeProducers from "./GrapeProducers.jsx";
 import Countries from "./Countries.jsx";
 import CountryDetail from "./CountryDetail.jsx";
 import Regions from "./Regions.jsx";
@@ -65,6 +66,7 @@ function AppRoutes({ user, setUser }) {
         <Route element={<Grapes />} path="/grapes" />
         <Route element={<GrapeDetail />} path="/grapes/:id" />
         <Route element={<GrapeWines />} path="/grapes/:id/wines" />
+        <Route element={<GrapeProducers />} path="/grapes/:id/producers" />
         <Route element={<Countries />} path="/countries" />
         <Route element={<CountryDetail />} path="/countries/:id" />
         <Route element={<Regions />} path="/regions" />

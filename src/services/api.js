@@ -21,6 +21,18 @@ if (typeof window !== "undefined") {
   authToken = window.localStorage.getItem(TOKEN_STORAGE_KEY);
 }
 
+// Serialize a params object into a "?a=1&b=2" query string, skipping
+// undefined/null/empty values.
+function buildQuery(params) {
+  const search = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value === undefined || value === null || value === "") return;
+    search.set(key, String(value));
+  });
+  const qs = search.toString();
+  return qs ? `?${qs}` : "";
+}
+
 async function request(
   path,
   { method = "GET", body, auth = false, headers = {} } = {},
@@ -121,8 +133,9 @@ export const imagesApi = {
 };
 
 export const winesApi = {
-  list() {
-    return request("/wines", { auth: false });
+  list(params) {
+    const query = params ? buildQuery(params) : "";
+    return request(`/wines${query}`, { auth: false });
   },
   search(query) {
     return request(`/wines/search?q=${encodeURIComponent(query)}`, {
@@ -155,8 +168,9 @@ export const winesApi = {
 };
 
 export const producersApi = {
-  list() {
-    return request("/producers");
+  list(params) {
+    const query = params ? buildQuery(params) : "";
+    return request(`/producers${query}`);
   },
   search(query) {
     return request(`/producers/search?q=${encodeURIComponent(query)}`);
@@ -197,6 +211,13 @@ export const producersApi = {
     return request(`/producers/${id}/logo`, {
       method: "DELETE",
       auth: true,
+    });
+  },
+  linkWine(id, wineId) {
+    return request(`/producers/${id}/link_wine`, {
+      method: "POST",
+      auth: true,
+      body: { wine_id: wineId },
     });
   },
 };
@@ -290,8 +311,9 @@ export const vintagesApi = {
 };
 
 export const reviewsApi = {
-  all() {
-    return request("/reviews", { auth: true });
+  all(params) {
+    const query = params ? buildQuery(params) : "";
+    return request(`/reviews${query}`, { auth: true });
   },
   list(wineSlug, vintageId) {
     return request(`/wines/${wineSlug}/vintages/${vintageId}/reviews`, {
@@ -327,8 +349,9 @@ export const reviewsApi = {
 };
 
 export const articlesApi = {
-  list() {
-    return request("/articles", { auth: true });
+  list(params) {
+    const query = params ? buildQuery(params) : "";
+    return request(`/articles${query}`, { auth: true });
   },
   myArticles() {
     return request("/articles/my_articles", { auth: true });
@@ -400,6 +423,20 @@ export const categoriesApi = {
       body: { type, ordered_ids: orderedIds },
     });
   },
+  linkWine(id, wineId) {
+    return request(`/categories/${id}/link_wine`, {
+      method: "POST",
+      auth: true,
+      body: { wine_id: wineId },
+    });
+  },
+  linkProducer(id, producerId) {
+    return request(`/categories/${id}/link_producer`, {
+      method: "POST",
+      auth: true,
+      body: { producer_id: producerId },
+    });
+  },
 };
 
 export const grapesApi = {
@@ -439,6 +476,13 @@ export const grapesApi = {
       body: { wine_id: wineId },
     });
   },
+  linkProducer(id, producerId) {
+    return request(`/grapes/${id}/link_producer`, {
+      method: "POST",
+      auth: true,
+      body: { producer_id: producerId },
+    });
+  },
 };
 
 export const countriesApi = {
@@ -466,6 +510,13 @@ export const countriesApi = {
     return request(`/countries/${id}`, {
       method: "DELETE",
       auth: true,
+    });
+  },
+  linkProducer(id, producerId) {
+    return request(`/countries/${id}/link_producer`, {
+      method: "POST",
+      auth: true,
+      body: { producer_id: producerId },
     });
   },
 };
@@ -505,6 +556,13 @@ export const regionsApi = {
       method: "POST",
       auth: true,
       body: { wine_id: wineId },
+    });
+  },
+  linkProducer(id, producerId) {
+    return request(`/regions/${id}/link_producer`, {
+      method: "POST",
+      auth: true,
+      body: { producer_id: producerId },
     });
   },
   remove(id) {

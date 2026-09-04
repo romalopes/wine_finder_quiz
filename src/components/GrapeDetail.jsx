@@ -406,6 +406,10 @@ function GrapeDetail() {
                     wines: prev.wines.filter((w) => w.slug !== deleted.slug),
                   }))
                 }
+                linkContext={{ type: "grape", id: grape.id, name: grape.name }}
+                onWineLinked={() => {
+                  grapesApi.show(grape.id).then(setGrape).catch(() => {});
+                }}
               />
             ) : (
               <p className="empty">No wines are associated with this grape yet.</p>

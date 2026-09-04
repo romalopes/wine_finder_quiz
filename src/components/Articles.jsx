@@ -6,6 +6,8 @@ import { useSelectedCategory } from "../hooks/useSelectedCategory";
 import ArticleForm from "./ArticleForm";
 import { useAuth } from "../contexts/AuthContext";
 import { canManageWinesRole } from "../constants/roles";
+import usePagedList from "../hooks/usePagedList";
+import Pagination from "./Pagination";
 
 function excerpt(text, max = 50) {
   if (!text) return "";
@@ -24,23 +26,16 @@ function Articles() {
   const canManageContent = canManageWinesRole(user);
   const categoryOrder = useCategoryOrder("sort_order_article");
   const selectedCategory = useSelectedCategory();
-  const [articles, setArticles] = useState([]);
   const [myArticles, setMyArticles] = useState([]);
-  const [loading, setLoading] = useState(true);
+  // Paginated main feed (20 per page, page kept in the URL ?page=N).
+  const feed = usePagedList({ fetcher: (params) => articlesApi.list(params) });
+  const loading = feed.loading;
   const [showForm, setShowForm] = useState(false);
   const [scope, setScope] = useState("all"); // "all" | "mine"
   const [statusFilter, setStatusFilter] = useState("all");
 
-  const loadArticles = useCallback(async () => {
-    try {
-      const data = await articlesApi.list();
-      setArticles(Array.isArray(data) ? data : []);
-    } catch {
-      setArticles([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  // Reload the paginated feed (used after create/delete/status changes).
+  const loadArticles = feed.reload;
 
   const loadMyArticles = useCallback(async () => {
     try {
@@ -181,7 +176,7 @@ function Articles() {
               const effectiveStatus = canManageContent
                 ? statusFilter
                 : "published";
-              const source = effectiveScope === "mine" ? myArticles : articles;
+              const source = effectiveScope === "mine" ? myArticles : feed.items;
               const filtered = (
                 effectiveStatus === "all"
                   ? source
@@ -332,6 +327,15 @@ function Articles() {
                 </div>
               );
             })()}
+
+            {scope !== "mine" && (
+              <Pagination
+                page={feed.page}
+                totalPages={feed.totalPages}
+                totalCount={feed.totalCount}
+                onPageChange={feed.setPage}
+              />
+            )}
           </>
         ))}
     </main>

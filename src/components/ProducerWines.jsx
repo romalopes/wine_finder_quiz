@@ -76,6 +76,17 @@ function ProducerWines() {
           onDeleted={(deleted) =>
             setWines((prev) => prev.filter((w) => w.slug !== deleted.slug))
           }
+          linkContext={{
+            type: "producer",
+            id: producer.id,
+            name: producer.name,
+          }}
+          onWineLinked={() => {
+            producersApi
+              .show(producer.slug)
+              .then((p) => setWines(p.wines))
+              .catch(() => {});
+          }}
         />
       )}
     </div>

@@ -1,36 +1,68 @@
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { winesApi } from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
 import { canManageWinesRole } from "../constants/roles";
+import LinkWineDialog from "./LinkWineDialog";
 
 // Shared table of wines (one wine per row): Name, Producer, Regions,
-// Vintages count and Edit/Delete actions for wine managers.
-function WineTable({ wines, onDeleted }) {
+// Vintages count and Edit actions for wine managers.
+// When `linkContext` is provided, shows a "Link a Wine" button that opens
+// a dialog to search and link wines to the given entity.
+function WineTable({ wines, linkContext, onWineLinked, onDeleted }) {
   const { user } = useAuth();
   const canManageWines = canManageWinesRole(user);
   const navigate = useNavigate();
-
-  async function handleDelete(wine, e) {
-    e.stopPropagation();
-    if (
-      !window.confirm(`Delete "${wine.name}"? This action cannot be undone.`)
-    ) {
-      return;
-    }
-    try {
-      await winesApi.destroy(wine.slug);
-      if (onDeleted) onDeleted(wine);
-    } catch (err) {
-      alert(err.message || "Failed to delete wine");
-    }
-  }
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const excludeIds = Array.isArray(wines)
+    ? wines.flatMap((w) => [w.id, w.slug].filter(Boolean))
+    : [];
 
   if (!Array.isArray(wines) || wines.length === 0) {
-    return <p className="wine-management__empty-state">No wines yet.</p>;
+    return (
+      <>
+        {canManageWines && linkContext && (
+          <div style={{ margin: "0 0 1rem" }}>
+            <button
+              type="button"
+              className="btn-action"
+              onClick={() => setDialogOpen(true)}
+            >
+              + Link a Wine
+            </button>
+          </div>
+        )}
+        <p className="wine-management__empty-state">No wines yet.</p>
+        {dialogOpen && (
+          <LinkWineDialog
+            entityType={linkContext.type}
+            entityId={linkContext.id}
+            entityName={linkContext.name}
+            excludeIds={excludeIds}
+            onClose={() => setDialogOpen(false)}
+            onLinked={() => {
+              setDialogOpen(false);
+              onWineLinked?.();
+            }}
+          />
+        )}
+      </>
+    );
   }
 
   return (
-    <table className="grapes-table producers-table">
+    <>
+      {canManageWines && linkContext && (
+        <div style={{ margin: "0 0 1rem" }}>
+          <button
+            type="button"
+            className="btn-action"
+            onClick={() => setDialogOpen(true)}
+          >
+            + Link a Wine
+          </button>
+        </div>
+      )}
+      <table className="grapes-table producers-table">
       <thead>
         <tr>
           <th>Name</th>
@@ -38,7 +70,7 @@ function WineTable({ wines, onDeleted }) {
           <th>Regions</th>
           <th>Grapes</th>
           <th>Vintages</th>
-          {/* {canManageWines && <th>Actions</th>} */}
+          {canManageWines && <th>Actions</th>}
         </tr>
       </thead>
       <tbody>
@@ -110,7 +142,7 @@ function WineTable({ wines, onDeleted }) {
                   }`
                 : "—"}
             </td>
-            {/* {canManageWines && (
+            {canManageWines && (
               <td className="actions">
                 <Link
                   to={`/wines/${wine.slug}/edit`}
@@ -119,18 +151,28 @@ function WineTable({ wines, onDeleted }) {
                 >
                   Edit
                 </Link>
-                <button
-                  className="btn-action btn-action--delete"
-                  onClick={(e) => handleDelete(wine, e)}
-                >
-                  Delete
-                </button>
+                {/* Delete button intentionally omitted — deletion is handled
+                    by the pages that pass `onDeleted` (via wine detail). */}
               </td>
-            )} */}
+            )}
           </tr>
         ))}
       </tbody>
     </table>
+      {dialogOpen && (
+        <LinkWineDialog
+          entityType={linkContext.type}
+          entityId={linkContext.id}
+          entityName={linkContext.name}
+          excludeIds={excludeIds}
+          onClose={() => setDialogOpen(false)}
+          onLinked={() => {
+            setDialogOpen(false);
+            onWineLinked?.();
+          }}
+        />
+      )}
+    </>
   );
 }
 
