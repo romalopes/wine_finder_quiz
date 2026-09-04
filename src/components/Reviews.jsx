@@ -1,6 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { reviewsApi, winesApi, vintagesApi } from "../services/api";
+import {
+  reviewsApi,
+  winesApi,
+  vintagesApi,
+  categoriesApi,
+} from "../services/api";
 import { useCategoryOrder, sortCategoryNames } from "../hooks/useCategoryOrder";
 import { useSelectedCategory } from "../hooks/useSelectedCategory";
 import ReviewForm from "./ReviewForm";
@@ -45,8 +50,40 @@ function Reviews() {
   // add button; Guests/Readers only see published reviews.
   const canManageContent = canManageWinesRole(user);
   const [myReviews, setMyReviews] = useState([]);
-  // Paginated main feed (20 per page, page kept in the URL ?page=N).
-  const feed = usePagedList({ fetcher: (params) => reviewsApi.all(params) });
+  const selectedCategory = useSelectedCategory();
+  // Category name -> id map for resolving ?category= to category_id
+  const [categoryNameToId, setCategoryNameToId] = useState({});
+
+  useEffect(() => {
+    categoriesApi
+      .list()
+      .then((cats) => {
+        const map = {};
+        (Array.isArray(cats) ? cats : []).forEach((c) => {
+          map[c.name] = c.id;
+        });
+        setCategoryNameToId(map);
+      })
+      .catch(() => {});
+  }, []);
+
+  const categoryId = selectedCategory
+    ? categoryNameToId[selectedCategory]
+    : null;
+  const isUncategorised = selectedCategory === "Uncategorised";
+
+  // Paginated main feed (20 per page when a category is selected).
+  // For "Uncategorised", send uncategorised=true instead of category_id.
+  const feed = usePagedList({
+    fetcher: (params) => reviewsApi.all(params),
+    extraParams: isUncategorised
+      ? { uncategorised: "true" }
+      : categoryId
+        ? { category_id: categoryId }
+        : {},
+    perPage: 20,
+    enabled: Boolean(selectedCategory),
+  });
   const loading = feed.loading;
   const [showForm, setShowForm] = useState(false);
   const [scope, setScope] = useState("all"); // "all" | "mine"
@@ -73,6 +110,24 @@ function Reviews() {
   // Reload the paginated feed (used after create/delete/status changes).
   const loadReviews = feed.reload;
 
+  // All reviews, loaded once when no category is selected (grouped view).
+  const [allReviews, setAllReviews] = useState([]);
+  async function loadAllReviews() {
+    try {
+      const data = await reviewsApi.all();
+      setAllReviews(Array.isArray(data) ? data : []);
+    } catch {
+      setAllReviews([]);
+    }
+  }
+
+  // Reload whichever feed is active (paginated when a category is selected,
+  // the full grouped list otherwise).
+  const reloadReviews = () => {
+    if (selectedCategory) loadReviews();
+    else loadAllReviews();
+  };
+
   async function loadMyReviews() {
     try {
       const data = await reviewsApi.myReviews();
@@ -83,10 +138,10 @@ function Reviews() {
   }
 
   useEffect(() => {
-    loadReviews();
+    reloadReviews();
     if (user) loadMyReviews();
     else setMyReviews([]);
-  }, [user]);
+  }, [user, selectedCategory]);
 
   function canManage(review) {
     return Boolean(
@@ -98,7 +153,7 @@ function Reviews() {
     if (!window.confirm("Delete this review?")) return;
     try {
       await reviewsApi.destroy(reviewId);
-      loadReviews();
+      reloadReviews();
       loadMyReviews();
     } catch (err) {
       alert(err.message || "Failed to delete review");
@@ -113,7 +168,7 @@ function Reviews() {
           ? { published_at: new Date().toISOString() }
           : {}),
       });
-      loadReviews();
+      reloadReviews();
       loadMyReviews();
     } catch (err) {
       alert(
@@ -208,7 +263,14 @@ function Reviews() {
   return (
     <main className="wine-app">
       <div className="wine-management__header">
-        <h1>Reviews</h1>
+        <div>
+          <h1>{selectedCategory || "Reviews"}</h1>
+          {selectedCategory && (
+            <Link className="group-show-all" to="/reviews">
+              ← Show all reviews
+            </Link>
+          )}
+        </div>
         {canManageContent && (
           <button
             type="button"
@@ -250,7 +312,7 @@ function Reviews() {
                 }
                 onSaved={() => {
                   closeForm();
-                  loadReviews();
+                  reloadReviews();
                 }}
                 onCancel={closeForm}
               />
@@ -510,7 +572,7 @@ function Reviews() {
             )}
 
             <ReviewsList
-              reviews={scope === "mine" ? myReviews : feed.items}
+              reviews={scope === "mine" ? myReviews : (selectedCategory ? feed.items : allReviews)}
               scope={scope}
               user={user}
               statusFilter={canManageContent ? statusFilter : "published"}
@@ -521,12 +583,12 @@ function Reviews() {
               onStatusChange={handleStatusChange}
               onSaved={() => {
                 setEditingReview(null);
-                loadReviews();
+                reloadReviews();
                 loadMyReviews();
               }}
             />
 
-            {scope === "all" && (
+            {selectedCategory && scope === "all" && (
               <Pagination
                 page={feed.page}
                 totalPages={feed.totalPages}
@@ -559,14 +621,21 @@ function ReviewsList({
     statusFilter === "all"
       ? reviews
       : reviews.filter((r) => r.status === statusFilter)
-  ).filter(
-    (r) =>
-      !selectedCategory || (r.category || "Uncategorised") === selectedCategory,
-  );
+  ).filter((r) => {
+    if (!selectedCategory) return true;
+    const catNames = Array.isArray(r.categories)
+      ? r.categories.map((c) => c.name)
+      : [];
+    if (catNames.length === 0) return selectedCategory === "Uncategorised";
+    return catNames.includes(selectedCategory);
+  });
 
   // Group by category
   const grouped = filtered.reduce((acc, review) => {
-    const key = review.category || "Uncategorised";
+    const catNames = Array.isArray(review.categories)
+      ? review.categories.map((c) => c.name)
+      : [];
+    const key = catNames.length > 0 ? catNames[0] : "Uncategorised";
     if (!acc[key]) acc[key] = [];
     acc[key].push(review);
     return acc;
@@ -596,13 +665,135 @@ function ReviewsList({
       </p>
     );
   }
+
+  // When a category is selected, show a flat list (no grouping).
+  if (selectedCategory) {
+    return (
+      <div className="content-grid">
+        {filtered.map((review) => (
+          <div
+            key={review.id}
+            className="wine-management__card"
+            onClick={() => navigate(`/reviews/${review.id}`)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                navigate(`/reviews/${review.id}`);
+              }
+            }}
+          >
+            <div className="wine-management__card-header">
+              <h3>{review.title || "Untitled review"}</h3>
+              <span
+                className={`wine-management__color-badge wine-management__color-badge--${review.status}`}
+              >
+                {review.score}
+              </span>
+            </div>
+            {(review.wine_name || review.vintage_year) && (
+              <p className="wine-management__producer">
+                {review.wine_name}
+                {review.vintage_year ? ` ${review.vintage_year}` : ""}
+              </p>
+            )}
+            {review.reviewer_name && (
+              <p className="wine-management__region">
+                by {review.reviewer_name}
+              </p>
+            )}
+            {(review.drink_from != null || review.drink_to != null) && (
+              <p className="wine-management__vintage-count">
+                Drink {review.drink_from ?? ""}
+                {review.drink_to != null ? `–${review.drink_to}` : ""}
+                {review.drink_plus ? "+" : ""}
+              </p>
+            )}
+            {excerpt(review.comment, 50) && (
+              <p className="wine-management__region">
+                {excerpt(review.comment, 50)}
+              </p>
+            )}
+            {(Array.isArray(review.images) && review.images.length > 0
+              ? review.images[0]
+              : review.wine_image) && (
+              <img
+                src={
+                  Array.isArray(review.images) && review.images.length > 0
+                    ? review.images[0]
+                    : review.wine_image
+                }
+                alt={review.title || review.wine_name || "review"}
+                className="wine-management__thumb"
+              />
+            )}
+
+            {canManage(review) && (
+              <div
+                className="wine-management__card-actions"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button
+                  type="button"
+                  className="wine-management__edit-btn"
+                  onClick={() => setEditingReview(review)}
+                >
+                  Edit
+                </button>
+                {review.status === "draft" ? (
+                  <button
+                    type="button"
+                    className="wine-management__edit-btn"
+                    onClick={() => onStatusChange(review, "published")}
+                  >
+                    Publish
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="wine-management__delete-btn"
+                    onClick={() => onStatusChange(review, "draft")}
+                  >
+                    Unpublish
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="wine-management__delete-btn"
+                  onClick={() => onDelete(review.id)}
+                  title="Delete review"
+                >
+                  ×
+                </button>
+              </div>
+            )}
+
+            {editingReview && editingReview.id === review.id && (
+              <div
+                className="review-form-wrapper"
+                style={{ marginTop: 12 }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <ReviewForm
+                  wineSlug={review.wine_slug}
+                  vintageId={review.vintage_id}
+                  vintageYear={editingReview?.vintage_year}
+                  review={editingReview}
+                  onSaved={onSaved}
+                  onCancel={() => setEditingReview(null)}
+                />
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  // No category selected: grouped-by-category view.
   return (
     <div className="content-grid-groups">
-      {selectedCategory && (
-        <Link className="group-show-all" to="/reviews">
-          ← Show all categories
-        </Link>
-      )}
       {sortedCategories.map((category) => (
         <section key={category} className="content-grid-group">
           <h2 className="content-grid-group__title">
@@ -615,10 +806,7 @@ function ReviewsList({
             </Link>
           </h2>
           <div className="content-grid">
-            {(selectedCategory
-              ? grouped[category]
-              : grouped[category].slice(0, 12)
-            ).map((review) => (
+            {grouped[category].slice(0, 12).map((review) => (
               <div
                 key={review.id}
                 className="wine-management__card"
@@ -627,6 +815,7 @@ function ReviewsList({
                 tabIndex={0}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
                     navigate(`/reviews/${review.id}`);
                   }
                 }}

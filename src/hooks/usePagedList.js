@@ -12,7 +12,7 @@ import { useSearchParams } from "react-router-dom";
 //
 // `extraParams` (e.g. { grape_id: 5 }) is merged into every request; changing
 // it resets the pagination to page 1.
-function usePagedList({ fetcher, extraParams = {}, enabled = true, paramKey = "page" }) {
+function usePagedList({ fetcher, extraParams = {}, enabled = true, paramKey = "page", perPage = 20 }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const pageFromUrl = Math.max(parseInt(searchParams.get(paramKey), 10) || 1, 1);
 
@@ -37,7 +37,7 @@ function usePagedList({ fetcher, extraParams = {}, enabled = true, paramKey = "p
       try {
         setLoading(true);
         setError(null);
-        const data = await fetcher({ page, per_page: 20, ...JSON.parse(extraKey) });
+        const data = await fetcher({ page, per_page: perPage, ...JSON.parse(extraKey) });
         if (cancelled) return;
         if (Array.isArray(data)) {
           // Endpoint did not paginate (no page param honoured) — show all.
@@ -62,7 +62,7 @@ function usePagedList({ fetcher, extraParams = {}, enabled = true, paramKey = "p
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, extraKey, reloadToken, enabled]);
+  }, [page, extraKey, reloadToken, enabled, perPage]);
 
   // Keep the URL in sync when the page changes; a URL change (back/forward)
   // flows back into `page` on the next render.

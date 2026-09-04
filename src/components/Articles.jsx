@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { articlesApi } from "../services/api";
+import { articlesApi, categoriesApi } from "../services/api";
 import { useCategoryOrder, sortCategoryNames } from "../hooks/useCategoryOrder";
 import { useSelectedCategory } from "../hooks/useSelectedCategory";
 import ArticleForm from "./ArticleForm";
@@ -27,8 +27,39 @@ function Articles() {
   const categoryOrder = useCategoryOrder("sort_order_article");
   const selectedCategory = useSelectedCategory();
   const [myArticles, setMyArticles] = useState([]);
-  // Paginated main feed (20 per page, page kept in the URL ?page=N).
-  const feed = usePagedList({ fetcher: (params) => articlesApi.list(params) });
+  // Category name -> id map for resolving ?category= to category_id
+  const [categoryNameToId, setCategoryNameToId] = useState({});
+
+  useEffect(() => {
+    categoriesApi
+      .list()
+      .then((cats) => {
+        const map = {};
+        (Array.isArray(cats) ? cats : []).forEach((c) => {
+          map[c.name] = c.id;
+        });
+        setCategoryNameToId(map);
+      })
+      .catch(() => {});
+  }, []);
+
+  const categoryId = selectedCategory
+    ? categoryNameToId[selectedCategory]
+    : null;
+  const isUncategorised = selectedCategory === "Uncategorised";
+
+  // Paginated main feed (20 per page when a category is selected).
+  // For "Uncategorised", send uncategorised=true instead of category_id.
+  const feed = usePagedList({
+    fetcher: (params) => articlesApi.list(params),
+    extraParams: isUncategorised
+      ? { uncategorised: "true" }
+      : categoryId
+        ? { category_id: categoryId }
+        : {},
+    perPage: 20,
+    enabled: Boolean(selectedCategory),
+  });
   const loading = feed.loading;
   const [showForm, setShowForm] = useState(false);
   const [scope, setScope] = useState("all"); // "all" | "mine"
@@ -36,6 +67,24 @@ function Articles() {
 
   // Reload the paginated feed (used after create/delete/status changes).
   const loadArticles = feed.reload;
+
+  // All articles, loaded once when no category is selected (grouped view).
+  const [allArticles, setAllArticles] = useState([]);
+  async function loadAllArticles() {
+    try {
+      const data = await articlesApi.list();
+      setAllArticles(Array.isArray(data) ? data : []);
+    } catch {
+      setAllArticles([]);
+    }
+  }
+
+  // Reload whichever feed is active (paginated when a category is selected,
+  // the full grouped list otherwise).
+  const reloadArticles = () => {
+    if (selectedCategory) loadArticles();
+    else loadAllArticles();
+  };
 
   const loadMyArticles = useCallback(async () => {
     try {
@@ -47,10 +96,10 @@ function Articles() {
   }, []);
 
   useEffect(() => {
-    loadArticles();
+    reloadArticles();
     if (user) loadMyArticles();
     else setMyArticles([]);
-  }, [user, loadArticles, loadMyArticles]);
+  }, [user, selectedCategory]);
 
   function canManage(article) {
     return Boolean(
@@ -62,7 +111,7 @@ function Articles() {
     if (!window.confirm("Delete this article?")) return;
     try {
       await articlesApi.destroy(id);
-      loadArticles();
+      reloadArticles();
     } catch (err) {
       alert(err.message || "Failed to delete article");
     }
@@ -73,7 +122,7 @@ function Articles() {
       await articlesApi.update(article.id, {
         status: article.status === "draft" ? "published" : "draft",
       });
-      loadArticles();
+      reloadArticles();
     } catch (err) {
       alert(err.message || "Failed to update article");
     }
@@ -82,7 +131,14 @@ function Articles() {
   return (
     <main className="wine-app">
       <div className="wine-management__header">
-        <h1>Articles</h1>
+        <div>
+          <h1>{selectedCategory || "Articles"}</h1>
+          {selectedCategory && (
+            <Link className="group-show-all" to="/articles">
+              ← Show all articles
+            </Link>
+          )}
+        </div>
         {canManageContent && (
           <button
             type="button"
@@ -99,7 +155,7 @@ function Articles() {
           <ArticleForm
             onSaved={() => {
               setShowForm(false);
-              loadArticles();
+              reloadArticles();
             }}
             onCancel={() => setShowForm(false)}
           />
@@ -176,16 +232,25 @@ function Articles() {
               const effectiveStatus = canManageContent
                 ? statusFilter
                 : "published";
-              const source = effectiveScope === "mine" ? myArticles : feed.items;
+              const source =
+                effectiveScope === "mine"
+                  ? myArticles
+                  : selectedCategory
+                    ? feed.items
+                    : allArticles;
               const filtered = (
                 effectiveStatus === "all"
                   ? source
                   : source.filter((a) => a.status === effectiveStatus)
-              ).filter(
-                (a) =>
-                  !selectedCategory ||
-                  (a.category || "Uncategorised") === selectedCategory,
-              );
+              ).filter((a) => {
+                if (!selectedCategory) return true;
+                const catNames = Array.isArray(a.categories)
+                  ? a.categories.map((c) => c.name)
+                  : [];
+                if (catNames.length === 0)
+                  return selectedCategory === "Uncategorised";
+                return catNames.includes(selectedCategory);
+              });
 
               if (effectiveScope === "mine" && !user) {
                 return (
@@ -205,9 +270,102 @@ function Articles() {
                   </p>
                 );
               }
+
+              // When a category is selected, show a flat list (no grouping).
+              if (selectedCategory) {
+                return (
+                  <div className="content-grid">
+                    {filtered.map((article) => (
+                      <div
+                        key={article.id}
+                        className="wine-management__card"
+                        onClick={() => navigate(`/articles/${article.id}`)}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            navigate(`/articles/${article.id}`);
+                          }
+                        }}
+                      >
+                        {Array.isArray(article.images) &&
+                          article.images.length > 0 && (
+                            <img
+                              src={article.images[0]}
+                              alt={article.title}
+                              className="wine-management__thumb"
+                            />
+                          )}
+                        <div className="wine-management__card-header">
+                          <h3>{article.title}</h3>
+                          {canManageContent && (
+                            <span
+                              className={`wine-management__color-badge wine-management__color-badge--${article.status}`}
+                            >
+                              {article.status}
+                            </span>
+                          )}
+                        </div>
+                        <p className="wine-management__region">{`by ${article.author_name}`}</p>
+                        {Array.isArray(article.tags) &&
+                          article.tags.length > 0 && (
+                            <p className="wine-management__vintage-count">
+                              Tags: {article.tags.join(", ")}
+                            </p>
+                          )}
+                        {excerpt(article.body, 50) && (
+                          <p className="wine-management__region">
+                            {excerpt(article.body, 50)}
+                          </p>
+                        )}
+
+                        {canManage(article) && (
+                          <div
+                            className="wine-management__card-actions"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Link
+                              to={`/articles/${article.id}/edit`}
+                              className="wine-management__edit-btn"
+                            >
+                              Edit
+                            </Link>
+                            <button
+                              type="button"
+                              className={
+                                article.status === "draft"
+                                  ? "wine-management__edit-btn"
+                                  : "wine-management__delete-btn"
+                              }
+                              onClick={() => togglePublish(article)}
+                            >
+                              {article.status === "draft"
+                                ? "Publish"
+                                : "Unpublish"}
+                            </button>
+                            <button
+                              type="button"
+                              className="wine-management__delete-btn"
+                              onClick={() => handleDelete(article.id)}
+                              title="Delete article"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                );
+              }
+
               // Group by category
               const grouped = filtered.reduce((acc, article) => {
-                const key = article.category || "Uncategorised";
+                const catNames = Array.isArray(article.categories)
+                  ? article.categories.map((c) => c.name)
+                  : [];
+                const key = catNames.length > 0 ? catNames[0] : "Uncategorised";
                 if (!acc[key]) acc[key] = [];
                 acc[key].push(article);
                 return acc;
@@ -221,11 +379,6 @@ function Articles() {
 
               return (
                 <div className="content-grid-groups">
-                  {selectedCategory && (
-                    <Link className="group-show-all" to="/articles">
-                      ← Show all categories
-                    </Link>
-                  )}
                   {sortedCategories.map((category) => (
                     <section key={category} className="content-grid-group">
                       <h2 className="content-grid-group__title">
@@ -238,10 +391,7 @@ function Articles() {
                         </Link>
                       </h2>
                       <div className="content-grid">
-                        {(selectedCategory
-                          ? grouped[category]
-                          : grouped[category].slice(0, 12)
-                        ).map((article) => (
+                        {grouped[category].slice(0, 12).map((article) => (
                           <div
                             key={article.id}
                             className="wine-management__card"
@@ -250,6 +400,7 @@ function Articles() {
                             tabIndex={0}
                             onKeyDown={(e) => {
                               if (e.key === "Enter" || e.key === " ") {
+                                e.preventDefault();
                                 navigate(`/articles/${article.id}`);
                               }
                             }}
@@ -328,7 +479,7 @@ function Articles() {
               );
             })()}
 
-            {scope !== "mine" && (
+            {selectedCategory && scope !== "mine" && (
               <Pagination
                 page={feed.page}
                 totalPages={feed.totalPages}

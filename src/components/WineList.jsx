@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { winesApi } from "../services/api";
+import { winesApi, categoriesApi } from "../services/api";
 import { useCategoryOrder, sortCategoryNames } from "../hooks/useCategoryOrder";
 import { useSelectedCategory } from "../hooks/useSelectedCategory";
 import { useAuth } from "../contexts/AuthContext";
 import { canManageWinesRole } from "../constants/roles";
+import usePagedList from "../hooks/usePagedList";
+import Pagination from "./Pagination";
 
 function WineList() {
   const { user } = useAuth();
@@ -19,9 +21,48 @@ function WineList() {
   const selectedProducer = searchParams.get("producer");
   const selectedCategory = useSelectedCategory();
 
+  // Category name -> id map for resolving ?category= to category_id
+  const [categoryNameToId, setCategoryNameToId] = useState({});
+
   useEffect(() => {
-    loadWines();
+    categoriesApi
+      .list()
+      .then((cats) => {
+        const map = {};
+        (Array.isArray(cats) ? cats : []).forEach((c) => {
+          map[c.name] = c.id;
+        });
+        setCategoryNameToId(map);
+      })
+      .catch(() => {});
   }, []);
+
+  const categoryId = selectedCategory
+    ? categoryNameToId[selectedCategory]
+    : null;
+  const isUncategorised = selectedCategory === "Uncategorised";
+
+  // Paginated list when a category is selected (server-side filtering).
+  // For "Uncategorised", send uncategorised=true instead of category_id.
+  const pagedWines = usePagedList({
+    fetcher: (params) => winesApi.list(params),
+    extraParams: isUncategorised
+      ? { uncategorised: "true" }
+      : categoryId
+        ? { category_id: categoryId }
+        : {},
+    perPage: 20,
+    enabled: Boolean(selectedCategory),
+  });
+
+  // Load all wines for the grouped-by-category view (no category selected).
+  useEffect(() => {
+    if (!selectedCategory) {
+      loadWines();
+    } else {
+      setLoading(false);
+    }
+  }, [selectedCategory]);
 
   async function loadWines() {
     try {
@@ -45,7 +86,11 @@ function WineList() {
     }
     try {
       await winesApi.destroy(wine.slug);
-      setWines((prev) => prev.filter((w) => w.slug !== wine.slug));
+      if (selectedCategory) {
+        pagedWines.reload();
+      } else {
+        setWines((prev) => prev.filter((w) => w.slug !== wine.slug));
+      }
     } catch (err) {
       alert(err.message || "Failed to delete wine");
     }
@@ -70,17 +115,139 @@ function WineList() {
     );
   }
 
+  // --- Category selected: flat paginated list ---
+  if (selectedCategory) {
+    return (
+      <div className="wine-app">
+        <div className="wine-management__header">
+          <div>
+            <p className="wine-kicker">Cellar</p>
+            <h1>"{selectedCategory}" Wines</h1>
+            <Link className="group-show-all" to="/wines">
+              ← Show all categories
+            </Link>
+          </div>
+          {canManageWines && (
+            <Link
+              to="/wines/new"
+              className="auth-form__submit wine-management__add-btn"
+            >
+              + Add Wine
+            </Link>
+          )}
+        </div>
+
+        {pagedWines.loading ? (
+          <p className="wine-management__loading">Loading wines…</p>
+        ) : pagedWines.items.length === 0 ? (
+          <div className="wine-management__empty">
+            <p>No wines found in this category.</p>
+          </div>
+        ) : (
+          <>
+            <div className="content-grid">
+              {pagedWines.items.map((wine) => (
+                <div
+                  key={wine.slug}
+                  className="wine-management__card"
+                  onClick={() => navigate(`/wines/${wine.slug}`)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      navigate(`/wines/${wine.slug}`);
+                    }
+                  }}
+                >
+                  {Array.isArray(wine.images) && wine.images.length > 0 && (
+                    <img
+                      src={wine.images[0]}
+                      alt={wine.name}
+                      className="wine-management__thumb"
+                    />
+                  )}
+                  <div className="wine-management__card-header">
+                    <h3>{wine.name}</h3>
+                    <span
+                      className={`wine-management__color-badge wine-management__color-badge--${wine.color}`}
+                    >
+                      {wine.color}
+                    </span>
+                  </div>
+                  {wine.producer && (
+                    <p className="wine-management__producer">
+                      {wine.producer.name}
+                    </p>
+                  )}
+                  {Array.isArray(wine.grapes) && wine.grapes.length > 0 && (
+                    <p className="wine-management__grapes">
+                      <strong>Grapes:</strong>{" "}
+                      {wine.grapes
+                        .slice(0, 3)
+                        .map((g) => g.name)
+                        .join(", ")}
+                      {wine.grapes.length > 3 ? "…" : ""}
+                    </p>
+                  )}
+                  {Array.isArray(wine.regions) && wine.regions.length > 0 && (
+                    <p className="wine-management__regions">
+                      <strong>Regions:</strong>{" "}
+                      {wine.regions
+                        .slice(0, 3)
+                        .map((r) => (r.name ? r.name : r))
+                        .join(", ")}
+                      {wine.regions.length > 3 ? "…" : ""}
+                    </p>
+                  )}
+                  {wine.sparkling && (
+                    <p className="wine-management__sparkling">✨ Sparkling</p>
+                  )}
+                  {wine.vintages && wine.vintages.length > 0 && (
+                    <p className="wine-management__vintage-count">
+                      {wine.vintages.length} vintage
+                      {wine.vintages.length !== 1 ? "s" : ""}
+                    </p>
+                  )}
+                  {canManageWines && (
+                    <div className="wine-management__card-actions">
+                      <Link
+                        to={`/wines/${wine.slug}/edit`}
+                        className="wine-management__edit-btn"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        Edit
+                      </Link>
+                      <button
+                        className="wine-management__delete-btn"
+                        onClick={(e) => handleDelete(wine, e)}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+            <Pagination
+              page={pagedWines.page}
+              totalPages={pagedWines.totalPages}
+              totalCount={pagedWines.totalCount}
+              onPageChange={pagedWines.setPage}
+            />
+          </>
+        )}
+      </div>
+    );
+  }
+
+  // --- No category selected: grouped-by-category view (12 per category) ---
   return (
     <div className="wine-app">
       <div className="wine-management__header">
         <div>
           <p className="wine-kicker">Cellar</p>
           <h1>Wine List</h1>
-          {selectedCategory && (
-            <Link className="group-show-all" to="/wines">
-              ← Show all categories
-            </Link>
-          )}
         </div>
         {canManageWines && (
           <Link
@@ -106,21 +273,8 @@ function WineList() {
         </div>
       ) : (
         (() => {
-          // When a category is selected via ?category=, show only that one.
-          let visible = wines;
-          if (selectedCategory) {
-            visible = visible.filter(
-              (w) => (w.category || "Uncategorised") === selectedCategory,
-            );
-          }
-          if (selectedProducer) {
-            visible = visible.filter(
-              (w) => w.producer && w.producer.slug === selectedProducer,
-            );
-          }
-
           // Group wines by category
-          const grouped = visible.reduce((acc, wine) => {
+          const grouped = wines.reduce((acc, wine) => {
             const key = wine.category || "Uncategorised";
             if (!acc[key]) acc[key] = [];
             acc[key].push(wine);
@@ -147,10 +301,7 @@ function WineList() {
                     </Link>
                   </h2>
                   <div className="content-grid">
-                    {(selectedCategory
-                      ? grouped[category]
-                      : grouped[category].slice(0, 12)
-                    ).map((wine) => (
+                    {grouped[category].slice(0, 12).map((wine) => (
                       <div
                         key={wine.slug}
                         className="wine-management__card"
@@ -159,6 +310,7 @@ function WineList() {
                         tabIndex={0}
                         onKeyDown={(e) => {
                           if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
                             navigate(`/wines/${wine.slug}`);
                           }
                         }}
