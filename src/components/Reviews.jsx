@@ -304,7 +304,13 @@ function Reviews() {
               </div>
               <ReviewForm
                 wineSlug={selectedWine.slug}
+                wineName={selectedWine.name}
                 vintageId={Number(selectedVintageId)}
+                vintageNoVintage={
+                  selectedWine.vintages?.find(
+                    (v) => String(v.id) === String(selectedVintageId),
+                  )?.no_vintage
+                }
                 vintageYear={
                   selectedWine.vintages?.find(
                     (v) => String(v.id) === String(selectedVintageId),
@@ -777,6 +783,7 @@ function ReviewsList({
               >
                 <ReviewForm
                   wineSlug={review.wine_slug}
+                  wineName={editingReview?.wine_name}
                   vintageId={review.vintage_id}
                   vintageYear={editingReview?.vintage_year}
                   review={editingReview}
@@ -919,6 +926,7 @@ function ReviewsList({
                   >
                     <ReviewForm
                       wineSlug={review.wine_slug}
+                      wineName={editingReview?.wine_name}
                       vintageId={review.vintage_id}
                       vintageYear={editingReview?.vintage_year}
                       review={editingReview}

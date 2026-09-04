@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { reviewsApi, imagesApi, categoriesApi } from "../services/api";
 import ImageManager from "./ImageManager";
 import RichTextEditor from "./RichTextEditor";
@@ -7,11 +7,19 @@ function ReviewForm({
   wineSlug,
   vintageId,
   vintageYear,
+  wineName,
+  vintageNoVintage,
   review,
   onSaved,
   onCancel,
 }) {
   const isEditing = Boolean(review);
+
+  // Auto-generated title: "Review of {Wine} - {Year|NV}" (create only).
+  const autoTitle = wineName
+    ? `Review of ${wineName} - ${vintageNoVintage ? "NV" : vintageYear || "NV"}`
+    : "";
+  const titleEditedRef = useRef(Boolean(review?.title));
 
   const [form, setForm] = useState(
     review
@@ -26,7 +34,7 @@ function ReviewForm({
           category_ids: (review.categories || []).map((c) => c.id),
         }
       : {
-          title: "",
+          title: autoTitle,
           comment: "",
           score: 80,
           status: "draft",
@@ -36,6 +44,13 @@ function ReviewForm({
           category_ids: [],
         },
   );
+
+  // Keep the title in sync when the wine/vintage changes, until the user edits it.
+  useEffect(() => {
+    if (isEditing) return;
+    if (titleEditedRef.current) return;
+    setForm((prev) => ({ ...prev, title: autoTitle }));
+  }, [autoTitle, isEditing]);
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
@@ -75,6 +90,7 @@ function ReviewForm({
         value = e.target.value;
       }
       setForm((prev) => ({ ...prev, [field]: value }));
+      if (field === "title") titleEditedRef.current = true;
     };
   }
 
