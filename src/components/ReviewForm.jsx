@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { reviewsApi, imagesApi, categoriesApi } from "../services/api";
+import { reviewsApi, imagesApi, categoriesApi, winesApi } from "../services/api";
 import ImageManager from "./ImageManager";
 import RichTextEditor from "./RichTextEditor";
 
@@ -32,6 +32,7 @@ function ReviewForm({
           drink_to: review.drink_to ?? "",
           drink_plus: Boolean(review.drink_plus),
           category_ids: (review.categories || []).map((c) => c.id),
+          vintage_id: review.vintage_id ?? null,
         }
       : {
           title: autoTitle,
@@ -44,6 +45,61 @@ function ReviewForm({
           category_ids: [],
         },
   );
+
+  // Edit mode: wine/vintage picker state.
+  const [changingWine, setChangingWine] = useState(false);
+  const [wineQuery, setWineQuery] = useState("");
+  const [wineResults, setWineResults] = useState(null);
+  const [pickedWine, setPickedWine] = useState(null); // {name, vintages}
+  const [pickedVintage, setPickedVintage] = useState(
+    review
+      ? {
+          id: review.vintage_id,
+          year: review.vintage_year,
+          wineName: review.wine_name,
+        }
+      : null,
+  );
+
+  // Debounced wine search for the edit-mode picker.
+  useEffect(() => {
+    if (!isEditing || !changingWine) return undefined;
+    const q = wineQuery.trim();
+    if (q.length < 2) {
+      setWineResults(null);
+      return undefined;
+    }
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      try {
+        const data = await winesApi.search(q);
+        if (!cancelled) setWineResults(Array.isArray(data) ? data : []);
+      } catch {
+        if (!cancelled) setWineResults([]);
+      }
+    }, 300);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [wineQuery, changingWine, isEditing]);
+
+  function pickWine(wine) {
+    setPickedWine(wine);
+    setPickedVintage(null);
+  }
+
+  function pickVintage(vintage) {
+    setPickedVintage({
+      id: vintage.id,
+      year: vintage.no_vintage ? "NV" : vintage.year,
+      wineName: pickedWine?.name || review?.wine_name,
+    });
+    setForm((prev) => ({ ...prev, vintage_id: vintage.id }));
+    setChangingWine(false);
+    setWineQuery("");
+    setWineResults(null);
+  }
 
   // Keep the title in sync when the wine/vintage changes, until the user edits it.
   useEffect(() => {
@@ -110,7 +166,10 @@ function ReviewForm({
       };
 
       if (isEditing) {
-        await reviewsApi.update(review.id, payload);
+        await reviewsApi.update(review.id, {
+          ...payload,
+          vintage_id: pickedVintage?.id ?? review.vintage_id,
+        });
         if (images && images.length > 0) {
           await imagesApi.upload("review", review.id, images);
         }
@@ -131,6 +190,95 @@ function ReviewForm({
 
   return (
     <form className="review-form" onSubmit={handleSubmit}>
+      {isEditing && (
+        <div className="review-form__field">
+          <label>Wine &amp; Vintage</label>
+          {!changingWine ? (
+            <div className="review-list">
+              <div className="review-card">
+                <div className="review-card__top">
+                  <strong>{pickedVintage?.wineName || wineName || "—"}</strong>
+                  <span className="review-card__status">
+                    {pickedVintage?.year || vintageYear || "Vintage"}
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="btn-action"
+                onClick={() => setChangingWine(true)}
+              >
+                Change wine/vintage
+              </button>
+            </div>
+          ) : (
+            <>
+              <input
+                type="text"
+                value={wineQuery}
+                onChange={(e) => setWineQuery(e.target.value)}
+                placeholder="Search for a wine…"
+                autoFocus
+              />
+              {wineResults !== null && wineResults.length > 0 && !pickedWine && (
+                <div className="review-list">
+                  {wineResults.map((wine) => (
+                    <button
+                      key={wine.slug}
+                      type="button"
+                      className="review-card"
+                      onClick={() => pickWine(wine)}
+                    >
+                      <div className="review-card__top">
+                        <strong>{wine.name}</strong>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+              {pickedWine && (
+                <>
+                  <p className="wine-management__empty-state">
+                    Reviewing <strong>{pickedWine.name}</strong> — choose a vintage.
+                  </p>
+                  <div className="review-list">
+                    {(pickedWine.vintages || []).map((vintage) => (
+                      <button
+                        key={vintage.id}
+                        type="button"
+                        className="review-card"
+                        onClick={() => pickVintage(vintage)}
+                      >
+                        <div className="review-card__top">
+                          <strong>{vintage.no_vintage ? "NV" : vintage.year}</strong>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    className="review-form__cancel"
+                    onClick={() => {
+                      setPickedWine(null);
+                      setWineQuery("");
+                      setWineResults(null);
+                    }}
+                  >
+                    Back to wine search
+                  </button>
+                </>
+              )}
+              <button
+                type="button"
+                className="review-form__cancel"
+                onClick={() => setChangingWine(false)}
+              >
+                Cancel
+              </button>
+            </>
+          )}
+        </div>
+      )}
       <div className="review-form__field">
         <label htmlFor="review-title">Title</label>
         <input

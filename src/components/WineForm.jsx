@@ -376,7 +376,7 @@ function WineForm() {
                 name="alcohol_percentage"
                 value={formData.alcohol_percentage}
                 onChange={handleChange}
-                step="0.5"
+                step="0.1"
                 min="0"
                 max="25"
                 placeholder="e.g. 13.5"

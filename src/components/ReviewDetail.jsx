@@ -137,17 +137,22 @@ function ReviewDetail() {
       </div>
 
       <p className="review-card__comment">
-        {[
-          review.wine_name
-            ? `${review.wine_name}${review.vintage_year ? ` ${review.vintage_year}` : ""}`
-            : null,
-          `by ${review.reviewer_name}`,
-          review.published_at
-            ? new Date(review.published_at).toLocaleDateString()
-            : null,
-        ]
-          .filter(Boolean)
-          .join(" · ")}
+        {review.wine_name && (
+          <>
+            <Link to={`/wines/${review.wine_slug}`}>
+              {review.wine_name}
+              {review.vintage_year ? ` ${review.vintage_year}` : ""}
+            </Link>
+            {" · "}
+          </>
+        )}
+        {`by ${review.reviewer_name}`}
+        {review.published_at && (
+          <>
+            {" · "}
+            {new Date(review.published_at).toLocaleDateString()}
+          </>
+        )}
         <span className={`review-card__status`}> {review.status}</span>
       </p>
 
