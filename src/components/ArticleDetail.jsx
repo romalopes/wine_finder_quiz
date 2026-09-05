@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { articlesApi } from "../services/api";
 import ArticleForm from "./ArticleForm";
 import DOMPurify from "dompurify";
 import { useAuth } from "../contexts/AuthContext";
+import { canManageWinesRole } from "../constants/roles";
 
 function RichBody({ html }) {
   return (
@@ -16,11 +17,13 @@ function RichBody({ html }) {
 
 function ArticleDetail() {
   const { slug } = useParams();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [article, setArticle] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [editing, setEditing] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const loadArticle = useCallback(async () => {
     try {
@@ -50,6 +53,20 @@ function ArticleDetail() {
     }
   }
 
+  async function handleDelete() {
+    if (!window.confirm("Delete this article? This action cannot be undone.")) {
+      return;
+    }
+    try {
+      setDeleting(true);
+      await articlesApi.destroy(article.id);
+      navigate("/articles");
+    } catch (err) {
+      setError(err.message || "Failed to delete article");
+      setDeleting(false);
+    }
+  }
+
   if (loading) {
     return (
       <main className="wine-app">
@@ -69,7 +86,9 @@ function ArticleDetail() {
     );
   }
 
-  const isAuthor = user?.id === article.user_id;
+  const canManage = canManageWinesRole(user);
+  const isAuthor = Boolean(user && Number(article.user_id) === Number(user.id));
+  const canEdit = canManage || isAuthor;
   // Reviews shown under the article: link must be published AND review published.
   const visibleReviews = (article.reviews || []).filter(
     (r) => r.link_status === "published" && r.status === "published",
@@ -117,7 +136,7 @@ function ArticleDetail() {
         {article.tags?.length > 0 ? ` — ${article.tags.join(", ")}` : ""}
       </p>
 
-      {isAuthor && (
+      {canEdit && (
         <div className="wine-detail__actions">
           {!editing && (
             <>
@@ -126,6 +145,14 @@ function ArticleDetail() {
               </button>
               <button type="button" className="review-card__publish" onClick={togglePublish}>
                 {article.status === "draft" ? "Publish" : "Unpublish"}
+              </button>
+              <button
+                type="button"
+                className="review-form__cancel"
+                onClick={handleDelete}
+                disabled={deleting}
+              >
+                {deleting ? "Deleting…" : "Delete Article"}
               </button>
             </>
           )}

@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { reviewsApi } from "../services/api";
 import ReviewForm from "./ReviewForm";
 import { useAuth } from "../contexts/AuthContext";
+import { canManageWinesRole } from "../constants/roles";
 import DOMPurify from "dompurify";
 
 function RichComment({ html }) {
@@ -26,6 +27,7 @@ function ReviewDetail() {
 
   const isOwner =
     Boolean(user && review && Number(review.user_id) === Number(user.id));
+  const canEdit = canManageWinesRole(user) || isOwner;
 
   const loadReview = useCallback(async () => {
     try {
@@ -97,7 +99,7 @@ function ReviewDetail() {
 
       {error && <p className="wine-management__error">{error}</p>}
 
-      {isOwner && !editing && (
+      {canEdit && !editing && (
         <div className="review-form__actions">
           <button
             type="button"
@@ -117,7 +119,7 @@ function ReviewDetail() {
         </div>
       )}
 
-      {isOwner && editing && (
+      {canEdit && editing && (
         <ReviewForm
           review={review}
           vintageYear={review.vintage_year}

@@ -79,7 +79,7 @@ function CategoryDetail() {
             <WineTable
               wines={wines.items}
               onDeleted={() => wines.reload()}
-              linkContext={{ type: "category", id, name: category.name }}
+              linkContext={{ type: "category", id: category?.id, name: category.name }}
               onWineLinked={() => wines.reload()}
             />
             <Pagination
