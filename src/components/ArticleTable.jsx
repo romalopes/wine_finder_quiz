@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { canManageWinesRole } from "../constants/roles";
 import LinkArticleDialog from "./LinkArticleDialog";
+import { useReturnToLink } from "../hooks/useReturnToLink";
 
 // Shared table of articles (one article per row): Title, Author, Status and
 // Published date. Rows navigate to the article detail page.
@@ -12,6 +13,7 @@ function ArticleTable({ articles, linkContext, onArticleLinked }) {
   const { user } = useAuth();
   const canManage = canManageWinesRole(user);
   const navigate = useNavigate();
+  const returnToLink = useReturnToLink();
   const [dialogOpen, setDialogOpen] = useState(false);
   const excludeIds = Array.isArray(articles)
     ? articles.flatMap((a) => [a.id, a.slug].filter(Boolean))
@@ -67,12 +69,12 @@ function ArticleTable({ articles, linkContext, onArticleLinked }) {
             <tr
               key={article.slug || article.id}
               className={index % 2 === 0 ? "grapes-row--even" : "grapes-row--odd"}
-              onClick={() => navigate(`/articles/${article.slug}`)}
+              onClick={() => navigate(returnToLink(`/articles/${article.slug}`))}
               style={{ cursor: "pointer" }}
             >
               <td>
                 <Link
-                  to={`/articles/${article.slug}`}
+                  to={returnToLink(`/articles/${article.slug}`)}
                   className="grapes-table__link"
                   onClick={(e) => e.stopPropagation()}
                 >

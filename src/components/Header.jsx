@@ -96,6 +96,11 @@ function Header() {
           encodeURIComponent(c.name),
       }));
 
+    // Add "All {Type}" as the first item (unfiltered list).
+    const collection = `/${type}s`;
+    const allLabel = `All ${type.charAt(0).toUpperCase() + type.slice(1)}s`;
+    categoryLinks.unshift({ label: allLabel, to: collection });
+
     // Add Uncategorised as the last item if there are any
     if (uncategorisedCount > 0) {
       categoryLinks.push({

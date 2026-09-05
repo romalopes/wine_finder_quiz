@@ -5,6 +5,8 @@ import ReviewForm from "./ReviewForm";
 import { useAuth } from "../contexts/AuthContext";
 import { canManageWinesRole } from "../constants/roles";
 import DOMPurify from "dompurify";
+import BackToSource from "./BackToSource";
+import { useReturnToLink } from "../hooks/useReturnToLink";
 
 function RichComment({ html }) {
   return (
@@ -19,6 +21,7 @@ function ReviewDetail() {
   const { slug } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const returnToLink = useReturnToLink();
   const [review, setReview] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -85,6 +88,7 @@ function ReviewDetail() {
 
   return (
     <main className="wine-app">
+      <BackToSource />
       <Link to="/reviews" className="wine-detail__back">
         &larr; Back to Reviews
       </Link>
@@ -139,7 +143,7 @@ function ReviewDetail() {
       <p className="review-card__comment">
         {review.wine_name && (
           <>
-            <Link to={`/wines/${review.wine_slug}`}>
+            <Link to={returnToLink(`/wines/${review.wine_slug}`)}>
               {review.wine_name}
               {review.vintage_year ? ` ${review.vintage_year}` : ""}
             </Link>
@@ -161,7 +165,7 @@ function ReviewDetail() {
           Categories:{" "}
           {review.categories.map((cat, i) => (
             <span key={cat.id}>
-              <Link to={`/categories/${cat.slug}`}>{cat.name}</Link>
+              <Link to={returnToLink(`/categories/${cat.slug}`)}>{cat.name}</Link>
               {i < review.categories.length - 1 ? ", " : ""}
             </span>
           ))}

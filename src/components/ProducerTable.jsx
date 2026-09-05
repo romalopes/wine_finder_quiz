@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import LinkProducerDialog from "./LinkProducerDialog";
+import { useReturnToLink } from "../hooks/useReturnToLink";
 
 // Reusable producers table (image · name · country · type · status ·
 // address · email · wines · actions). Used by ProducerList and any other
@@ -9,6 +10,7 @@ import LinkProducerDialog from "./LinkProducerDialog";
 // opens a dialog to search and link producers to the given entity.
 function ProducerTable({ producers, canManage = false, linkContext, onProducerLinked }) {
   const navigate = useNavigate();
+  const returnToLink = useReturnToLink();
   const [dialogOpen, setDialogOpen] = useState(false);
   const excludeIds = Array.isArray(producers)
     ? producers.flatMap((p) => [p.id, p.slug].filter(Boolean))
@@ -80,7 +82,7 @@ function ProducerTable({ producers, canManage = false, linkContext, onProducerLi
             className={
               index % 2 === 0 ? "grapes-row--even" : "grapes-row--odd"
             }
-            onClick={() => navigate(`/producers/${producer.slug}`)}
+            onClick={() => navigate(returnToLink(`/producers/${producer.slug}`))}
             style={{ cursor: "pointer" }}
           >
             <td>
@@ -106,7 +108,7 @@ function ProducerTable({ producers, canManage = false, linkContext, onProducerLi
             </td>
             <td>
               <Link
-                to={`/producers/${producer.slug}`}
+                to={returnToLink(`/producers/${producer.slug}`)}
                 className="grapes-table__link"
                 onClick={(e) => e.stopPropagation()}
               >

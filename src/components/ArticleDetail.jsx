@@ -5,6 +5,8 @@ import ArticleForm from "./ArticleForm";
 import DOMPurify from "dompurify";
 import { useAuth } from "../contexts/AuthContext";
 import { canManageWinesRole } from "../constants/roles";
+import BackToSource from "./BackToSource";
+import { useReturnToLink } from "../hooks/useReturnToLink";
 
 function RichBody({ html }) {
   return (
@@ -19,6 +21,7 @@ function ArticleDetail() {
   const { slug } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const returnToLink = useReturnToLink();
   const [article, setArticle] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -96,6 +99,7 @@ function ArticleDetail() {
 
   return (
     <main className="wine-app">
+      <BackToSource />
       <Link to="/articles" className="wine-detail__back">
         &larr; Back to Articles
       </Link>
@@ -122,7 +126,7 @@ function ArticleDetail() {
           <>
             {article.categories.map((cat, i) => (
               <span key={cat.id}>
-                <Link to={`/categories/${cat.slug}`}>{cat.name}</Link>
+                <Link to={returnToLink(`/categories/${cat.slug}`)}>{cat.name}</Link>
                 {i < article.categories.length - 1 ? ", " : ""}
               </span>
             ))}{" "}
@@ -209,7 +213,7 @@ function ArticleDetail() {
               <ul>
                 {article.vintages.map((vintage) => (
                   <li key={vintage.id}>
-                    <Link to={`/wines/${vintage.wine_slug}`}>
+                    <Link to={returnToLink(`/wines/${vintage.wine_slug}`)}>
                       {vintage.wine_name} {vintage.year}
                     </Link>
                     {vintage.region ? ` — ${vintage.region}` : ""}
@@ -224,7 +228,7 @@ function ArticleDetail() {
               <ul>
                 {article.producers.map((producer) => (
                   <li key={producer.id}>
-                    <Link to={`/producers/${producer.slug}`}>{producer.name}</Link>
+                    <Link to={returnToLink(`/producers/${producer.slug}`)}>{producer.name}</Link>
                   </li>
                 ))}
               </ul>

@@ -4,6 +4,8 @@ import { grapesApi, winesApi } from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
 import { isSuperUser, canManageGrapes, canManageWinesRole } from "../constants/roles";
 import WineTable from "./WineTable";
+import BackToSource from "./BackToSource";
+import { useReturnToLink } from "../hooks/useReturnToLink";
 
 const emptyForm = {
   name: "",
@@ -28,6 +30,7 @@ function GrapeDetail() {
   const { slug } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const returnToLink = useReturnToLink();
   const [grape, setGrape] = useState(null);
   const [form, setForm] = useState(emptyForm);
   const [loading, setLoading] = useState(true);
@@ -172,6 +175,7 @@ function GrapeDetail() {
   return (
     <div className="grapes-page">
       <div className="grapes-page__header">
+        <BackToSource />
         <Link to="/grapes" className="back-link">← All Grapes</Link>
         {isWineManager && !isEditing && (
           <button type="button" className="btn-primary" onClick={() => setIsEditing(true)}>

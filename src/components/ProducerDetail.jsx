@@ -4,11 +4,14 @@ import { producersApi, winesApi } from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
 import { canManageWinesRole } from "../constants/roles";
 import WineTable from "./WineTable";
+import BackToSource from "./BackToSource";
+import { useReturnToLink } from "../hooks/useReturnToLink";
 
 function ProducerDetail() {
   const { slug } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const returnToLink = useReturnToLink();
   // Super Users, Reviewers and Editors may manage producers / link wines.
   const canManageProducers = canManageWinesRole(user);
   const [producer, setProducer] = useState(null);
@@ -103,6 +106,7 @@ function ProducerDetail() {
 
   return (
     <div className="wine-app">
+      <BackToSource />
       <Link to="/producers" className="wine-detail__back">
         &larr; Back to Producers
       </Link>

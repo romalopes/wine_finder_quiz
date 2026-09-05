@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { canManageWinesRole } from "../constants/roles";
 import LinkReviewDialog from "./LinkReviewDialog";
+import { useReturnToLink } from "../hooks/useReturnToLink";
 
 // Shared table of reviews (one review per row): Score, Wine, Vintage,
 // Reviewer and Status. Rows navigate to the review detail page.
@@ -12,6 +13,7 @@ function ReviewTable({ reviews, linkContext, onReviewLinked }) {
   const { user } = useAuth();
   const canManage = canManageWinesRole(user);
   const navigate = useNavigate();
+  const returnToLink = useReturnToLink();
   const [dialogOpen, setDialogOpen] = useState(false);
   const excludeIds = Array.isArray(reviews)
     ? reviews.flatMap((r) => [r.id, r.slug].filter(Boolean))
@@ -68,7 +70,7 @@ function ReviewTable({ reviews, linkContext, onReviewLinked }) {
             <tr
               key={review.slug || review.id}
               className={index % 2 === 0 ? "grapes-row--even" : "grapes-row--odd"}
-              onClick={() => navigate(`/reviews/${review.slug}`)}
+              onClick={() => navigate(returnToLink(`/reviews/${review.slug}`))}
               style={{ cursor: "pointer" }}
             >
               <td>
@@ -77,7 +79,7 @@ function ReviewTable({ reviews, linkContext, onReviewLinked }) {
               <td>
                 {review.wine_slug ? (
                   <Link
-                    to={`/wines/${review.wine_slug}`}
+                    to={returnToLink(`/wines/${review.wine_slug}`)}
                     className="grapes-table__link"
                     onClick={(e) => e.stopPropagation()}
                   >

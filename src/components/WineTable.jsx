@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { canManageWinesRole } from "../constants/roles";
 import LinkWineDialog from "./LinkWineDialog";
+import { useReturnToLink } from "../hooks/useReturnToLink";
 
 // Shared table of wines (one wine per row): Name, Producer, Regions,
 // Vintages count and Edit actions for wine managers.
@@ -12,6 +13,7 @@ function WineTable({ wines, linkContext, onWineLinked, onDeleted }) {
   const { user } = useAuth();
   const canManageWines = canManageWinesRole(user);
   const navigate = useNavigate();
+  const returnToLink = useReturnToLink();
   const [dialogOpen, setDialogOpen] = useState(false);
   const excludeIds = Array.isArray(wines)
     ? wines.flatMap((w) => [w.id, w.slug].filter(Boolean))
@@ -78,12 +80,12 @@ function WineTable({ wines, linkContext, onWineLinked, onDeleted }) {
           <tr
             key={wine.slug || wine.id}
             className={index % 2 === 0 ? "grapes-row--even" : "grapes-row--odd"}
-            onClick={() => navigate(`/wines/${wine.slug}`)}
+            onClick={() => navigate(returnToLink(`/wines/${wine.slug}`))}
             style={{ cursor: "pointer" }}
           >
             <td>
               <Link
-                to={`/wines/${wine.slug}`}
+                to={returnToLink(`/wines/${wine.slug}`)}
                 className="grapes-table__link"
                 onClick={(e) => e.stopPropagation()}
               >
@@ -93,7 +95,7 @@ function WineTable({ wines, linkContext, onWineLinked, onDeleted }) {
             <td>
               {wine.producer ? (
                 <Link
-                  to={`/producers/${wine.producer.slug}`}
+                  to={returnToLink(`/producers/${wine.producer.slug}`)}
                   className="grapes-table__link"
                   onClick={(e) => e.stopPropagation()}
                 >
@@ -109,7 +111,7 @@ function WineTable({ wines, linkContext, onWineLinked, onDeleted }) {
                     <span key={region.id || regionIndex}>
                       {regionIndex > 0 && ", "}
                       <Link
-                        to={`/regions/${region.slug}`}
+                        to={returnToLink(`/regions/${region.slug}`)}
                         className="grapes-table__link"
                         onClick={(e) => e.stopPropagation()}
                       >
@@ -125,7 +127,7 @@ function WineTable({ wines, linkContext, onWineLinked, onDeleted }) {
                     <span key={grape.id || grapeIndex}>
                       {grapeIndex > 0 && ", "}
                       <Link
-                        to={`/grapes/${grape.slug}`}
+                        to={returnToLink(`/grapes/${grape.slug}`)}
                         className="grapes-table__link"
                         onClick={(e) => e.stopPropagation()}
                       >

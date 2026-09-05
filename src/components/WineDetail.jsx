@@ -15,6 +15,8 @@ function RichComment({ html }) {
   );
 }
 import ReviewForm from "./ReviewForm";
+import BackToSource from "./BackToSource";
+import { useReturnToLink } from "../hooks/useReturnToLink";
 
 function timeAgo(dateStr) {
   if (!dateStr) return null;
@@ -42,6 +44,7 @@ function WineDetail() {
   const { slug } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const returnToLink = useReturnToLink();
   // Super Users, Reviewers and Editors may edit or delete wines.
   const canManageWines = canManageWinesRole(user);
   const [wine, setWine] = useState(null);
@@ -180,6 +183,7 @@ function WineDetail() {
 
   return (
     <div className="wine-app">
+      <BackToSource />
       <Link to="/wines" className="wine-detail__back">
         &larr; Back to Wines
       </Link>
@@ -210,7 +214,7 @@ function WineDetail() {
         <li>
           <strong>Producer:</strong>{" "}
           {wine.producer ? (
-            <Link to={`/producers/${wine.producer.slug}`}>
+            <Link to={returnToLink(`/producers/${wine.producer.slug}`)}>
               {wine.producer.name}
             </Link>
           ) : (
@@ -222,7 +226,7 @@ function WineDetail() {
           {Array.isArray(wine.categories) && wine.categories.length > 0 ? (
             wine.categories.map((cat, i) => (
               <span key={cat.id}>
-                <Link to={`/categories/${cat.slug}`}>{cat.name}</Link>
+                <Link to={returnToLink(`/categories/${cat.slug}`)}>{cat.name}</Link>
                 {i < wine.categories.length - 1 ? ", " : ""}
               </span>
             ))
@@ -255,7 +259,7 @@ function WineDetail() {
             ? wine.grapes.map((grape, grapeIndex) => (
                 <span key={grape.id || grapeIndex}>
                   {grapeIndex > 0 && ", "}
-                  <Link to={`/grapes/${grape.slug}`}>{grape.name}</Link>
+                  <Link to={returnToLink(`/grapes/${grape.slug}`)}>{grape.name}</Link>
                 </span>
               ))
             : "—"}
@@ -266,7 +270,7 @@ function WineDetail() {
             ? wine.regions.map((region, regionIndex) => (
                 <span key={region.id || regionIndex}>
                   {regionIndex > 0 && ", "}
-                  <Link to={`/regions/${region.slug}`}>{region.name}</Link>
+                  <Link to={returnToLink(`/regions/${region.slug}`)}>{region.name}</Link>
                 </span>
               ))
             : "—"}

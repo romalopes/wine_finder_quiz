@@ -60,6 +60,11 @@ function Articles() {
     perPage: 20,
     enabled: Boolean(selectedCategory),
   });
+  // When the selected category changes, hide the add form (user navigated away).
+  useEffect(() => {
+    setShowForm(false);
+  }, [selectedCategory]);
+
   const loading = feed.loading;
   const [showForm, setShowForm] = useState(false);
   const [scope, setScope] = useState("all"); // "all" | "mine"

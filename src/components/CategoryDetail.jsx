@@ -6,9 +6,12 @@ import ReviewTable from "./ReviewTable";
 import ArticleTable from "./ArticleTable";
 import Pagination from "./Pagination";
 import usePagedList from "../hooks/usePagedList";
+import BackToSource from "./BackToSource";
+import { useReturnToLink } from "../hooks/useReturnToLink";
 
 function CategoryDetail() {
   const { slug } = useParams();
+  const returnToLink = useReturnToLink();
   const [category, setCategory] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -59,6 +62,7 @@ function CategoryDetail() {
 
   return (
     <div className="wine-app">
+      <BackToSource />
       <Link to="/categories" className="wine-detail__back">
         &larr; Back to Categories
       </Link>

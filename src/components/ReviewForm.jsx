@@ -1,5 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { reviewsApi, imagesApi, categoriesApi, winesApi } from "../services/api";
+import {
+  reviewsApi,
+  imagesApi,
+  categoriesApi,
+  winesApi,
+} from "../services/api";
 import ImageManager from "./ImageManager";
 import RichTextEditor from "./RichTextEditor";
 
@@ -17,7 +22,7 @@ function ReviewForm({
 
   // Auto-generated title: "Review of {Wine} - {Year|NV}" (create only).
   const autoTitle = wineName
-    ? `Review of ${wineName} - ${vintageNoVintage ? "NV" : vintageYear || "NV"}`
+    ? `${wineName} ${vintageNoVintage ? "NV" : vintageYear || "NV"}`
     : "";
   const titleEditedRef = useRef(Boolean(review?.title));
 
@@ -220,26 +225,29 @@ function ReviewForm({
                 placeholder="Search for a wine…"
                 autoFocus
               />
-              {wineResults !== null && wineResults.length > 0 && !pickedWine && (
-                <div className="review-list">
-                  {wineResults.map((wine) => (
-                    <button
-                      key={wine.slug}
-                      type="button"
-                      className="review-card"
-                      onClick={() => pickWine(wine)}
-                    >
-                      <div className="review-card__top">
-                        <strong>{wine.name}</strong>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
+              {wineResults !== null &&
+                wineResults.length > 0 &&
+                !pickedWine && (
+                  <div className="review-list">
+                    {wineResults.map((wine) => (
+                      <button
+                        key={wine.slug}
+                        type="button"
+                        className="review-card"
+                        onClick={() => pickWine(wine)}
+                      >
+                        <div className="review-card__top">
+                          <strong>{wine.name}</strong>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
               {pickedWine && (
                 <>
                   <p className="wine-management__empty-state">
-                    Reviewing <strong>{pickedWine.name}</strong> — choose a vintage.
+                    Reviewing <strong>{pickedWine.name}</strong> — choose a
+                    vintage.
                   </p>
                   <div className="review-list">
                     {(pickedWine.vintages || []).map((vintage) => (
@@ -250,7 +258,9 @@ function ReviewForm({
                         onClick={() => pickVintage(vintage)}
                       >
                         <div className="review-card__top">
-                          <strong>{vintage.no_vintage ? "NV" : vintage.year}</strong>
+                          <strong>
+                            {vintage.no_vintage ? "NV" : vintage.year}
+                          </strong>
                         </div>
                       </button>
                     ))}

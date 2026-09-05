@@ -7,6 +7,8 @@ import WineTable from "./WineTable";
 import ProducerTable from "./ProducerTable";
 import Pagination from "./Pagination";
 import usePagedList from "../hooks/usePagedList";
+import BackToSource from "./BackToSource";
+import { useReturnToLink } from "../hooks/useReturnToLink";
 
 function typeLabel(region) {
   const labels = [];
@@ -18,6 +20,7 @@ function typeLabel(region) {
 function RegionDetail() {
   const { slug } = useParams();
   const { user } = useAuth();
+  const returnToLink = useReturnToLink();
   const canManage = isSuperUser(user) || canManageGrapes(user);
   // Super Users, Reviewers and Editors may link wines to this region.
   const canManageWines = canManageWinesRole(user);
@@ -120,6 +123,7 @@ function RegionDetail() {
     return (
       <div className="grapes-page">
         {error && <div className="flash flash--alert">{error}</div>}
+        <BackToSource />
         <Link to="/regions" className="back-link">
           &larr; Back to regions
         </Link>
@@ -163,7 +167,7 @@ function RegionDetail() {
             {index > 0 && " → "}
             {item.flag_emoji && <span className="region-detail__flag">{item.flag_emoji} </span>}
             <Link
-              to={item.type === "country" ? `/countries/${region.country.slug}` : `/regions/${item.slug}`}
+              to={returnToLink(item.type === "country" ? `/countries/${region.country.slug}` : `/regions/${item.slug}`)}
               className="region-detail__path-link"
             >
               {item.name}
