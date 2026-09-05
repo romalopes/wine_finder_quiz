@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
-import { Link, useParams, useNavigate } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { categoriesApi, winesApi, reviewsApi, articlesApi } from "../services/api";
 import WineTable from "./WineTable";
+import ReviewTable from "./ReviewTable";
+import ArticleTable from "./ArticleTable";
 import Pagination from "./Pagination";
 import usePagedList from "../hooks/usePagedList";
 
 function CategoryDetail() {
   const { slug } = useParams();
-  const navigate = useNavigate();
   const [category, setCategory] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -101,62 +102,26 @@ function CategoryDetail() {
         </h2>
         {reviews.loading ? (
           <p className="wine-management__loading">Loading reviews…</p>
-        ) : reviews.items.length > 0 ? (
-          <>
-            <table className="grapes-table producers-table">
-              <thead>
-                <tr>
-                  <th>Score</th>
-                  <th>Wine</th>
-                  <th>Vintage</th>
-                  <th>Reviewer</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {reviews.items.map((review, index) => (
-                  <tr
-                    key={review.id}
-                    className={
-                      index % 2 === 0 ? "grapes-row--even" : "grapes-row--odd"
-                    }
-                    onClick={() => navigate(`/reviews/${review.slug}`)}
-                    style={{ cursor: "pointer" }}
-                  >
-                    <td>
-                      <strong>{review.score ?? "—"}</strong>
-                    </td>
-                    <td>
-                      {review.wine_slug ? (
-                        <Link
-                          to={`/wines/${review.wine_slug}`}
-                          className="grapes-table__link"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          {review.wine_name}
-                        </Link>
-                      ) : (
-                        "—"
-                      )}
-                    </td>
-                    <td>{review.vintage_year ?? "—"}</td>
-                    <td>{review.reviewer_name || "—"}</td>
-                    <td>{review.status || "—"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            <Pagination
-              page={reviews.page}
-              totalPages={reviews.totalPages}
-              totalCount={reviews.totalCount}
-              onPageChange={reviews.setPage}
-            />
-          </>
         ) : (
-          <p className="wine-management__empty-state">
-            No reviews in this category yet.
-          </p>
+          <>
+            <ReviewTable
+              reviews={reviews.items}
+              linkContext={
+                category
+                  ? { type: "category", id: category.id, name: category.name }
+                  : null
+              }
+              onReviewLinked={() => reviews.reload()}
+            />
+            {reviews.items.length > 0 && (
+              <Pagination
+                page={reviews.page}
+                totalPages={reviews.totalPages}
+                totalCount={reviews.totalCount}
+                onPageChange={reviews.setPage}
+              />
+            )}
+          </>
         )}
       </section>
       </section>
@@ -167,58 +132,26 @@ function CategoryDetail() {
         </h2>
         {articles.loading ? (
           <p className="wine-management__loading">Loading articles…</p>
-        ) : articles.items.length > 0 ? (
-          <>
-            <table className="grapes-table producers-table">
-              <thead>
-                <tr>
-                  <th>Title</th>
-                  <th>Author</th>
-                  <th>Status</th>
-                  <th>Published</th>
-                </tr>
-              </thead>
-              <tbody>
-                {articles.items.map((article, index) => (
-                  <tr
-                    key={article.id}
-                    className={
-                      index % 2 === 0 ? "grapes-row--even" : "grapes-row--odd"
-                    }
-                    onClick={() => navigate(`/articles/${article.slug}`)}
-                    style={{ cursor: "pointer" }}
-                  >
-                    <td>
-                      <Link
-                        to={`/articles/${article.slug}`}
-                        className="grapes-table__link"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        {article.title}
-                      </Link>
-                    </td>
-                    <td>{article.author || "—"}</td>
-                    <td>{article.status || "—"}</td>
-                    <td>
-                      {article.published_at
-                        ? article.published_at.slice(0, 10)
-                        : "—"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            <Pagination
-              page={articles.page}
-              totalPages={articles.totalPages}
-              totalCount={articles.totalCount}
-              onPageChange={articles.setPage}
-            />
-          </>
         ) : (
-          <p className="wine-management__empty-state">
-            No articles in this category yet.
-          </p>
+          <>
+            <ArticleTable
+              articles={articles.items}
+              linkContext={
+                category
+                  ? { type: "category", id: category.id, name: category.name }
+                  : null
+              }
+              onArticleLinked={() => articles.reload()}
+            />
+            {articles.items.length > 0 && (
+              <Pagination
+                page={articles.page}
+                totalPages={articles.totalPages}
+                totalCount={articles.totalCount}
+                onPageChange={articles.setPage}
+              />
+            )}
+          </>
         )}
       </section>
     </div>

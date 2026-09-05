@@ -437,6 +437,20 @@ export const categoriesApi = {
       body: { producer_id: producerId },
     });
   },
+  linkReview(id, reviewId) {
+    return request(`/categories/${id}/link_review`, {
+      method: "POST",
+      auth: true,
+      body: { review_id: reviewId },
+    });
+  },
+  linkArticle(id, articleId) {
+    return request(`/categories/${id}/link_article`, {
+      method: "POST",
+      auth: true,
+      body: { article_id: articleId },
+    });
+  },
 };
 
 export const grapesApi = {
