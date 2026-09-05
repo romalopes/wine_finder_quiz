@@ -6,7 +6,11 @@ import { categoriesApi } from "../services/api";
 
 function NavDropdown({ label, items }) {
   const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
   const location = useLocation();
+  // The first item is always the "All {Type}" link — clicking the dropdown
+  // header navigates straight there.
+  const allPath = items[0]?.to;
   return (
     <div
       className="settings-menu"
@@ -18,7 +22,7 @@ function NavDropdown({ label, items }) {
         className="settings-menu__toggle"
         aria-haspopup="true"
         aria-expanded={open}
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => allPath && navigate(allPath)}
       >
         {label}
       </button>
@@ -96,11 +100,6 @@ function Header() {
           encodeURIComponent(c.name),
       }));
 
-    // Add "All {Type}" as the first item (unfiltered list).
-    const collection = `/${type}s`;
-    const allLabel = `All ${type.charAt(0).toUpperCase() + type.slice(1)}s`;
-    categoryLinks.unshift({ label: allLabel, to: collection });
-
     // Add Uncategorised as the last item if there are any
     if (uncategorisedCount > 0) {
       categoryLinks.push({
@@ -152,14 +151,20 @@ function Header() {
         <NavDropdown
           label="Reviews"
           items={[
-            { label: `All Reviews (${counts.totals?.review || 0})`, to: "/reviews" },
+            {
+              label: `All Reviews (${counts.totals?.review || 0})`,
+              to: "/reviews",
+            },
             ...navCategories("for_review", "sort_order_review"),
           ]}
         />
         <NavDropdown
           label="Articles"
           items={[
-            { label: `All Articles (${counts.totals?.article || 0})`, to: "/articles" },
+            {
+              label: `All Articles (${counts.totals?.article || 0})`,
+              to: "/articles",
+            },
             ...navCategories("for_article", "sort_order_article"),
           ]}
         />
@@ -216,12 +221,18 @@ function Header() {
                   </NavLink>
                 )}
                 {isAdmin && (
-                  <NavLink to="/admin/api-health" onClick={() => setSettingsOpen(false)}>
+                  <NavLink
+                    to="/admin/api-health"
+                    onClick={() => setSettingsOpen(false)}
+                  >
                     API Health
                   </NavLink>
                 )}
                 {isAdmin && (
-                  <NavLink to="/subscriptions" onClick={() => setSettingsOpen(false)}>
+                  <NavLink
+                    to="/subscriptions"
+                    onClick={() => setSettingsOpen(false)}
+                  >
                     Subscriptions
                   </NavLink>
                 )}
