@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { winesApi, categoriesApi } from "../services/api";
-import { useCategoryOrder, sortCategoryNames } from "../hooks/useCategoryOrder";
 import { useSelectedCategory } from "../hooks/useSelectedCategory";
 import { useAuth } from "../contexts/AuthContext";
 import { canManageWinesRole } from "../constants/roles";
@@ -12,11 +11,10 @@ function WineList() {
   const { user } = useAuth();
   // Super Users, Reviewers and Editors may add, edit or delete wines.
   const canManageWines = canManageWinesRole(user);
-  const [wines, setWines] = useState([]);
+  const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
-  const categoryOrder = useCategoryOrder("sort_order_wine");
   const [searchParams] = useSearchParams();
   const selectedProducer = searchParams.get("producer");
   const selectedCategory = useSelectedCategory();
@@ -55,21 +53,21 @@ function WineList() {
     enabled: Boolean(selectedCategory),
   });
 
-  // Load all wines for the grouped-by-category view (no category selected).
+  // Load server-side grouped wines (12 per category) for the no-category view.
   useEffect(() => {
     if (!selectedCategory) {
-      loadWines();
+      loadGroups();
     } else {
       setLoading(false);
     }
   }, [selectedCategory]);
 
-  async function loadWines() {
+  async function loadGroups() {
     try {
       setLoading(true);
       setError(null);
-      const data = await winesApi.list();
-      setWines(Array.isArray(data) ? data : []);
+      const data = await winesApi.grouped();
+      setGroups(Array.isArray(data) ? data : []);
     } catch (err) {
       setError(err.message || "Failed to load wines");
     } finally {
@@ -89,7 +87,8 @@ function WineList() {
       if (selectedCategory) {
         pagedWines.reload();
       } else {
-        setWines((prev) => prev.filter((w) => w.slug !== wine.slug));
+        // Re-fetch the grouped view (cheap: only 12 per category).
+        loadGroups();
       }
     } catch (err) {
       alert(err.message || "Failed to delete wine");
@@ -108,7 +107,7 @@ function WineList() {
     return (
       <div className="wine-app">
         <p className="wine-management__error">{error}</p>
-        <button className="auth-form__submit" onClick={loadWines}>
+        <button className="auth-form__submit" onClick={loadGroups}>
           Retry
         </button>
       </div>
@@ -203,10 +202,10 @@ function WineList() {
                   {wine.sparkling && (
                     <p className="wine-management__sparkling">✨ Sparkling</p>
                   )}
-                  {wine.vintages && wine.vintages.length > 0 && (
+                  {wine.vintages_count > 0 && (
                     <p className="wine-management__vintage-count">
-                      {wine.vintages.length} vintage
-                      {wine.vintages.length !== 1 ? "s" : ""}
+                      {wine.vintages_count} vintage
+                      {wine.vintages_count !== 1 ? "s" : ""}
                     </p>
                   )}
                   {canManageWines && (
@@ -259,7 +258,7 @@ function WineList() {
         )}
       </div>
 
-      {wines.length === 0 ? (
+      {groups.length === 0 ? (
         <div className="wine-management__empty">
           <p>
             No wines found
@@ -272,128 +271,108 @@ function WineList() {
           )}
         </div>
       ) : (
-        (() => {
-          // Group wines by category
-          const grouped = wines.reduce((acc, wine) => {
-            const key = wine.category || "Uncategorised";
-            if (!acc[key]) acc[key] = [];
-            acc[key].push(wine);
-            return acc;
-          }, {});
-
-          // Sort categories: by admin-defined sort order, Uncategorised last
-          const sortedCategories = sortCategoryNames(
-            Object.keys(grouped),
-            categoryOrder,
-          );
-
-          return (
-            <div className="content-grid-groups">
-              {sortedCategories.map((category) => (
-                <section key={category} className="content-grid-group">
-                  <h2 className="content-grid-group__title">
-                    {category}
-                    <Link
-                      className="group-show-all"
-                      to={`/wines?category=${encodeURIComponent(category)}`}
-                    >
-                      Show all ({grouped[category].length})
-                    </Link>
-                  </h2>
-                  <div className="content-grid">
-                    {grouped[category].slice(0, 12).map((wine) => (
-                      <div
-                        key={wine.slug}
-                        className="wine-management__card"
-                        onClick={() => navigate(`/wines/${wine.slug}`)}
-                        role="button"
-                        tabIndex={0}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" || e.key === " ") {
-                            e.preventDefault();
-                            navigate(`/wines/${wine.slug}`);
-                          }
-                        }}
+        <div className="content-grid-groups">
+          {groups.map((group) => (
+            <section key={group.category} className="content-grid-group">
+              <h2 className="content-grid-group__title">
+                {group.category}
+                <Link
+                  className="group-show-all"
+                  to={`/wines?category=${encodeURIComponent(group.category)}`}
+                >
+                  Show all ({group.count})
+                </Link>
+              </h2>
+              <div className="content-grid">
+                {group.wines.map((wine) => (
+                  <div
+                    key={wine.slug}
+                    className="wine-management__card"
+                    onClick={() => navigate(`/wines/${wine.slug}`)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        navigate(`/wines/${wine.slug}`);
+                      }
+                    }}
+                  >
+                    {Array.isArray(wine.images) &&
+                      wine.images.length > 0 && (
+                        <img
+                          src={wine.images[0]}
+                          alt={wine.name}
+                          className="wine-management__thumb"
+                        />
+                      )}
+                    <div className="wine-management__card-header">
+                      <h3>{wine.name}</h3>
+                      <span
+                        className={`wine-management__color-badge wine-management__color-badge--${wine.color}`}
                       >
-                        {Array.isArray(wine.images) &&
-                          wine.images.length > 0 && (
-                            <img
-                              src={wine.images[0]}
-                              alt={wine.name}
-                              className="wine-management__thumb"
-                            />
-                          )}
-                        <div className="wine-management__card-header">
-                          <h3>{wine.name}</h3>
-                          <span
-                            className={`wine-management__color-badge wine-management__color-badge--${wine.color}`}
-                          >
-                            {wine.color}
-                          </span>
-                        </div>
-                        {wine.producer && (
-                          <p className="wine-management__producer">
-                            {wine.producer.name}
-                          </p>
-                        )}
-                        {Array.isArray(wine.grapes) &&
-                          wine.grapes.length > 0 && (
-                            <p className="wine-management__grapes">
-                              <strong>Grapes:</strong>{" "}
-                              {wine.grapes
-                                .slice(0, 3)
-                                .map((g) => g.name)
-                                .join(", ")}
-                              {wine.grapes.length > 3 ? "…" : ""}
-                            </p>
-                          )}
-                        {Array.isArray(wine.regions) &&
-                          wine.regions.length > 0 && (
-                            <p className="wine-management__regions">
-                              <strong>Regions:</strong>{" "}
-                              {wine.regions
-                                .slice(0, 3)
-                                .map((r) => (r.name ? r.name : r))
-                                .join(", ")}
-                              {wine.regions.length > 3 ? "…" : ""}
-                            </p>
-                          )}
-                        {wine.sparkling && (
-                          <p className="wine-management__sparkling">
-                            ✨ Sparkling
-                          </p>
-                        )}
-                        {wine.vintages && wine.vintages.length > 0 && (
-                          <p className="wine-management__vintage-count">
-                            {wine.vintages.length} vintage
-                            {wine.vintages.length !== 1 ? "s" : ""}
-                          </p>
-                        )}
-                        {canManageWines && (
-                          <div className="wine-management__card-actions">
-                            <Link
-                              to={`/wines/${wine.slug}/edit`}
-                              className="wine-management__edit-btn"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              Edit
-                            </Link>
-                            <button
-                              className="wine-management__delete-btn"
-                              onClick={(e) => handleDelete(wine, e)}
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        )}
+                        {wine.color}
+                      </span>
+                    </div>
+                    {wine.producer && (
+                      <p className="wine-management__producer">
+                        {wine.producer.name}
+                      </p>
+                    )}
+                    {Array.isArray(wine.grapes) &&
+                      wine.grapes.length > 0 && (
+                        <p className="wine-management__grapes">
+                          <strong>Grapes:</strong>{" "}
+                          {wine.grapes
+                            .slice(0, 3)
+                            .map((g) => g.name)
+                            .join(", ")}
+                          {wine.grapes.length > 3 ? "…" : ""}
+                        </p>
+                      )}
+                    {Array.isArray(wine.regions) &&
+                      wine.regions.length > 0 && (
+                        <p className="wine-management__regions">
+                          <strong>Regions:</strong>{" "}
+                          {wine.regions
+                            .slice(0, 3)
+                            .map((r) => (r.name ? r.name : r))
+                            .join(", ")}
+                          {wine.regions.length > 3 ? "…" : ""}
+                        </p>
+                      )}
+                    {wine.sparkling && (
+                      <p className="wine-management__sparkling">✨ Sparkling</p>
+                    )}
+                    {wine.vintages_count > 0 && (
+                      <p className="wine-management__vintage-count">
+                        {wine.vintages_count} vintage
+                        {wine.vintages_count !== 1 ? "s" : ""}
+                      </p>
+                    )}
+                    {canManageWines && (
+                      <div className="wine-management__card-actions">
+                        <Link
+                          to={`/wines/${wine.slug}/edit`}
+                          className="wine-management__edit-btn"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          Edit
+                        </Link>
+                        <button
+                          className="wine-management__delete-btn"
+                          onClick={(e) => handleDelete(wine, e)}
+                        >
+                          Delete
+                        </button>
                       </div>
-                    ))}
+                    )}
                   </div>
-                </section>
-              ))}
-            </div>
-          );
-        })()
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
       )}
     </div>
   );

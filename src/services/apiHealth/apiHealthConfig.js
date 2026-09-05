@@ -135,6 +135,57 @@ export const API_CHECKS = [
     url: "/wines",
     latencyThresholds: { excellent: 300, good: 700, slow: 1500 },
   }),
+  listCheck({
+    id: "wines-grouped",
+    category: API_CATEGORIES.WINES,
+    name: "Grouped Wines (12 per category)",
+    url: "/wines/grouped",
+    latencyThresholds: { excellent: 300, good: 700, slow: 1500 },
+    validate: (data) =>
+      isValidArray(data) &&
+      data.every(
+        (g) =>
+          typeof g.category === "string" &&
+          typeof g.count === "number" &&
+          isValidArray(g.wines),
+      ),
+    describeFailure: () =>
+      "Expected an array of { category, count, wines } objects",
+  }),
+  listCheck({
+    id: "reviews-grouped",
+    category: API_CATEGORIES.REVIEWS,
+    name: "Grouped Reviews (12 per category)",
+    url: "/reviews/grouped",
+    latencyThresholds: { excellent: 300, good: 700, slow: 1500 },
+    validate: (data) =>
+      isValidArray(data) &&
+      data.every(
+        (g) =>
+          typeof g.category === "string" &&
+          typeof g.count === "number" &&
+          isValidArray(g.reviews),
+      ),
+    describeFailure: () =>
+      "Expected an array of { category, count, reviews } objects",
+  }),
+  listCheck({
+    id: "articles-grouped",
+    category: API_CATEGORIES.ARTICLES,
+    name: "Grouped Articles (12 per category)",
+    url: "/articles/grouped",
+    latencyThresholds: { excellent: 300, good: 700, slow: 1500 },
+    validate: (data) =>
+      isValidArray(data) &&
+      data.every(
+        (g) =>
+          typeof g.category === "string" &&
+          typeof g.count === "number" &&
+          isValidArray(g.articles),
+      ),
+    describeFailure: () =>
+      "Expected an array of { category, count, articles } objects",
+  }),
   // Free and paid plans are just rows of the same public list, so a single
   // check validates both the payload shape and that features are exposed.
   listCheck({

@@ -74,13 +74,17 @@ function Articles() {
   const loadArticles = feed.reload;
 
   // All articles, loaded once when no category is selected (grouped view).
-  const [allArticles, setAllArticles] = useState([]);
-  async function loadAllArticles() {
+  const [groups, setGroups] = useState([]);
+  const [loadingGroups, setLoadingGroups] = useState(false);
+  async function loadGroups() {
     try {
-      const data = await articlesApi.list();
-      setAllArticles(Array.isArray(data) ? data : []);
+      setLoadingGroups(true);
+      const data = await articlesApi.grouped();
+      setGroups(Array.isArray(data) ? data : []);
     } catch {
-      setAllArticles([]);
+      setGroups([]);
+    } finally {
+      setLoadingGroups(false);
     }
   }
 
@@ -88,7 +92,7 @@ function Articles() {
   // the full grouped list otherwise).
   const reloadArticles = () => {
     if (selectedCategory) loadArticles();
-    else loadAllArticles();
+    else loadGroups();
   };
 
   const loadMyArticles = useCallback(async () => {
@@ -242,11 +246,11 @@ function Articles() {
                   ? myArticles
                   : selectedCategory
                     ? feed.items
-                    : allArticles;
+                    : groups.flatMap((g) => g.articles);
               const filtered = (
                 effectiveStatus === "all"
                   ? source
-                  : source.filter((a) => a.status === effectiveStatus)
+                  : source.filter((a) => a?.status === effectiveStatus)
               ).filter((a) => {
                 if (!selectedCategory) return true;
                 const catNames = Array.isArray(a.categories)

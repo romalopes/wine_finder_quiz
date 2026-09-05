@@ -137,6 +137,10 @@ export const winesApi = {
     const query = params ? buildQuery(params) : "";
     return request(`/wines${query}`, { auth: false });
   },
+  grouped(params) {
+    const query = params ? buildQuery(params) : "";
+    return request(`/wines/grouped${query}`, { auth: false });
+  },
   search(query) {
     return request(`/wines/search?q=${encodeURIComponent(query)}`, {
       auth: true,
@@ -346,6 +350,10 @@ export const reviewsApi = {
   myReviews() {
     return request("/reviews/my_reviews", { auth: true });
   },
+  grouped(params) {
+    const query = params ? buildQuery(params) : "";
+    return request(`/reviews/grouped${query}`, { auth: true });
+  },
 };
 
 export const articlesApi = {
@@ -380,6 +388,10 @@ export const articlesApi = {
       method: "DELETE",
       auth: true,
     });
+  },
+  grouped(params) {
+    const query = params ? buildQuery(params) : "";
+    return request(`/articles/grouped${query}`, { auth: true });
   },
 };
 

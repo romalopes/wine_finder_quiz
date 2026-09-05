@@ -116,13 +116,17 @@ function Reviews() {
   const loadReviews = feed.reload;
 
   // All reviews, loaded once when no category is selected (grouped view).
-  const [allReviews, setAllReviews] = useState([]);
-  async function loadAllReviews() {
+  const [groups, setGroups] = useState([]);
+  const [loadingGroups, setLoadingGroups] = useState(false);
+  async function loadGroups() {
     try {
-      const data = await reviewsApi.all();
-      setAllReviews(Array.isArray(data) ? data : []);
+      setLoadingGroups(true);
+      const data = await reviewsApi.grouped();
+      setGroups(Array.isArray(data) ? data : []);
     } catch {
-      setAllReviews([]);
+      setGroups([]);
+    } finally {
+      setLoadingGroups(false);
     }
   }
 
@@ -130,7 +134,7 @@ function Reviews() {
   // the full grouped list otherwise).
   const reloadReviews = () => {
     if (selectedCategory) loadReviews();
-    else loadAllReviews();
+    else loadGroups();
   };
 
   async function loadMyReviews() {
@@ -583,7 +587,7 @@ function Reviews() {
             )}
 
             <ReviewsList
-              reviews={scope === "mine" ? myReviews : (selectedCategory ? feed.items : allReviews)}
+              reviews={scope === "mine" ? myReviews : (selectedCategory ? feed.items : groups.flatMap((g) => g.reviews || []))}
               scope={scope}
               user={user}
               statusFilter={canManageContent ? statusFilter : "published"}
@@ -631,7 +635,7 @@ function ReviewsList({
   const filtered = (
     statusFilter === "all"
       ? reviews
-      : reviews.filter((r) => r.status === statusFilter)
+      : reviews.filter((r) => r?.status === statusFilter)
   ).filter((r) => {
     if (!selectedCategory) return true;
     const catNames = Array.isArray(r.categories)

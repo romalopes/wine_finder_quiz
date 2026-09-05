@@ -138,9 +138,9 @@ function WineTable({ wines, linkContext, onWineLinked, onDeleted }) {
                 : "—"}
             </td>
             <td>
-              {Array.isArray(wine.vintages) && wine.vintages.length > 0
-                ? `${wine.vintages.length} vintage${
-                    wine.vintages.length !== 1 ? "s" : ""
+              {wine.vintages_count > 0
+                ? `${wine.vintages_count} vintage${
+                    wine.vintages_count !== 1 ? "s" : ""
                   }`
                 : "—"}
             </td>

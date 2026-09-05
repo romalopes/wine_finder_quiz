@@ -35,12 +35,15 @@ function WineForm() {
     prompt: "",
     producer_id: "",
     producer_name: "",
+    designation_name: "",
     category_ids: [],
+    fortified: false,
     sparkling: false,
   });
 
   const [selectedGrapes, setSelectedGrapes] = useState([]);
   const [selectedRegions, setSelectedRegions] = useState([]);
+  const [autoName, setAutoName] = useState(true);
 
   const [wineCategories, setWineCategories] = useState([]);
   const [vintages, setVintages] = useState([]);
@@ -96,11 +99,14 @@ function WineForm() {
             prompt: wineData.prompt || "",
             producer_id: wineData.producer?.id || "",
             producer_name: wineData.producer?.name || "",
+            designation_name: wineData.designation_name || "",
             category_ids: (wineData.categories || []).map((c) => c.id),
             sparkling: Boolean(wineData.sparkling),
+            fortified: Boolean(wineData.fortified),
           });
 
           setSelectedGrapes(wineData.grapes || []);
+          setAutoName(false);
           setSelectedRegions(wineData.regions || []);
 
           setVintages(
@@ -141,7 +147,24 @@ function WineForm() {
     initFormData();
   }, [slug, isEditing]);
 
+  useEffect(() => {
+    if (!autoName) return;
+    const producer = (formData.producer_name || "").trim();
+    const designation = (formData.designation_name || "").trim();
+    const grape = (selectedGrapes[0] || {}).name;
+    const grapeName = grape ? grape.trim() : "";
+    const parts = [producer, designation, grapeName].filter(Boolean);
+    const computed = parts.join(" ");
+    setFormData((prev) => ({ ...prev, name: computed }));
+  }, [
+    formData.producer_name,
+    formData.designation_name,
+    selectedGrapes,
+    autoName,
+  ]);
+
   function handleChange(e) {
+    if (e.target.name === "name" && autoName) setAutoName(false);
     const target = e.target;
     const value = target.type === "checkbox" ? target.checked : target.value;
     setFormData((prev) => ({ ...prev, [target.name]: value }));
@@ -212,6 +235,7 @@ function WineForm() {
           : null,
         category_ids: formData.category_ids || [],
         sparkling: Boolean(formData.sparkling),
+        fortified: Boolean(formData.fortified),
         grape_ids: selectedGrapes.map((g) => g.id),
         region_ids: selectedRegions.map((r) => r.id),
         vintages_attributes: vintages.map((v) => {
@@ -272,6 +296,28 @@ function WineForm() {
       {error && <p className="auth-form__error">{error}</p>}
       <form onSubmit={handleSubmit} className="wine-form">
         <div className="wine-form__fields">
+          <div className="auth-form__field">
+            <ProducerSearch
+              value={formData.producer_name}
+              onChange={handleProducerChange}
+            />
+          </div>
+          <label className="auth-form__field">
+            <span>Designation Name</span>
+            <input
+              type="text"
+              name="designation_name"
+              value={formData.designation_name}
+              onChange={handleChange}
+              placeholder="e.g. Reserve"
+            />
+          </label>
+          <div className="auth-form__field">
+            <GrapeSearch
+              selected={selectedGrapes}
+              onChange={setSelectedGrapes}
+            />
+          </div>
           <label className="auth-form__field">
             <span>Name *</span>
             <input
@@ -280,21 +326,20 @@ function WineForm() {
               value={formData.name}
               onChange={handleChange}
               required
-              placeholder="e.g. Château Margaux"
+              readOnly={autoName}
             />
           </label>
-          <div className="auth-form__field">
-            <ProducerSearch
-              value={formData.producer_name}
-              onChange={handleProducerChange}
+          <label
+            className="auth-form__field"
+            style={{ display: "flex", alignItems: "center", gap: 6 }}
+          >
+            <input
+              type="checkbox"
+              checked={autoName}
+              onChange={() => setAutoName(autoName ? false : true)}
             />
-          </div>
-          <div className="auth-form__field">
-            <GrapeSearch
-              selected={selectedGrapes}
-              onChange={setSelectedGrapes}
-            />
-          </div>
+            <span>Auto-generate name</span>
+          </label>
           <div className="auth-form__field">
             <RegionSearch
               selected={selectedRegions}
@@ -309,6 +354,15 @@ function WineForm() {
               onChange={handleChange}
             />
             <span>Sparkling ✨</span>
+          </label>
+          <label className="auth-form__field auth-form__field--checkbox">
+            <input
+              type="checkbox"
+              name="fortified"
+              checked={formData.fortified}
+              onChange={handleChange}
+            />
+            <span>Fortified 🍷</span>
           </label>
           <div className="auth-form__field">
             <span>Categories</span>

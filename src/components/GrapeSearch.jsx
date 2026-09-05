@@ -44,7 +44,7 @@ function GrapeSearch({ selected, onChange }) {
 
   return (
     <div className="producer-search">
-      <span>Grapes</span>
+      <span>Variaties</span>
       {selected.length > 0 && (
         <div className="grape-search__selected">
           {selected.map((grape) => (
@@ -83,7 +83,8 @@ function GrapeSearch({ selected, onChange }) {
               {grape.color && <span> ({grape.color})</span>}
               {Array.isArray(grape.synonyms) && grape.synonyms.length > 0 && (
                 <span className="grape-search__synonyms">
-                  {" "}({grape.synonyms.join(", ")})
+                  {" "}
+                  ({grape.synonyms.join(", ")})
                 </span>
               )}
             </button>
