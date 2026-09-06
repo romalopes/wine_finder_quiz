@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { authApi } from "../services/api";
 
 const initialForm = { email: "", password: "", name: "" };
 
@@ -9,9 +10,11 @@ function Login() {
   const [mode, setMode] = useState("signIn");
   const [form, setForm] = useState(initialForm);
   const [formError, setFormError] = useState(null);
+  const [success, setSuccess] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isSignUp = mode === "signUp";
+  const isForgot = mode === "forgot";
   const navigate = useNavigate();
 
   function updateField(field) {
@@ -23,6 +26,7 @@ function Login() {
   function toggleMode(nextMode) {
     setMode(nextMode);
     setFormError(null);
+    setSuccess(null);
     setForm(initialForm);
   }
 
@@ -30,9 +34,22 @@ function Login() {
     e.preventDefault();
     setIsSubmitting(true);
     setFormError(null);
+    setSuccess(null);
 
     try {
       const { email, password, name } = form;
+
+      if (isForgot) {
+        if (!email) {
+          setFormError("Enter your account email.");
+          return;
+        }
+        const result = await authApi.forgotPassword(email);
+        setSuccess(result.message || "Reset instructions sent.");
+        setForm(initialForm);
+        return;
+      }
+
       if (!email || !password) {
         setFormError("Email and password are required.");
         return;
@@ -67,77 +84,106 @@ function Login() {
         ) : (
           <>
             <p className="wine-kicker">
-              {isSignUp ? "Create account" : "Welcome back"}
+              {isForgot ? "Account recovery" : isSignUp ? "Create account" : "Welcome back"}
             </p>
             <h1 id="auth-title">
-              {isSignUp ? "Join Wine Words" : "Sign in to Wine Words"}
+              {isForgot
+                ? "Reset your password"
+                : isSignUp
+                  ? "Join Wine Words"
+                  : "Sign in to Wine Words"}
             </h1>
             <p className="auth-card__intro">
-              {isSignUp
-                ? "Save tasting profiles, track the wines you have tried, and sync your quiz results across devices."
-                : "Access your saved tasting profiles and continue where you left off in the quiz."}
+              {isForgot
+                ? "Enter your account email and we'll send you a link to set a new password."
+                : isSignUp
+                  ? "Save tasting profiles, track the wines you have tried, and sync your quiz results across devices."
+                  : "Access your saved tasting profiles and continue where you left off in the quiz."}
             </p>
 
-            <form className="auth-form" onSubmit={handleSubmit} noValidate>
-              {isSignUp ? (
+            {success ? (
+              <p className="auth-card__status">{success}</p>
+            ) : (
+              <form className="auth-form" onSubmit={handleSubmit} noValidate>
+                {isSignUp && !isForgot ? (
+                  <label className="auth-form__field">
+                    <span>Name</span>
+                    <input
+                      autoComplete="name"
+                      name="name"
+                      onChange={updateField("name")}
+                      type="text"
+                      value={form.name}
+                    />
+                  </label>
+                ) : null}
+
                 <label className="auth-form__field">
-                  <span>Name</span>
+                  <span>Email</span>
                   <input
-                    autoComplete="name"
-                    name="name"
-                    onChange={updateField("name")}
-                    type="text"
-                    value={form.name}
+                    autoComplete="email"
+                    name="email"
+                    onChange={updateField("email")}
+                    required
+                    type="email"
+                    value={form.email}
                   />
                 </label>
-              ) : null}
 
-              <label className="auth-form__field">
-                <span>Email</span>
-                <input
-                  autoComplete="email"
-                  name="email"
-                  onChange={updateField("email")}
-                  required
-                  type="email"
-                  value={form.email}
-                />
-              </label>
+                {!isForgot ? (
+                  <label className="auth-form__field">
+                    <span>Password</span>
+                    <input
+                      autoComplete={isSignUp ? "new-password" : "current-password"}
+                      minLength={6}
+                      name="password"
+                      onChange={updateField("password")}
+                      required
+                      type="password"
+                      value={form.password}
+                    />
+                  </label>
+                ) : null}
 
-              <label className="auth-form__field">
-                <span>Password</span>
-                <input
-                  autoComplete={isSignUp ? "new-password" : "current-password"}
-                  minLength={6}
-                  name="password"
-                  onChange={updateField("password")}
-                  required
-                  type="password"
-                  value={form.password}
-                />
-              </label>
+                {formError ? (
+                  <p className="auth-form__error" role="alert">
+                    {formError}
+                  </p>
+                ) : null}
 
-              {formError ? (
-                <p className="auth-form__error" role="alert">
-                  {formError}
-                </p>
-              ) : null}
+                <button
+                  className="auth-form__submit"
+                  disabled={isSubmitting}
+                  type="submit"
+                >
+                  {isSubmitting
+                    ? "Please wait..."
+                    : isForgot
+                      ? "Send reset link"
+                      : isSignUp
+                        ? "Create account"
+                        : "Sign in"}
+                </button>
+              </form>
+            )}
 
-              <button
-                className="auth-form__submit"
-                disabled={isSubmitting}
-                type="submit"
-              >
-                {isSubmitting
-                  ? "Please wait..."
-                  : isSignUp
-                    ? "Create account"
-                    : "Sign in"}
-              </button>
-            </form>
+            {!isForgot && !isSignUp && (
+              <p className="auth-card__switch">
+                <button onClick={() => toggleMode("forgot")} type="button">
+                  Forgot your password?
+                </button>
+              </p>
+            )}
 
             <p className="auth-card__switch">
-              {isSignUp ? (
+              {isForgot ? (
+                <>
+                  Remembered it?{" "}
+                  <button onClick={() => toggleMode("signIn")} type="button">
+                    Sign in
+                  </button>
+                </>
+              ) : isSignUp ? (
                 <>
                   Already have an account?{" "}
                   <button onClick={() => toggleMode("signIn")} type="button">

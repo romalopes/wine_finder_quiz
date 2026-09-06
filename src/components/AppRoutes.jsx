@@ -3,6 +3,7 @@ import About from "./About.jsx";
 import Dashboard from "./Dashboard.jsx";
 import Home from "./Home.jsx";
 import Login from "./Login.jsx";
+import ResetPassword from "./ResetPassword.jsx";
 import Reviews from "./Reviews.jsx";
 import ReviewDetail from "./ReviewDetail.jsx";
 import Articles from "./Articles.jsx";
@@ -43,6 +44,7 @@ function AppRoutes({ user, setUser }) {
           path="/login"
           element={<Login user={user} setUser={setUser} />}
         />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route element={<Navigate replace to="/reviews" />} path="/my-reviews" />
         <Route element={<Reviews />} path="/reviews" />
         <Route element={<ReviewDetail />} path="/reviews/:slug" />

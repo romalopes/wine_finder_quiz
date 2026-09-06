@@ -81,6 +81,21 @@ export function AuthProvider({ children }) {
     [persistToken],
   );
 
+  const resetPassword = useCallback(
+    async ({ reset_password_token, password, password_confirmation }) => {
+      const result = await authApi.resetPassword({
+        reset_password_token,
+        password,
+        password_confirmation,
+      });
+      const nextToken = extractToken(result);
+      persistToken(nextToken);
+      setUser(result.user ?? null);
+      return result.user;
+    },
+    [persistToken],
+  );
+
   const refreshSession = useCallback(async () => {
     try {
       const result = await authApi.me();
@@ -111,10 +126,11 @@ export function AuthProvider({ children }) {
       loading,
       signIn,
       signUp,
+      resetPassword,
       refreshSession,
       signOut,
     }),
-    [user, token, loading, signIn, signUp, refreshSession, signOut],
+    [user, token, loading, signIn, signUp, resetPassword, refreshSession, signOut],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

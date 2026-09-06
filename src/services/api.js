@@ -107,6 +107,20 @@ export const authApi = {
   signOut() {
     return request("/auth/sign_out", { method: "DELETE", auth: true });
   },
+  forgotPassword(email) {
+    return request("/auth/password", {
+      method: "POST",
+      body: { user: { email } },
+    });
+  },
+  resetPassword({ reset_password_token, password, password_confirmation }) {
+    return request("/auth/password", {
+      method: "PATCH",
+      body: {
+        user: { reset_password_token, password, password_confirmation },
+      },
+    });
+  },
   me() {
     return request("/me", { auth: true });
   },
