@@ -18,7 +18,6 @@ function ProducerForm() {
   const [formData, setFormData] = useState({
     name: "",
     legal_name: "",
-    address: "",
     email: "",
     producer_type: "winery",
     website: "",
@@ -26,12 +25,18 @@ function ProducerForm() {
     facebook: "",
     description: "",
     phone: "",
-    city: "",
-    state: "",
-    postal_code: "",
     founded_year: "",
     active: true,
     country_id: "",
+    // Mailing address lives in its own record (producer has_one :address).
+    address: {
+      id: null,
+      street_address: "",
+      city: "",
+      state: "",
+      postal_code: "",
+      country_id: "",
+    },
   });
   const [existingLogoUrl, setExistingLogoUrl] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -46,11 +51,20 @@ function ProducerForm() {
           (c) => c.is_wine_country,
         );
         setCountries(list);
-        // Default the selection to Australia when nothing is selected yet.
+        // Default the selections to Australia when nothing is selected yet.
         setFormData((prev) => {
-          if (prev.country_id) return prev;
           const australia = list.find((c) => c.code === "AU");
-          return australia ? { ...prev, country_id: String(australia.id) } : prev;
+          const next = { ...prev };
+          if (!prev.country_id && australia) {
+            next.country_id = String(australia.id);
+          }
+          if (!prev.address.country_id && australia) {
+            next.address = {
+              ...prev.address,
+              country_id: String(australia.id),
+            };
+          }
+          return next;
         });
       })
       .catch(() => setCountries([]));
@@ -65,7 +79,6 @@ function ProducerForm() {
           setFormData({
             name: data.name || "",
             legal_name: data.legal_name || "",
-            address: data.address || "",
             email: data.email || "",
             producer_type: data.producer_type || "winery",
             website: data.website || "",
@@ -73,13 +86,20 @@ function ProducerForm() {
             facebook: data.facebook || "",
             description: data.description || "",
             phone: data.phone || "",
-            city: data.city || "",
-            state: data.state || "",
-            postal_code: data.postal_code || "",
             founded_year:
               data.founded_year != null ? String(data.founded_year) : "",
             active: data.active !== false,
             country_id: data.country?.id ? String(data.country.id) : "",
+            address: {
+              id: data.address?.id ?? null,
+              street_address: data.address?.street_address || "",
+              city: data.address?.city || "",
+              state: data.address?.state || "",
+              postal_code: data.address?.postal_code || "",
+              country_id: data.address?.country?.id
+                ? String(data.address.country.id)
+                : "",
+            },
           });
           setExistingLogoUrl(data.logo_url || null);
           setSelectedRegions(
@@ -114,6 +134,15 @@ function ProducerForm() {
     }));
   }
 
+  // Address fields live in the nested formData.address object.
+  function handleAddressChange(e) {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      address: { ...prev.address, [name]: value },
+    }));
+  }
+
   // Changing the country invalidates regions outside it — drop them.
   function handleCountryChange(e) {
     const countryId = e.target.value;
@@ -134,7 +163,6 @@ function ProducerForm() {
       const payload = {
         name: formData.name,
         legal_name: formData.legal_name || null,
-        address: formData.address || null,
         email: formData.email || null,
         producer_type: formData.producer_type || null,
         website: formData.website || null,
@@ -142,14 +170,19 @@ function ProducerForm() {
         facebook: formData.facebook || null,
         description: formData.description || null,
         phone: formData.phone || null,
-        city: formData.city || null,
-        state: formData.state || null,
-        postal_code: formData.postal_code || null,
         founded_year: formData.founded_year || null,
         active: formData.active,
         country_id: formData.country_id || null,
         region_ids: selectedRegions.map((r) => r.id),
         grape_ids: selectedGrapes.map((g) => g.id),
+        address_attributes: {
+          id: formData.address.id || undefined,
+          street_address: formData.address.street_address || null,
+          city: formData.address.city || null,
+          state: formData.address.state || null,
+          postal_code: formData.address.postal_code || null,
+          country_id: formData.address.country_id || null,
+        },
       };
 
       let result;
@@ -226,12 +259,12 @@ function ProducerForm() {
             />
           </label>
           <label className="auth-form__field">
-            <span>Address</span>
+            <span>Street address</span>
             <input
               type="text"
-              name="address"
-              value={formData.address}
-              onChange={handleChange}
+              name="street_address"
+              value={formData.address.street_address}
+              onChange={handleAddressChange}
               placeholder="e.g. 123 Vine St, Bordeaux"
             />
           </label>
@@ -240,8 +273,8 @@ function ProducerForm() {
             <input
               type="text"
               name="city"
-              value={formData.city}
-              onChange={handleChange}
+              value={formData.address.city}
+              onChange={handleAddressChange}
             />
           </label>
           <label className="auth-form__field">
@@ -249,8 +282,8 @@ function ProducerForm() {
             <input
               type="text"
               name="state"
-              value={formData.state}
-              onChange={handleChange}
+              value={formData.address.state}
+              onChange={handleAddressChange}
             />
           </label>
           <label className="auth-form__field">
@@ -258,9 +291,24 @@ function ProducerForm() {
             <input
               type="text"
               name="postal_code"
-              value={formData.postal_code}
-              onChange={handleChange}
+              value={formData.address.postal_code}
+              onChange={handleAddressChange}
             />
+          </label>
+          <label className="auth-form__field">
+            <span>Address country</span>
+            <select
+              name="country_id"
+              value={formData.address.country_id}
+              onChange={handleAddressChange}
+            >
+              {countries.map((country) => (
+                <option key={country.id} value={country.id}>
+                  {country.flag_emoji ? `${country.flag_emoji} ` : ""}
+                  {country.name}
+                </option>
+              ))}
+            </select>
           </label>
           <label className="auth-form__field">
             <span>Country</span>

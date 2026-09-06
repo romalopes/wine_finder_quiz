@@ -4,6 +4,8 @@ import { producersApi, winesApi } from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
 import { canManageWinesRole } from "../constants/roles";
 import WineTable from "./WineTable";
+import RegionSearch from "./RegionSearch";
+import GrapeSearch from "./GrapeSearch";
 import BackToSource from "./BackToSource";
 import { useReturnToLink } from "../hooks/useReturnToLink";
 
@@ -24,12 +26,26 @@ function ProducerDetail() {
   const [linking, setLinking] = useState(false);
   const [linkError, setLinkError] = useState(null);
 
+  // Region / grape link editors (search pickers + save).
+  const [regionsEditorOpen, setRegionsEditorOpen] = useState(false);
+  const [grapesEditorOpen, setGrapesEditorOpen] = useState(false);
+  const [selectedRegions, setSelectedRegions] = useState([]);
+  const [selectedGrapes, setSelectedGrapes] = useState([]);
+  const [savingLinks, setSavingLinks] = useState(false);
+
   const loadProducer = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       const data = await producersApi.show(slug);
       setProducer(data);
+      // Keep the link editors in sync with the freshly loaded producer.
+      setSelectedRegions(
+        (data.regions || []).map((r) => ({ id: r.id, name: r.name })),
+      );
+      setSelectedGrapes(
+        (data.grapes || []).map((g) => ({ id: g.id, name: g.name })),
+      );
     } catch (err) {
       setError(err.message || "Failed to load producer");
     } finally {
@@ -80,6 +96,41 @@ function ProducerDetail() {
       setLinkError(err.message || "Failed to link wine");
     } finally {
       setLinking(false);
+    }
+  }
+
+  // Save the (full) region list for this producer. The API replaces the
+  // producer's regions with the supplied ids, so unlinking is just removing
+  // a chip from the picker before saving.
+  async function handleSaveRegions() {
+    setSavingLinks(true);
+    setLinkError(null);
+    try {
+      await producersApi.update(slug, {
+        region_ids: selectedRegions.map((r) => r.id),
+      });
+      await loadProducer();
+      setRegionsEditorOpen(false);
+    } catch (err) {
+      setLinkError(err.message || "Failed to update regions");
+    } finally {
+      setSavingLinks(false);
+    }
+  }
+
+  async function handleSaveGrapes() {
+    setSavingLinks(true);
+    setLinkError(null);
+    try {
+      await producersApi.update(slug, {
+        grape_ids: selectedGrapes.map((g) => g.id),
+      });
+      await loadProducer();
+      setGrapesEditorOpen(false);
+    } catch (err) {
+      setLinkError(err.message || "Failed to update grapes");
+    } finally {
+      setSavingLinks(false);
     }
   }
 
@@ -151,11 +202,15 @@ function ProducerDetail() {
             <strong>Legal name:</strong> {producer.legal_name || "—"}
           </li>
           <li>
-            <strong>Address:</strong> {producer.address || "—"}
+            <strong>Address:</strong> {producer.address?.street_address || "—"}
           </li>
           <li>
             <strong>Location:</strong>{" "}
-            {[producer.city, producer.state, producer.postal_code]
+            {[
+              producer.address?.city,
+              producer.address?.state,
+              producer.address?.postal_code,
+            ]
               .filter(Boolean)
               .join(", ") || "—"}
           </li>
@@ -263,29 +318,90 @@ function ProducerDetail() {
         </div>
       )}
 
-      {Array.isArray(producer.regions) && producer.regions.length > 0 && (
-        <div className="wine-detail__section">
+      <div className="wine-detail__section">
+        <div className="wine-management__header">
           <h2>Regions</h2>
-          <p>
-            {producer.regions
-              .map((r) =>
-                r.country_name ? `${r.name} (${r.country_name})` : r.name,
-              )
-              .join(", ")}
-          </p>
+          {canManageProducers && (
+            <button
+              type="button"
+              className="review-form__status-btn"
+              onClick={() => setRegionsEditorOpen((open) => !open)}
+            >
+              {regionsEditorOpen ? "Close" : "+ Link Region"}
+            </button>
+          )}
         </div>
-      )}
+        {linkError && regionsEditorOpen && (
+          <p className="review-form__error">{linkError}</p>
+        )}
+        <p>
+          {Array.isArray(producer.regions) && producer.regions.length > 0
+            ? producer.regions
+                .map((r) =>
+                  r.country_name ? `${r.name} (${r.country_name})` : r.name,
+                )
+                .join(", ")
+            : "No regions linked yet."}
+        </p>
+        {canManageProducers && regionsEditorOpen && (
+          <div className="review-form__field">
+            <RegionSearch
+              selected={selectedRegions}
+              onChange={setSelectedRegions}
+              countryId={producer.country?.id}
+            />
+            <button
+              type="button"
+              className="review-form__status-btn"
+              disabled={savingLinks}
+              onClick={handleSaveRegions}
+            >
+              {savingLinks ? "Saving…" : "Save Regions"}
+            </button>
+          </div>
+        )}
+      </div>
 
-      {Array.isArray(producer.grapes) && producer.grapes.length > 0 && (
-        <div className="wine-detail__section">
+      <div className="wine-detail__section">
+        <div className="wine-management__header">
           <h2>Grapes</h2>
-          <p>
-            {producer.grapes
-              .map((g) => (g.color ? `${g.name} (${g.color})` : g.name))
-              .join(", ")}
-          </p>
+          {canManageProducers && (
+            <button
+              type="button"
+              className="review-form__status-btn"
+              onClick={() => setGrapesEditorOpen((open) => !open)}
+            >
+              {grapesEditorOpen ? "Close" : "+ Link Grapes"}
+            </button>
+          )}
         </div>
-      )}
+        {linkError && grapesEditorOpen && !regionsEditorOpen && (
+          <p className="review-form__error">{linkError}</p>
+        )}
+        <p>
+          {Array.isArray(producer.grapes) && producer.grapes.length > 0
+            ? producer.grapes
+                .map((g) => (g.color ? `${g.name} (${g.color})` : g.name))
+                .join(", ")
+            : "No grapes linked yet."}
+        </p>
+        {canManageProducers && grapesEditorOpen && (
+          <div className="review-form__field">
+            <GrapeSearch
+              selected={selectedGrapes}
+              onChange={setSelectedGrapes}
+            />
+            <button
+              type="button"
+              className="review-form__status-btn"
+              disabled={savingLinks}
+              onClick={handleSaveGrapes}
+            >
+              {savingLinks ? "Saving…" : "Save Grapes"}
+            </button>
+          </div>
+        )}
+      </div>
 
       {/* {canManageProducers && (
         <div className="wine-detail__section">

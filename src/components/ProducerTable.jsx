@@ -128,7 +128,7 @@ function ProducerTable({ producers, canManage = false, linkContext, onProducerLi
                 : "—"}
             </td>
             <td>{producer.active === false ? "Inactive" : "Active"}</td>
-            <td>{producer.address || "—"}</td>
+            <td>{producer.address?.street_address || "—"}</td>
             <td>{producer.email || "—"}</td>
             <td>
               {producer.wines && producer.wines.length > 0 ? (
