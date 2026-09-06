@@ -146,6 +146,27 @@ export const winesApi = {
       auth: true,
     });
   },
+  // Complex filter-driven search. Values that are empty/null are skipped;
+  // arrays (region_ids, grape_ids) are serialised as repeated `key[]` params.
+  advancedSearch(params) {
+    const search = new URLSearchParams();
+    Object.entries(params || {}).forEach(([key, value]) => {
+      if (value === undefined || value === null || value === "") return;
+      if (Array.isArray(value)) {
+        value.forEach((v) => {
+          if (v !== undefined && v !== null && v !== "") {
+            search.append(`${key}[]`, String(v));
+          }
+        });
+      } else {
+        search.set(key, String(value));
+      }
+    });
+    const qs = search.toString();
+    return request(`/wines/advanced_search${qs ? `?${qs}` : ""}`, {
+      auth: false,
+    });
+  },
   show(id) {
     return request(`/wines/${id}`);
   },
